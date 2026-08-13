@@ -23,13 +23,12 @@ Os seguintes arquivos sao gerados localmente e estao no `.gitignore`:
 - `github_ingest/.env`
 - `github_ingest/.venv/`
 - `github_ingest/data/github.duckdb`
-- `github_ingest/data/parquet/*.parquet`
 - `github_ingest/data/checkpoints/*.jsonl`
 - `dev.duckdb`
 - `target/`
 - `logs/`
 
-Nao commite tokens, bancos locais, Parquets ou checkpoints.
+O arquivo `github_ingest/data/parquet/repositories.parquet` sobe para o repositorio para facilitar a avaliacao sem reprocessar a API. Nao commite tokens, bancos locais, venv, logs ou checkpoints.
 
 ## Fonte de linguagens populares
 

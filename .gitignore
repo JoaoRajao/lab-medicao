@@ -6,6 +6,8 @@ __pycache__/
 *.duckdb
 *.duckdb.*
 *.parquet
+!github_ingest/data/parquet/
+!github_ingest/data/parquet/repositories.parquet
 target/
 dbt_packages/
 logs/
@@ -14,5 +16,4 @@ dbt_internal_packages/
 github_ingest/.venv/
 github_ingest/data/*.duckdb
 github_ingest/data/*.duckdb.*
-github_ingest/data/parquet/*.parquet
 github_ingest/data/checkpoints/*.jsonl
