@@ -1,0 +1,6 @@
+lab_medicao:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: github_ingest/data/github.duckdb

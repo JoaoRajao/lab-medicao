@@ -1,0 +1,38 @@
+version: 2
+
+models:
+  - name: gold_rq05_popular_languages
+    description: "Tabela gold para RQ05: distribuicao dos repositorios populares por linguagem primaria e classificacao de linguagem popular."
+    columns:
+      - name: primary_language
+        tests:
+          - not_null
+      - name: repositories_count
+        tests:
+          - not_null
+      - name: popular_language_source
+        description: "Fonte usada de forma consistente para definir linguagens populares."
+
+  - name: gold_rq06_closed_issues
+    description: "Tabela gold para RQ06: distribuicao dos repositorios por faixa de percentual de issues fechadas."
+    columns:
+      - name: closed_issues_band
+        tests:
+          - not_null
+          - unique
+      - name: weighted_closed_issues_ratio
+        description: "Razao global ponderada: soma de issues fechadas dividida pela soma total de issues."
+
+  - name: gold_rq07_popular_language_comparison
+    description: "Tabela gold para RQ07: comparacao entre repositorios em linguagens populares e demais linguagens."
+    columns:
+      - name: language_group
+        tests:
+          - not_null
+          - unique
+      - name: avg_accepted_pull_requests
+        description: "Media de pull requests aceitas por grupo."
+      - name: avg_releases_count
+        description: "Media de releases por grupo."
+      - name: avg_days_since_last_update
+        description: "Media de dias desde a ultima atualizacao; menor valor indica atualizacao mais frequente."

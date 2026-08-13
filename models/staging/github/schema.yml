@@ -1,0 +1,22 @@
+version: 2
+
+models:
+  - name: stg_github_repositories
+    description: "Repositorios populares coletados da API do GitHub e lidos do Parquet gerado pela aplicacao Python."
+    columns:
+      - name: repo_id
+        tests:
+          - not_null
+          - unique
+      - name: full_name
+        tests:
+          - not_null
+      - name: stars_count
+        tests:
+          - not_null
+
+  - name: github_research_questions
+    description: "Dataset direto para responder RQ01 a RQ06."
+
+  - name: github_bonus_language_groups
+    description: "Comparacao agregada para RQ07 entre repositorios em linguagens populares e demais repositorios."

@@ -1,0 +1,13 @@
+{
+  "source_name": "GitHub Octoverse 2025",
+  "source_url": "https://octoverse.github.com/",
+  "definition": "Linguagens citadas pelo GitHub Octoverse 2025 como linguagens centrais de novos projetos: TypeScript como #1 e Python, JavaScript, Java, C++ e C# no grupo principal de novos repositorios.",
+  "languages": [
+    "TypeScript",
+    "Python",
+    "JavaScript",
+    "Java",
+    "C++",
+    "C#"
+  ]
+}
