@@ -13,6 +13,7 @@ dbt_packages/
 logs/
 .env
 dbt_internal_packages/
+.tmp_dbt_profiles/
 github_ingest/.venv/
 github_ingest/data/*.duckdb
 github_ingest/data/*.duckdb.*

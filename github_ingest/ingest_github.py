@@ -3,18 +3,24 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import ssl
 import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 
 import duckdb
-import requests
-from dotenv import load_dotenv
+
+try:
+    import certifi
+except ImportError:  # pragma: no cover - optional TLS certificate helper
+    certifi = None
 
 
-BASE_URL = "https://api.github.com"
+GRAPHQL_URL = "https://api.github.com/graphql"
 ROOT_DIR = Path(__file__).resolve().parent
 DATA_DIR = ROOT_DIR / "data"
 PARQUET_DIR = DATA_DIR / "parquet"
@@ -25,6 +31,84 @@ DEFAULT_CHECKPOINT_PATH = CHECKPOINT_DIR / "repositories.jsonl"
 GITHUB_SEARCH_RESULT_LIMIT = 1000
 
 
+REPOSITORY_SEARCH_QUERY = """
+query SearchPopularRepositories($query: String!, $first: Int!, $after: String) {
+  search(query: $query, type: REPOSITORY, first: $first, after: $after) {
+    repositoryCount
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    nodes {
+      ... on Repository {
+        id
+        databaseId
+        nameWithOwner
+      }
+    }
+  }
+  rateLimit {
+    remaining
+    resetAt
+  }
+}
+"""
+
+
+REPOSITORY_DETAIL_QUERY = """
+query RepositoryDetails($owner: String!, $name: String!) {
+  repository(owner: $owner, name: $name) {
+    id
+    databaseId
+    nameWithOwner
+    name
+    url
+    description
+    stargazerCount
+    forkCount
+    createdAt
+    updatedAt
+    pushedAt
+    isArchived
+    isDisabled
+    isFork
+    primaryLanguage {
+      name
+    }
+    owner {
+      login
+    }
+    watchers {
+      totalCount
+    }
+    issues(states: OPEN) {
+      totalCount
+    }
+    closedIssues: issues(states: CLOSED) {
+      totalCount
+    }
+    pullRequests(states: MERGED) {
+      totalCount
+    }
+    releases {
+      totalCount
+    }
+    defaultBranchRef {
+      name
+    }
+    licenseInfo {
+      key
+      name
+    }
+  }
+  rateLimit {
+    remaining
+    resetAt
+  }
+}
+"""
+
+
 @dataclass(frozen=True)
 class PopularLanguageReference:
     source_name: str
@@ -32,92 +116,129 @@ class PopularLanguageReference:
     languages: set[str]
 
 
-class GitHubClient:
-    def __init__(self, token: str | None, timeout: int = 30, search_sleep: float = 2.2) -> None:
-        self.session = requests.Session()
-        self.session.headers.update(
-            {
-                "Accept": "application/vnd.github+json",
-                "X-GitHub-Api-Version": "2022-11-28",
-                "User-Agent": "dataplataform-ti6-github-ingest",
-            }
-        )
-        if token:
-            self.session.headers["Authorization"] = f"Bearer {token}"
+class GitHubGraphQLClient:
+    def __init__(self, token: str, timeout: int = 30) -> None:
+        self.token = token
         self.timeout = timeout
-        self.search_sleep = search_sleep
+        self.ssl_context = (
+            ssl.create_default_context(cafile=certifi.where())
+            if certifi is not None
+            else ssl.create_default_context()
+        )
 
-    def get(self, path: str, params: dict[str, Any] | None = None) -> requests.Response:
-        url = path if path.startswith("http") else f"{BASE_URL}{path}"
+    def execute(self, query: str, variables: dict[str, Any]) -> dict[str, Any]:
+        payload = json.dumps({"query": query, "variables": variables}).encode("utf-8")
+        request = Request(
+            GRAPHQL_URL,
+            data=payload,
+            headers={
+                "Accept": "application/vnd.github+json",
+                "Authorization": f"Bearer {self.token}",
+                "Content-Type": "application/json",
+                "User-Agent": "lab-medicao-github-graphql-ingest",
+            },
+            method="POST",
+        )
+
         while True:
-            response = self.session.get(url, params=params, timeout=self.timeout)
+            try:
+                with urlopen(request, timeout=self.timeout, context=self.ssl_context) as response:
+                    raw = response.read().decode("utf-8")
+            except HTTPError as error:
+                raw = error.read().decode("utf-8", errors="replace")
+                if 500 <= error.code < 600:
+                    print(f"GitHub retornou HTTP {error.code}. Tentando novamente em 30s.")
+                    time.sleep(30)
+                    continue
+                if error.code in {403, 429}:
+                    wait_seconds = self._rate_limit_wait_seconds(error.headers, raw)
+                    print(f"GitHub rate limit atingido. Aguardando {wait_seconds}s.")
+                    time.sleep(wait_seconds)
+                    continue
+                raise RuntimeError(f"Erro HTTP {error.code} na API GraphQL: {raw}") from error
+            except (TimeoutError, URLError) as error:
+                print(f"Erro de rede na API GraphQL: {error}. Tentando novamente em 30s.")
+                time.sleep(30)
+                continue
 
-            if response.status_code == 403 and response.headers.get("X-RateLimit-Remaining") == "0":
-                reset_at = int(response.headers.get("X-RateLimit-Reset", "0"))
-                wait_seconds = max(reset_at - int(time.time()) + 2, 1)
-                print(f"GitHub rate limit atingido. Aguardando {wait_seconds}s para continuar.")
+            data = json.loads(raw)
+            errors = data.get("errors", [])
+            if errors and self._has_rate_limit_error(errors):
+                reset_at = data.get("data", {}).get("rateLimit", {}).get("resetAt")
+                wait_seconds = self._wait_seconds_from_reset_at(reset_at) if reset_at else 60
+                print(f"GitHub rate limit atingido. Aguardando {wait_seconds}s.")
                 time.sleep(wait_seconds)
                 continue
+            if errors:
+                raise RuntimeError(f"Erro na query GraphQL: {errors}")
+            return data["data"]
 
-            if response.status_code in {403, 429} and "rate limit" in response.text.lower():
-                print("GitHub pediu reducao de ritmo. Aguardando 60s para continuar.")
-                time.sleep(60)
-                continue
+    def search_repositories(self, query: str, limit: int, page_size: int) -> list[dict[str, Any]]:
+        repositories: list[dict[str, Any]] = []
+        after = None
 
-            response.raise_for_status()
-            return response
-
-    def search_repositories(self, query: str, limit: int) -> list[dict[str, Any]]:
-        repos: list[dict[str, Any]] = []
-        per_page = min(100, limit)
-
-        for page in range(1, (limit + per_page - 1) // per_page + 1):
-            response = self.get(
-                "/search/repositories",
-                {
-                    "q": query,
-                    "sort": "stars",
-                    "order": "desc",
-                    "per_page": per_page,
-                    "page": page,
-                },
+        while len(repositories) < limit:
+            first = min(page_size, limit - len(repositories))
+            data = self.execute(
+                REPOSITORY_SEARCH_QUERY,
+                {"query": query, "first": first, "after": after},
             )
-            items = response.json().get("items", [])
-            repos.extend(items)
-            if len(items) < per_page or len(repos) >= limit:
+            search = data["search"]
+            nodes = [node for node in search["nodes"] if node is not None]
+            repositories.extend(nodes)
+
+            page_info = search["pageInfo"]
+            if not page_info["hasNextPage"] or not nodes:
                 break
+            after = page_info["endCursor"]
 
-        return repos[:limit]
+        return repositories[:limit]
 
-    def search_count(self, query: str) -> int:
-        response = self.get("/search/issues", {"q": query, "per_page": 1})
-        if self.search_sleep > 0:
-            time.sleep(self.search_sleep)
-        return int(response.json().get("total_count", 0))
-
-    def paginated_endpoint_count(self, path: str) -> int:
-        response = self.get(path, {"per_page": 1})
-        link = response.headers.get("Link", "")
-        last_page = self._extract_last_page(link)
-        if last_page is not None:
-            return last_page
-        return len(response.json())
+    def repository_details(self, full_name: str) -> dict[str, Any]:
+        owner, name = full_name.split("/", 1)
+        data = self.execute(REPOSITORY_DETAIL_QUERY, {"owner": owner, "name": name})
+        repository = data.get("repository")
+        if repository is None:
+            raise RuntimeError(f"Repositorio nao encontrado via GraphQL: {full_name}")
+        return repository
 
     @staticmethod
-    def _extract_last_page(link_header: str) -> int | None:
-        for part in link_header.split(","):
-            if 'rel="last"' not in part:
+    def _has_rate_limit_error(errors: list[dict[str, Any]]) -> bool:
+        return any("rate limit" in error.get("message", "").lower() for error in errors)
+
+    @staticmethod
+    def _rate_limit_wait_seconds(headers: Any, body: str) -> int:
+        reset_header = headers.get("X-RateLimit-Reset")
+        if reset_header:
+            return max(int(reset_header) - int(time.time()) + 2, 1)
+
+        try:
+            data = json.loads(body)
+            reset_at = data.get("data", {}).get("rateLimit", {}).get("resetAt")
+        except json.JSONDecodeError:
+            reset_at = None
+        return GitHubGraphQLClient._wait_seconds_from_reset_at(reset_at) if reset_at else 60
+
+    @staticmethod
+    def _wait_seconds_from_reset_at(reset_at: str | None) -> int:
+        if not reset_at:
+            return 60
+        reset_datetime = parse_datetime(reset_at)
+        if reset_datetime is None:
+            return 60
+        return max(int((reset_datetime - datetime.now(timezone.utc)).total_seconds()) + 2, 1)
+
+
+def load_env_file(path: Path) -> None:
+    if not path.exists():
+        return
+    with path.open("r", encoding="utf-8") as file:
+        for line in file:
+            stripped = line.strip()
+            if not stripped or stripped.startswith("#") or "=" not in stripped:
                 continue
-            marker = "page="
-            start = part.find(marker)
-            if start == -1:
-                continue
-            start += len(marker)
-            end = start
-            while end < len(part) and part[end].isdigit():
-                end += 1
-            return int(part[start:end])
-        return None
+            key, value = stripped.split("=", 1)
+            os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
 
 
 def parse_datetime(value: str | None) -> datetime | None:
@@ -175,34 +296,31 @@ def append_checkpoint(path: Path, record: dict[str, Any]) -> None:
 
 
 def build_repository_record(
-    client: GitHubClient,
     repo: dict[str, Any],
     language_reference: PopularLanguageReference,
     collected_at: datetime,
 ) -> dict[str, Any]:
-    full_name = repo["full_name"]
-    owner, name = full_name.split("/", 1)
-    primary_language = repo.get("language")
-
-    accepted_pull_requests = client.search_count(f"repo:{full_name} type:pr is:merged")
-    open_issues_count = client.search_count(f"repo:{full_name} type:issue state:open")
-    closed_issues_count = client.search_count(f"repo:{full_name} type:issue state:closed")
+    full_name = repo["nameWithOwner"]
+    owner = repo["owner"]["login"]
+    primary_language = repo["primaryLanguage"]["name"] if repo.get("primaryLanguage") else None
+    open_issues_count = int(repo["issues"]["totalCount"])
+    closed_issues_count = int(repo["closedIssues"]["totalCount"])
     total_issues_count = open_issues_count + closed_issues_count
-    releases_count = client.paginated_endpoint_count(f"/repos/{owner}/{name}/releases")
-
-    created_at = parse_datetime(repo.get("created_at"))
-    pushed_at = parse_datetime(repo.get("pushed_at"))
-    updated_at = parse_datetime(repo.get("updated_at"))
     closed_issues_ratio = (
         closed_issues_count / total_issues_count if total_issues_count > 0 else None
     )
 
+    created_at = parse_datetime(repo.get("createdAt"))
+    pushed_at = parse_datetime(repo.get("pushedAt"))
+    updated_at = parse_datetime(repo.get("updatedAt"))
+    license_info = repo.get("licenseInfo") or {}
+
     return {
-        "repo_id": repo["id"],
+        "repo_id": repo["databaseId"],
         "full_name": full_name,
         "owner": owner,
-        "name": name,
-        "html_url": repo.get("html_url"),
+        "name": repo["name"],
+        "html_url": repo.get("url"),
         "description": repo.get("description"),
         "primary_language": primary_language,
         "is_popular_language": primary_language in language_reference.languages
@@ -210,26 +328,26 @@ def build_repository_record(
         else False,
         "popular_language_source": language_reference.source_name,
         "popular_language_source_url": language_reference.source_url,
-        "stars_count": repo.get("stargazers_count"),
-        "forks_count": repo.get("forks_count"),
-        "watchers_count": repo.get("watchers_count"),
+        "stars_count": repo.get("stargazerCount"),
+        "forks_count": repo.get("forkCount"),
+        "watchers_count": repo["watchers"]["totalCount"],
         "open_issues_count": open_issues_count,
         "closed_issues_count": closed_issues_count,
         "total_issues_count": total_issues_count,
         "closed_issues_ratio": closed_issues_ratio,
-        "accepted_pull_requests": accepted_pull_requests,
-        "releases_count": releases_count,
+        "accepted_pull_requests": repo["pullRequests"]["totalCount"],
+        "releases_count": repo["releases"]["totalCount"],
         "created_at": created_at,
         "updated_at": updated_at,
         "pushed_at": pushed_at,
         "age_days": days_between(created_at, collected_at),
         "days_since_last_update": days_between(pushed_at or updated_at, collected_at),
-        "archived": repo.get("archived"),
-        "disabled": repo.get("disabled"),
-        "is_fork": repo.get("fork"),
-        "default_branch": repo.get("default_branch"),
-        "license_key": (repo.get("license") or {}).get("key"),
-        "license_name": (repo.get("license") or {}).get("name"),
+        "archived": repo.get("isArchived"),
+        "disabled": repo.get("isDisabled"),
+        "is_fork": repo.get("isFork"),
+        "default_branch": (repo.get("defaultBranchRef") or {}).get("name"),
+        "license_key": license_info.get("key"),
+        "license_name": license_info.get("name"),
         "collected_at": collected_at,
     }
 
@@ -328,12 +446,12 @@ def write_duckdb_and_parquet(records: list[dict[str, Any]]) -> None:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Coleta repositorios populares do GitHub e grava DuckDB + Parquet."
+        description="Coleta repositorios populares via GraphQL do GitHub e grava DuckDB + Parquet."
     )
     parser.add_argument(
         "--query",
-        default="stars:>1000 archived:false fork:false",
-        help="Query da GitHub Search API para selecionar repositorios.",
+        default="stars:>1000 archived:false fork:false sort:stars-desc",
+        help="Query da busca do GitHub usada dentro da query GraphQL.",
     )
     parser.add_argument(
         "--limit",
@@ -345,13 +463,13 @@ def parse_args() -> argparse.Namespace:
         "--sleep",
         type=float,
         default=0.2,
-        help="Pausa em segundos entre repositorios para reduzir pressao na API.",
+        help="Pausa em segundos entre repositorios ao gravar checkpoint.",
     )
     parser.add_argument(
-        "--search-sleep",
-        type=float,
-        default=2.2,
-        help="Pausa em segundos entre chamadas da GitHub Search API.",
+        "--page-size",
+        type=int,
+        default=25,
+        help="Numero de repositorios por pagina da query GraphQL.",
     )
     parser.add_argument(
         "--checkpoint",
@@ -372,42 +490,43 @@ def validate_args(args: argparse.Namespace, token: str | None) -> None:
         raise ValueError("--limit precisa ser maior que zero.")
     if args.limit > GITHUB_SEARCH_RESULT_LIMIT:
         raise ValueError(
-            "A GitHub Search API retorna no maximo os primeiros "
-            f"{GITHUB_SEARCH_RESULT_LIMIT} resultados por busca. Use --limit 1000."
+            "A busca do GitHub retorna no maximo os primeiros "
+            f"{GITHUB_SEARCH_RESULT_LIMIT} resultados. Use --limit 1000."
         )
-    if args.limit > 10 and not token:
-        raise RuntimeError(
-            "Para coletar mais de 10 repositorios, configure GITHUB_TOKEN em "
-            f"{ROOT_DIR / '.env'}. A coleta de 1.000 repositorios faz milhares de "
-            "chamadas na API."
-        )
+    if not 1 <= args.page_size <= 100:
+        raise ValueError("--page-size precisa estar entre 1 e 100.")
+    if not token:
+        raise RuntimeError(f"Configure GITHUB_TOKEN em {ROOT_DIR / '.env'}.")
 
 
 def main() -> None:
-    load_dotenv(ROOT_DIR / ".env")
+    load_env_file(ROOT_DIR / ".env")
     args = parse_args()
     token = os.getenv("GITHUB_TOKEN")
     validate_args(args, token)
-    client = GitHubClient(token=token, search_sleep=args.search_sleep)
+
+    client = GitHubGraphQLClient(token=token or "")
     language_reference = load_popular_languages()
     collected_at = datetime.now(timezone.utc)
 
-    repositories = client.search_repositories(args.query, args.limit)
+    repositories = client.search_repositories(args.query, args.limit, args.page_size)
     checkpoint_path = args.checkpoint if args.checkpoint.is_absolute() else ROOT_DIR / args.checkpoint
     if args.no_resume and checkpoint_path.exists():
         checkpoint_path.unlink()
 
-    repository_ids = {repo["id"] for repo in repositories}
+    repository_names = {repo["nameWithOwner"] for repo in repositories}
     records = [] if args.no_resume else load_checkpoint(checkpoint_path)
-    records = [record for record in records if record["repo_id"] in repository_ids]
-    collected_repo_ids = {record["repo_id"] for record in records}
+    records = [record for record in records if record["full_name"] in repository_names]
+    collected_repository_names = {record["full_name"] for record in records}
 
     for index, repo in enumerate(repositories, start=1):
-        if repo["id"] in collected_repo_ids:
-            print(f"[{index}/{len(repositories)}] pulando {repo['full_name']} (checkpoint)")
+        full_name = repo["nameWithOwner"]
+        if full_name in collected_repository_names:
+            print(f"[{index}/{len(repositories)}] pulando {repo['nameWithOwner']} (checkpoint)", flush=True)
             continue
-        print(f"[{index}/{len(repositories)}] coletando {repo['full_name']}")
-        record = build_repository_record(client, repo, language_reference, collected_at)
+        print(f"[{index}/{len(repositories)}] coletando detalhes {full_name}", flush=True)
+        detailed_repo = client.repository_details(full_name)
+        record = build_repository_record(detailed_repo, language_reference, collected_at)
         records.append(record)
         append_checkpoint(checkpoint_path, record)
         if args.sleep > 0:

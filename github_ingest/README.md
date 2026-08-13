@@ -1,6 +1,8 @@
 # GitHub ingest para DuckDB, Parquet e dbt
 
-Aplicacao simples em Python para coletar repositorios populares do GitHub e gerar uma base analitica para responder as RQs do laboratorio.
+Aplicacao simples em Python para coletar repositorios populares do GitHub via GraphQL e gerar uma base analitica para responder as RQs do laboratorio.
+
+A query GraphQL esta escrita em `ingest_github.py` e e consumida diretamente pelo script com `urllib`, da biblioteca padrao do Python. O projeto nao usa PyGithub, GitHub SDK, GraphQL client externo ou biblioteca de terceiros para consultar a API do GitHub.
 
 ## Fonte de linguagens populares
 
@@ -38,12 +40,6 @@ Se a coleta parar ou o terminal fechar, rode o mesmo comando novamente. O script
 python ingest_github.py
 ```
 
-Para uma coleta mais conservadora com a Search API:
-
-```bash
-python ingest_github.py --search-sleep 3
-```
-
 Com outro criterio de busca:
 
 ```bash
@@ -56,7 +52,7 @@ Para refazer a coleta do zero, ignorando o checkpoint:
 python ingest_github.py --no-resume
 ```
 
-Observacao: a GitHub Search API retorna no maximo os primeiros 1.000 resultados por busca. Para essa coleta, configure `GITHUB_TOKEN`; sem token, o limite da API nao sustenta a mineracao completa.
+Observacao: a busca do GitHub retorna no maximo os primeiros 1.000 resultados. Para essa coleta, configure `GITHUB_TOKEN`.
 
 ## Saidas
 

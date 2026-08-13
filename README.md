@@ -2,11 +2,13 @@
 
 Projeto para coletar dados dos 1.000 repositorios mais populares do GitHub, gravar a base em DuckDB/Parquet e gerar tabelas analiticas com dbt para responder as questoes de pesquisa do laboratorio.
 
+A coleta usa uma query GraphQL escrita no proprio script do projeto e consumida via biblioteca padrao do Python (`urllib`). Nao ha uso de PyGithub, GitHub SDK, GraphQL client externo ou biblioteca de terceiros para consultar a API do GitHub.
+
 ## Estrutura
 
 ```text
 github_ingest/
-  ingest_github.py              # Coleta dados da API do GitHub
+  ingest_github.py              # Coleta dados da API GraphQL do GitHub
   requirements.txt              # Dependencias Python da ingestao
   .env.example                  # Exemplo de variaveis de ambiente
   config/popular_languages.json # Fonte usada para linguagens populares
@@ -88,12 +90,6 @@ python ingest_github.py
 
 Se a coleta parar por rate limit ou interrupcao, rode o mesmo comando novamente. O script usa checkpoint e pula repositorios ja coletados.
 
-Para reduzir o ritmo da GitHub Search API:
-
-```bash
-python ingest_github.py --search-sleep 3
-```
-
 Para refazer a coleta do zero:
 
 ```bash
@@ -141,7 +137,7 @@ git init
 git status --short
 ```
 
-Confira que `.env`, `.duckdb`, `.parquet`, `.venv`, `target/` e `logs/` nao aparecem como arquivos a commitar.
+Confira que `.env`, `.duckdb`, `.venv`, `target/` e `logs/` nao aparecem como arquivos a commitar. O Parquet `github_ingest/data/parquet/repositories.parquet` deve aparecer porque e entregue junto com o projeto.
 
 Depois:
 
