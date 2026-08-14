@@ -79,3 +79,17 @@ Os modelos em `models/staging/github` leem a tabela `github_repositories` no mes
 cd ..
 dbt run --select staging.github gold.github
 ```
+
+## Snapshot de fechamento de sprint
+
+O GitHub Projects (v2) nao guarda historico de mudancas de coluna consultavel via API. Para isso, ao final de cada sprint rodamos `export_project_snapshot.py`, que reaproveita o `GitHubGraphQLClient` de `ingest_github.py` para consultar os itens do Project e o status atual de cada um, gravando um CSV.
+
+O token em `.env` precisa do escopo `read:project` (PAT classico) ou da permissao "Projects: Read" (fine-grained), alem do acesso normal ao repositorio.
+
+```bash
+python export_project_snapshot.py --sprint Lab01S01
+```
+
+Gera `data/project_snapshots/snapshot_Lab01S01_<data>.csv` com uma linha por item do Project: `issue_number`, `title`, `repository`, `assignees`, `status` (coluna do board) e `exported_at`.
+
+Esses CSVs sao versionados (nao entram no `.gitignore`) porque formam a serie de snapshots sprint a sprint que serve de base para os Labs 04 e 05.

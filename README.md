@@ -9,6 +9,7 @@ A coleta usa uma query GraphQL escrita no proprio script do projeto e consumida 
 ```text
 github_ingest/
   ingest_github.py              # Coleta dados da API GraphQL do GitHub
+  export_project_snapshot.py    # Exporta itens do GitHub Projects (v2) e status para CSV
   requirements.txt              # Dependencias Python da ingestao
   .env.example                  # Exemplo de variaveis de ambiente
   config/popular_languages.json # Fonte usada para linguagens populares
