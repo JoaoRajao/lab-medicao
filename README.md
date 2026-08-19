@@ -31,7 +31,7 @@ Os seguintes arquivos sao gerados localmente e estao no `.gitignore`:
 - `target/`
 - `logs/`
 
-O arquivo `github_ingest/data/parquet/repositories.parquet` sobe para o repositorio para facilitar a avaliacao sem reprocessar a API. Nao commite tokens, bancos locais, venv, logs ou checkpoints.
+Os arquivos `github_ingest/data/parquet/repositories.parquet` e `github_ingest/data/csv/repositories.csv` sobem para o repositorio para facilitar a avaliacao sem reprocessar a API. Nao commite tokens, bancos locais, venv, logs ou checkpoints.
 
 ## Fonte de linguagens populares
 
@@ -138,7 +138,7 @@ git init
 git status --short
 ```
 
-Confira que `.env`, `.duckdb`, `.venv`, `target/` e `logs/` nao aparecem como arquivos a commitar. O Parquet `github_ingest/data/parquet/repositories.parquet` deve aparecer porque e entregue junto com o projeto.
+Confira que `.env`, `.duckdb`, `.venv`, `target/` e `logs/` nao aparecem como arquivos a commitar. O Parquet `github_ingest/data/parquet/repositories.parquet` e o CSV `github_ingest/data/csv/repositories.csv` devem aparecer porque sao entregues junto com o projeto.
 
 Depois:
 
