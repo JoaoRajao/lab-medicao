@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 import os
 import ssl
@@ -24,11 +25,46 @@ GRAPHQL_URL = "https://api.github.com/graphql"
 ROOT_DIR = Path(__file__).resolve().parent
 DATA_DIR = ROOT_DIR / "data"
 PARQUET_DIR = DATA_DIR / "parquet"
+CSV_DIR = DATA_DIR / "csv"
 CHECKPOINT_DIR = DATA_DIR / "checkpoints"
 DUCKDB_PATH = DATA_DIR / "github.duckdb"
 POPULAR_LANGUAGES_PATH = ROOT_DIR / "config" / "popular_languages.json"
 DEFAULT_CHECKPOINT_PATH = CHECKPOINT_DIR / "repositories.jsonl"
 GITHUB_SEARCH_RESULT_LIMIT = 1000
+
+RECORD_COLUMNS = [
+    "repo_id",
+    "full_name",
+    "owner",
+    "name",
+    "html_url",
+    "description",
+    "primary_language",
+    "is_popular_language",
+    "popular_language_source",
+    "popular_language_source_url",
+    "stars_count",
+    "forks_count",
+    "watchers_count",
+    "open_issues_count",
+    "closed_issues_count",
+    "total_issues_count",
+    "closed_issues_ratio",
+    "accepted_pull_requests",
+    "releases_count",
+    "created_at",
+    "updated_at",
+    "pushed_at",
+    "age_days",
+    "days_since_last_update",
+    "archived",
+    "disabled",
+    "is_fork",
+    "default_branch",
+    "license_key",
+    "license_name",
+    "collected_at",
+]
 
 
 REPOSITORY_SEARCH_QUERY = """
@@ -356,39 +392,7 @@ def write_duckdb_and_parquet(records: list[dict[str, Any]]) -> None:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     PARQUET_DIR.mkdir(parents=True, exist_ok=True)
 
-    columns = [
-        "repo_id",
-        "full_name",
-        "owner",
-        "name",
-        "html_url",
-        "description",
-        "primary_language",
-        "is_popular_language",
-        "popular_language_source",
-        "popular_language_source_url",
-        "stars_count",
-        "forks_count",
-        "watchers_count",
-        "open_issues_count",
-        "closed_issues_count",
-        "total_issues_count",
-        "closed_issues_ratio",
-        "accepted_pull_requests",
-        "releases_count",
-        "created_at",
-        "updated_at",
-        "pushed_at",
-        "age_days",
-        "days_since_last_update",
-        "archived",
-        "disabled",
-        "is_fork",
-        "default_branch",
-        "license_key",
-        "license_name",
-        "collected_at",
-    ]
+    columns = RECORD_COLUMNS
 
     with duckdb.connect(str(DUCKDB_PATH)) as conn:
         conn.execute("drop table if exists github_repositories")
@@ -444,9 +448,33 @@ def write_duckdb_and_parquet(records: list[dict[str, Any]]) -> None:
         )
 
 
+def write_csv(records: list[dict[str, Any]], path: Path | None = None) -> Path:
+    csv_path = path or (CSV_DIR / "repositories.csv")
+    csv_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with csv_path.open("w", newline="", encoding="utf-8") as file:
+        writer = csv.DictWriter(file, fieldnames=RECORD_COLUMNS)
+        writer.writeheader()
+        for record in records:
+            writer.writerow({column: record.get(column) for column in RECORD_COLUMNS})
+
+    return csv_path
+
+
+def load_existing_records() -> list[dict[str, Any]]:
+    if not DUCKDB_PATH.exists():
+        raise RuntimeError(
+            f"DuckDB nao encontrado em {DUCKDB_PATH}. Rode a ingestao completa antes de usar --export-only."
+        )
+    with duckdb.connect(str(DUCKDB_PATH), read_only=True) as conn:
+        columns_sql = ", ".join(RECORD_COLUMNS)
+        rows = conn.execute(f"select {columns_sql} from github_repositories").fetchall()
+    return [dict(zip(RECORD_COLUMNS, row)) for row in rows]
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Coleta repositorios populares via GraphQL do GitHub e grava DuckDB + Parquet."
+        description="Coleta repositorios populares via GraphQL do GitHub e grava DuckDB + Parquet + CSV."
     )
     parser.add_argument(
         "--query",
@@ -482,6 +510,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Ignora checkpoint anterior e refaz a coleta do zero.",
     )
+    parser.add_argument(
+        "--export-only",
+        action="store_true",
+        help="Pula a coleta na API e apenas reexporta o CSV a partir dos dados ja existentes no DuckDB.",
+    )
     return parser.parse_args()
 
 
@@ -502,39 +535,46 @@ def validate_args(args: argparse.Namespace, token: str | None) -> None:
 def main() -> None:
     load_env_file(ROOT_DIR / ".env")
     args = parse_args()
-    token = os.getenv("GITHUB_TOKEN")
-    validate_args(args, token)
 
-    client = GitHubGraphQLClient(token=token or "")
-    language_reference = load_popular_languages()
-    collected_at = datetime.now(timezone.utc)
+    if args.export_only:
+        records = load_existing_records()
+    else:
+        token = os.getenv("GITHUB_TOKEN")
+        validate_args(args, token)
 
-    repositories = client.search_repositories(args.query, args.limit, args.page_size)
-    checkpoint_path = args.checkpoint if args.checkpoint.is_absolute() else ROOT_DIR / args.checkpoint
-    if args.no_resume and checkpoint_path.exists():
-        checkpoint_path.unlink()
+        client = GitHubGraphQLClient(token=token or "")
+        language_reference = load_popular_languages()
+        collected_at = datetime.now(timezone.utc)
 
-    repository_names = {repo["nameWithOwner"] for repo in repositories}
-    records = [] if args.no_resume else load_checkpoint(checkpoint_path)
-    records = [record for record in records if record["full_name"] in repository_names]
-    collected_repository_names = {record["full_name"] for record in records}
+        repositories = client.search_repositories(args.query, args.limit, args.page_size)
+        checkpoint_path = args.checkpoint if args.checkpoint.is_absolute() else ROOT_DIR / args.checkpoint
+        if args.no_resume and checkpoint_path.exists():
+            checkpoint_path.unlink()
 
-    for index, repo in enumerate(repositories, start=1):
-        full_name = repo["nameWithOwner"]
-        if full_name in collected_repository_names:
-            print(f"[{index}/{len(repositories)}] pulando {repo['nameWithOwner']} (checkpoint)", flush=True)
-            continue
-        print(f"[{index}/{len(repositories)}] coletando detalhes {full_name}", flush=True)
-        detailed_repo = client.repository_details(full_name)
-        record = build_repository_record(detailed_repo, language_reference, collected_at)
-        records.append(record)
-        append_checkpoint(checkpoint_path, record)
-        if args.sleep > 0:
-            time.sleep(args.sleep)
+        repository_names = {repo["nameWithOwner"] for repo in repositories}
+        records = [] if args.no_resume else load_checkpoint(checkpoint_path)
+        records = [record for record in records if record["full_name"] in repository_names]
+        collected_repository_names = {record["full_name"] for record in records}
 
-    write_duckdb_and_parquet(records)
-    print(f"OK: {len(records)} repositorios gravados em {DUCKDB_PATH}")
-    print(f"OK: parquet gravado em {PARQUET_DIR / 'repositories.parquet'}")
+        for index, repo in enumerate(repositories, start=1):
+            full_name = repo["nameWithOwner"]
+            if full_name in collected_repository_names:
+                print(f"[{index}/{len(repositories)}] pulando {repo['nameWithOwner']} (checkpoint)", flush=True)
+                continue
+            print(f"[{index}/{len(repositories)}] coletando detalhes {full_name}", flush=True)
+            detailed_repo = client.repository_details(full_name)
+            record = build_repository_record(detailed_repo, language_reference, collected_at)
+            records.append(record)
+            append_checkpoint(checkpoint_path, record)
+            if args.sleep > 0:
+                time.sleep(args.sleep)
+
+        write_duckdb_and_parquet(records)
+        print(f"OK: {len(records)} repositorios gravados em {DUCKDB_PATH}")
+        print(f"OK: parquet gravado em {PARQUET_DIR / 'repositories.parquet'}")
+
+    csv_path = write_csv(records)
+    print(f"OK: {len(records)} repositorios gravados em {csv_path}")
 
 
 if __name__ == "__main__":

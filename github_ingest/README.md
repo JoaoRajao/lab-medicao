@@ -58,8 +58,15 @@ Observacao: a busca do GitHub retorna no maximo os primeiros 1.000 resultados. P
 
 - DuckDB: `data/github.duckdb`
 - Parquet: `data/parquet/repositories.parquet`
+- CSV: `data/csv/repositories.csv`
 - Checkpoint: `data/checkpoints/repositories.jsonl`
 - Tabela DuckDB: `github_repositories`
+
+Para reexportar so o CSV a partir dos dados ja coletados no DuckDB, sem bater na API de novo:
+
+```bash
+python ingest_github.py --export-only
+```
 
 ## Metricas geradas
 
