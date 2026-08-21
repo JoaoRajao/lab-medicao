@@ -1,4 +1,4 @@
-# Dataplataform TI6 - Mineracao GitHub com DuckDB e dbt
+# Dataplataform  - Mineracao GitHub com DuckDB e dbt
 
 Projeto para coletar dados dos 1.000 repositorios mais populares do GitHub, gravar a base em DuckDB/Parquet e gerar tabelas analiticas com dbt para responder as questoes de pesquisa do laboratorio.
 
