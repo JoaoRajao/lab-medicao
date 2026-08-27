@@ -258,8 +258,8 @@ Issues verificadas:
 | #10 | Fechada | Analise e visualizacao RQ01 e RQ02 |
 | #11 | Fechada | Analise e visualizacao RQ03 e RQ04 |
 | #12 | Aberta (PR aberto) | Analise e visualizacao RQ05, RQ06 e RQ07 |
-| #13 | Aberta | Relatorio final e configuracao do processo |
-| #14 | Aberta (em andamento) | Snapshot final do board |
+| #13 | Aberta (PR aberto) | Relatorio final e configuracao do processo |
+| #14 | Aberta (PR aberto) | Snapshot final do board |
 
 Configuracao do board:
 
@@ -297,11 +297,11 @@ No snapshot S02, havia tarefas em `Done`, `Review`, `In Progress` e `Todo`, refl
 
 ### Snapshot final do board
 
-**Pendente.** Falta inserir aqui o print final do board ao encerrar o laboratorio, mostrando o fluxo completo do Lab01 e a politica de WIP em uso:
+Print do board ao encerrar o laboratorio, mostrando o fluxo Backlog/To Do/Doing/Review/Done com as issues do Lab01 posicionadas conforme o progresso real do grupo:
 
-```markdown
 ![Snapshot final do board](assets/snapshot-final-board.png)
-```
+
+No momento do print, #10 e #11 estavam concluidas (`Done`), #12 e #13 em `Review`, e #14 (esta propria issue, de snapshot final) em `In Progress` -- consistente com o snapshot `Lab01S03` exportado em `github_ingest/data/project_snapshots/snapshot_Lab01S03_2026-08-27.csv`.
 
 Link do board:
 
