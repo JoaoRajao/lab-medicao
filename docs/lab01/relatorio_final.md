@@ -68,9 +68,9 @@ O dbt organiza o pipeline medalhao:
 ```mermaid
 flowchart LR
     A["GitHub GraphQL API"] --> B["Ingestao Python<br/>labs/lab01_repos_populares/ingest.py"]
-    B --> C["Checkpoint JSONL<br/>data/checkpoints/repositories.jsonl"]
-    B --> D["Bronze local<br/>DuckDB/DuckLake style<br/>lab01_repos_populares"]
-    D --> E["Parquet versionado<br/>data/parquet/repositories.parquet"]
+    B --> C["Checkpoint JSONL<br/>labs/lab01_repos_populares/data/checkpoints/repositories.jsonl"]
+    B --> D["Bronze compartilhado<br/>data/warehouse.duckdb<br/>tabela lab01_repos_populares"]
+    D --> E["Parquet versionado<br/>labs/lab01_repos_populares/data/parquet/repositories.parquet"]
     D --> F["dbt staging<br/>Silver views"]
     F --> G["dbt gold<br/>Tabelas por RQ"]
     G --> H["DuckDB UI<br/>consultas e validacao"]

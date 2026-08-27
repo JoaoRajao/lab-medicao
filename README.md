@@ -41,6 +41,74 @@ Cada lab novo segue o mesmo padrao: uma pasta em `labs/`, um subdiretorio homoni
 | --- | --- | --- |
 | Lab01 | Mineracao de repositorios populares do GitHub (RQ01-RQ07) | [`labs/lab01_repos_populares/README.md`](labs/lab01_repos_populares/README.md), relatorios em [`docs/lab01/`](docs/lab01/) |
 
+## Como criar um lab novo
+
+`shared/` nao sabe o tema de nenhum lab -- so transporte HTTP, paginacao, warehouse e graficos.
+Um lab novo, mesmo com fonte de dados/tema totalmente diferente do Lab01, **nao precisa alterar
+nada em `shared/`**:
+
+```mermaid
+flowchart LR
+    subgraph shared["shared/ (nao muda por lab)"]
+        GC["github_client.py<br/>execute() + load_env_file()"]
+        PG["pagination.py<br/>paginate()"]
+        WH["warehouse.py<br/>create_and_load_table()<br/>export_table() / read_table()"]
+        CK["checkpoint.py<br/>load_checkpoint()<br/>append_checkpoint()"]
+        VZ["viz/charts.py<br/>fetch_distribution()<br/>plot_distribution()"]
+    end
+
+    L1["labs/lab01_repos_populares/<br/>ingest.py + visualize.py"] --> shared
+    L2["labs/lab02_&lt;tema&gt;/<br/>ingest.py + visualize.py"] --> shared
+
+    shared --> DB[("data/warehouse.duckdb<br/>compartilhado")]
+```
+
+Checklist para `labs/lab02_<tema>/`:
+
+1. **`labs/lab02_<tema>/ingest.py`** -- o unico arquivo obrigatorio. Define a(s) query(ies)
+   GraphQL, o schema de colunas (`list[tuple[nome, tipo_sql]]`) e `build_record()` (JSON da API ->
+   linha). Usa `shared.github_client`, `shared.pagination.paginate()` e
+   `shared.warehouse.create_and_load_table()`/`export_table()` para o resto. Esqueleto minimo:
+
+   ```python
+   from shared.github_client import GitHubGraphQLClient, load_env_file
+   from shared.pagination import paginate
+   from shared.warehouse import create_and_load_table, export_table
+
+   QUERY = """
+   query MinhaQuery($first: Int!, $after: String) {
+     minhaColecao(first: $first, after: $after) {
+       pageInfo { hasNextPage endCursor }
+       nodes { id algumCampo }
+     }
+   }
+   """
+   TABLE_NAME = "lab02_algum_tema"
+   COLUMNS = [("id", "bigint"), ("campo_x", "varchar")]
+
+   def build_record(node: dict) -> dict:
+       return {"id": node["id"], "campo_x": node["algumCampo"]}
+
+   def main() -> None:
+       load_env_file(REPO_ROOT_ENV_PATH)
+       client = GitHubGraphQLClient(token=...)
+       nodes = paginate(client, QUERY, {}, path="minhaColecao", page_size=50)
+       records = [build_record(n) for n in nodes]
+       create_and_load_table(TABLE_NAME, COLUMNS, records)
+       export_table(TABLE_NAME, parquet_path=..., csv_path=...)
+   ```
+
+2. **`labs/lab02_<tema>/visualize.py`** (se for gerar graficos) -- so as faixas/agrupamentos do
+   tema nas suas proprias queries SQL, chamando `shared.viz.charts.fetch_distribution()` e
+   `plot_distribution()` pra desenhar (mesma paleta e estilo do Lab01, de graca).
+3. **`models/staging/lab02/`** e **`models/gold/lab02/`** -- os modelos dbt, lendo da tabela
+   criada pelo `ingest.py` (`{{ source(...) }}`/`from lab02_algum_tema`).
+4. **`tests/lab02/`** -- testes de consistencia (opcional, mas recomendado).
+5. **`docs/lab02/`** -- relatorios.
+
+O Kanban (`shared/kanban/export_project_snapshot.py`) ja funciona pro lab novo automaticamente --
+o board e do semestre inteiro, nao por lab, entao nao ha nada a configurar ali.
+
 ## Ambiente Python (unico para o repositorio inteiro)
 
 ```bash
