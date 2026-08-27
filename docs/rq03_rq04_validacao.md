@@ -32,6 +32,10 @@ Métrica: Número total de releases formais (`releases_count`) associadas ao rep
 | Frequente (50 - 199) | 279 | 27,9% |
 | Muito frequente (>= 200) | 196 | 19,6% |
 
+### Visualização
+
+![Distribuição de releases lançadas por faixa](assets/rq03_releases_distribuicao.png)
+
 ### Outliers e Consistência
 - Aplicando a regra do IQR:
   - \(IQR = 152,25 - 0,00 = 152,25\)
@@ -74,6 +78,10 @@ Métrica: Quantidade de dias decorridos desde o último push (`days_since_last_u
 | Médio Prazo (31 - 90 dias) | 69 | 6,9% |
 | Longo Prazo (91 - 365 dias) | 88 | 8,8% |
 | Inativo (> 365 dias) | 101 | 10,1% |
+
+### Visualização
+
+![Distribuição de dias desde a última atualização por faixa](assets/rq04_updates_distribuicao.png)
 
 ### Outliers e Consistência
 - Aplicando a regra do IQR:
