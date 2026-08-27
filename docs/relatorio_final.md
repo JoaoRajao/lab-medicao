@@ -114,6 +114,8 @@ Resultado da execucao:
 | Minimo em dias | 0 |
 | Maximo em dias | 6.698 |
 
+![Distribuição da idade dos repositórios por faixa](assets/rq01_age_distribuicao.png)
+
 Resultado: a mediana de 2.819 dias indica que boa parte dos projetos populares possui varios anos de existencia.
 
 ### RQ02 - Pull requests aceitas
@@ -125,6 +127,8 @@ Resultado: a mediana de 2.819 dias indica que boa parte dos projetos populares p
 | Mediana de PRs aceitas | 798 |
 | Minimo | 0 |
 | Maximo | 103.013 |
+
+![Distribuição de pull requests aceitas por faixa](assets/rq02_pull_requests_distribuicao.png)
 
 Resultado: a media muito maior que a mediana indica distribuicao assimetrica, com poucos projetos concentrando volumes muito altos de PRs aceitas.
 
@@ -138,6 +142,8 @@ Resultado: a media muito maior que a mediana indica distribuicao assimetrica, co
 | Minimo | 0 |
 | Maximo | 1.000 |
 
+![Distribuição de releases lançadas por faixa](assets/rq03_releases_distribuicao.png)
+
 Resultado: a mediana de 42 releases indica uso relevante de releases em parte significativa da amostra, mas o minimo zero mostra que nem todo projeto popular usa releases do GitHub como mecanismo formal.
 
 ### RQ04 - Atualizacao
@@ -149,6 +155,8 @@ Resultado: a mediana de 42 releases indica uso relevante de releases em parte si
 | Mediana de dias desde a ultima atualizacao | 1 |
 | Minimo | 0 |
 | Maximo | 2.445 |
+
+![Distribuição de dias desde a última atualização por faixa](assets/rq04_updates_distribuicao.png)
 
 Resultado: a mediana de 1 dia indica que a maior parte dos projetos populares estava muito ativa no momento da coleta. A media maior mostra a presenca de outliers antigos.
 
@@ -178,6 +186,8 @@ Agrupando pelo criterio do Octoverse 2025:
 | Linguagens populares | 598 |
 | Demais linguagens ou sem linguagem | 402 |
 
+![Linguagens primárias mais frequentes (top 10)](assets/rq05_language_distribuicao.png)
+
 Resultado: 59,8% dos repositorios estao nas linguagens classificadas como populares. A hipotese e parcialmente confirmada: existe concentracao nas linguagens populares, mas a presenca de Go, Rust, C, Shell, Ruby e 83 repositorios sem linguagem primaria mostra que sistemas populares nao dependem exclusivamente dessas linguagens.
 
 ### RQ06 - Percentual de issues fechadas
@@ -190,6 +200,8 @@ Metrica: `closed_issues_ratio = closed_issues_count / total_issues_count`.
 | medio_50_79 | 224 | 0,6889 | 0,7068 |
 | baixo_0_49 | 109 | 0,3424 | 0,3131 |
 | sem_issues | 41 | n/a | n/a |
+
+![Distribuição do percentual de issues fechadas por faixa](assets/rq06_closed_issues_distribuicao.png)
 
 Resultado: 626 repositorios estao na faixa de 80% a 100% de issues fechadas. A hipotese e confirmada para a maior parte da amostra, mas ha 109 repositorios abaixo de 50% e 41 sem issues, que precisam ser tratados como excecoes/limitacoes.
 
@@ -205,6 +217,8 @@ Metricas:
 | --- | ---: | ---: | ---: | ---: |
 | linguagem_popular | 598 | 979,5 | 55,0 | 1,0 |
 | outras_linguagens | 402 | 612,5 | 27,5 | 3,0 |
+
+![Comparação de medianas entre linguagens populares e demais linguagens](assets/rq07_comparacao.png)
 
 Resultado: a hipotese e moderadamente confirmada. O grupo de linguagens populares apresenta medianas maiores de PRs aceitas e releases, alem de menor mediana de dias desde a ultima atualizacao. Ainda assim, linguagens fora do conjunto definido, como Go e Rust, aparecem com projetos muito ativos, entao a linguagem deve ser vista como associada ao ecossistema do projeto, nao como causa isolada.
 
@@ -241,11 +255,11 @@ Issues verificadas:
 | #7 | Fechada | Validacao e hipoteses RQ03 e RQ04 |
 | #8 | Fechada | Validacao e hipoteses RQ05, RQ06 e RQ07 |
 | #9 | Fechada | Snapshot S02 e relatorio parcial |
-| #10 | Aberta | Analise e visualizacao RQ01 e RQ02 |
-| #11 | Aberta | Analise e visualizacao RQ03 e RQ04 |
-| #12 | Aberta | Analise e visualizacao RQ05, RQ06 e RQ07 |
+| #10 | Fechada | Analise e visualizacao RQ01 e RQ02 |
+| #11 | Fechada | Analise e visualizacao RQ03 e RQ04 |
+| #12 | Aberta (PR aberto) | Analise e visualizacao RQ05, RQ06 e RQ07 |
 | #13 | Aberta | Relatorio final e configuracao do processo |
-| #14 | Aberta | Snapshot final do board |
+| #14 | Aberta (em andamento) | Snapshot final do board |
 
 Configuracao do board:
 
@@ -277,12 +291,13 @@ Snapshots exportados:
 | --- | --- | --- |
 | Lab01S01 | `github_ingest/data/project_snapshots/snapshot_Lab01S01_2026-08-14.csv` | 2026-08-14 |
 | Lab01S02 | `github_ingest/data/project_snapshots/snapshot_Lab01S02_2026-08-20.csv` | 2026-08-20 |
+| Lab01S03 | `github_ingest/data/project_snapshots/snapshot_Lab01S03_2026-08-27.csv` | 2026-08-27 |
 
-No snapshot S02, havia tarefas em `Done`, `Review`, `In Progress` e `Todo`, refletindo o fluxo real de trabalho: coleta/exportacao concluida, validacoes em revisao, relatorio parcial em andamento e tarefas de S03 ainda a iniciar.
+No snapshot S02, havia tarefas em `Done`, `Review`, `In Progress` e `Todo`, refletindo o fluxo real de trabalho: coleta/exportacao concluida, validacoes em revisao, relatorio parcial em andamento e tarefas de S03 ainda a iniciar. No snapshot S03, as issues #10 e #11 (analise e visualizacao RQ01-04) ja aparecem `Done`, enquanto #12 e #13 estao em `Review` e #14 (este proprio snapshot) em `In Progress`.
 
 ### Snapshot final do board
 
-Inserir aqui o print final do board ao encerrar o laboratorio:
+**Pendente.** Falta inserir aqui o print final do board ao encerrar o laboratorio, mostrando o fluxo completo do Lab01 e a politica de WIP em uso:
 
 ```markdown
 ![Snapshot final do board](assets/snapshot-final-board.png)
