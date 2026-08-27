@@ -74,6 +74,12 @@ Metrica: linguagem primaria de cada repositorio.
 | C | 21 | 2,1% | Nao |
 | Shell | 20 | 2,0% | Nao |
 
+### Visualizacao
+
+![Linguagens primarias mais frequentes (top 10)](assets/rq05_language_distribuicao.png)
+
+Grafico mostra as 10 linguagens primarias mais frequentes (859 dos 1000 repositorios); as demais 141 se distribuem entre outras ~35 linguagens de cauda longa.
+
 ### Outliers e consistencia
 
 - Foram identificados 45 grupos de linguagem, contando o grupo `SEM_LINGUAGEM`.
@@ -123,6 +129,10 @@ closed_issues_ratio = closed_issues_count / total_issues_count
 | 75-89% | 256 | 25,6% |
 | 90-100% | 431 | 43,1% |
 
+### Visualizacao
+
+![Distribuição do percentual de issues fechadas por faixa](assets/rq06_closed_issues_distribuicao.png)
+
 ### Outliers e consistencia
 
 - A metrica `closed_issues_ratio` e limitada entre 0 e 1, entao os extremos esperados sao proximos de 0% e 100%.
@@ -168,6 +178,10 @@ Metricas:
 | Rust | 61 | 2.512,0 | 102,0 | 0,0 |
 | C++ | 44 | 1.279,5 | 59,0 | 0,0 |
 | Java | 40 | 966,5 | 56,0 | 1,0 |
+
+### Visualizacao
+
+![Comparação de medianas entre linguagens populares e demais linguagens](assets/rq07_comparacao.png)
 
 ### Outliers e consistencia
 

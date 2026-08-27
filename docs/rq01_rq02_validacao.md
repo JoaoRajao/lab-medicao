@@ -32,6 +32,10 @@ Métrica: Idade do repositório em dias (`age_days`), calculada a partir da data
 | 5 a 10 anos (1.825 - 3.650 dias) | 334 | 33,4% |
 | Mais de 10 anos (> 3.650 dias) | 344 | 34,4% |
 
+### Visualização
+
+![Distribuição da idade dos repositórios por faixa](assets/rq01_age_distribuicao.png)
+
 ### Outliers e Consistência
 - Aplicando a regra do IQR (Interquartile Range) para identificação de outliers:
   - \(IQR = 4.146,75 - 1.287,50 = 2.859,25\)
@@ -72,6 +76,10 @@ Métrica: Número de Pull Requests aceitos (`accepted_pull_requests`), definido 
 | Moderado (100 - 499) | 233 | 23,3% |
 | Alto (500 - 1.999) | 260 | 26,0% |
 | Muito alto (>= 2.000) | 328 | 32,8% |
+
+### Visualização
+
+![Distribuição de pull requests aceitas por faixa](assets/rq02_pull_requests_distribuicao.png)
 
 ### Outliers e Consistência
 - Aplicando a regra do IQR:
