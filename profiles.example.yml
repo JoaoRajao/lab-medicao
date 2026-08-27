@@ -3,4 +3,4 @@ lab_medicao:
   outputs:
     dev:
       type: duckdb
-      path: github_ingest/data/github.duckdb
+      path: data/warehouse.duckdb

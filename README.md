@@ -1,151 +1,105 @@
-# Dataplataform  - Mineracao GitHub com DuckDB e dbt
+# Laboratorio de Experimentacao de Software
 
-Projeto para coletar dados dos 1.000 repositorios mais populares do GitHub, gravar a base em DuckDB/Parquet e gerar tabelas analiticas com dbt para responder as questoes de pesquisa do laboratorio.
-
-A coleta usa uma query GraphQL escrita no proprio script do projeto e consumida via biblioteca padrao do Python (`urllib`). Nao ha uso de PyGithub, GitHub SDK, GraphQL client externo ou biblioteca de terceiros para consultar a API do GitHub.
+Repositorio do grupo para os laboratorios da disciplina, com um pipeline analitico compartilhado
+(Python + DuckDB + dbt) e um lab por pasta em `labs/`.
 
 ## Estrutura
 
 ```text
-github_ingest/
-  ingest_github.py              # Coleta dados da API GraphQL do GitHub
-  export_project_snapshot.py    # Exporta itens do GitHub Projects (v2) e status para CSV
-  requirements.txt              # Dependencias Python da ingestao
-  .env.example                  # Exemplo de variaveis de ambiente
-  config/popular_languages.json # Fonte usada para linguagens populares
+shared/                  # infra reaproveitavel entre labs (nao sabe o tema de nenhum lab)
+  github_client.py        # transporte GraphQL puro (auth, retry, rate limit)
+  pagination.py            # paginador generico por cursor
+  warehouse.py              # leitura/escrita generica no DuckDB compartilhado
+  checkpoint.py              # checkpoint JSONL generico para coletas longas
+  kanban/
+    export_project_snapshot.py  # roda toda sprint, de qualquer lab
+  viz/
+    charts.py                    # motor de grafico generico (paleta, mark specs)
+
+data/
+  warehouse.duckdb          # unico DuckDB do semestre (gitignored, regenerado a partir dos parquets)
+  kanban_snapshots/         # CSVs de fechamento de sprint do GitHub Projects (semestre inteiro)
+
+labs/
+  lab01_repos_populares/    # Lab01: mineracao de repositorios populares do GitHub
+    ingest.py                 # UNICO arquivo especifico: query GraphQL + schema + mapeamento
+    visualize.py               # graficos especificos do Lab01
+    config/, data/
+
 models/
-  staging/github/               # Camada staging
-  gold/github/                  # Tabelas finais para RQs
-profiles.example.yml            # Exemplo de profile dbt com DuckDB
+  staging/lab01/   gold/lab01/     # modelos dbt do Lab01 (um subdiretorio por lab)
+tests/lab01/                        # testes de consistencia do Lab01
+docs/lab01/                         # relatorios do Lab01
 ```
 
-## Dados que nao sobem para o Git
+Cada lab novo segue o mesmo padrao: uma pasta em `labs/`, um subdiretorio homonimo em
+`models/staging/`, `models/gold/`, `tests/` e `docs/`. Nenhum lab precisa alterar `shared/`.
 
-Os seguintes arquivos sao gerados localmente e estao no `.gitignore`:
+## Labs
 
-- `github_ingest/.env`
-- `github_ingest/.venv/`
-- `github_ingest/data/github.duckdb`
-- `github_ingest/data/checkpoints/*.jsonl`
-- `dev.duckdb`
-- `target/`
-- `logs/`
+| Lab | Tema | Documentacao |
+| --- | --- | --- |
+| Lab01 | Mineracao de repositorios populares do GitHub (RQ01-RQ07) | [`labs/lab01_repos_populares/README.md`](labs/lab01_repos_populares/README.md), relatorios em [`docs/lab01/`](docs/lab01/) |
 
-Os arquivos `github_ingest/data/parquet/repositories.parquet` e `github_ingest/data/csv/repositories.csv` sobem para o repositorio para facilitar a avaliacao sem reprocessar a API. Nao commite tokens, bancos locais, venv, logs ou checkpoints.
-
-## Fonte de linguagens populares
-
-Para RQ05 e RQ07, o projeto usa uma unica referencia:
-
-- Fonte: GitHub Octoverse 2025
-- URL: https://octoverse.github.com/
-- Arquivo: `github_ingest/config/popular_languages.json`
-
-A classificacao `is_popular_language` usa as linguagens definidas nesse arquivo.
-
-## 1. Configurar ambiente Python
+## Ambiente Python (unico para o repositorio inteiro)
 
 ```bash
-cd lab-medicao/github_ingest
 python3 -m venv .venv
-source .venv/bin/activate
+source .venv/bin/activate       # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-cp .env.example .env
 ```
 
-Edite `github_ingest/.env` e coloque seu PAT do GitHub:
+Isso instala `dbt-duckdb`, `duckdb`, `matplotlib` e `certifi` -- tudo que qualquer lab ou o dbt
+precisam. Nao ha ambiente virtual por pasta.
 
-```env
-GITHUB_TOKEN=github_pat_seu_token_aqui
-```
+## dbt
 
-## 2. Configurar o profile do dbt
-
-Copie o exemplo para `~/.dbt/profiles.yml`, ou adapte seu arquivo existente:
+Copie o profile de exemplo (aponta para o warehouse compartilhado `data/warehouse.duckdb`):
 
 ```bash
 mkdir -p ~/.dbt
 cp profiles.example.yml ~/.dbt/profiles.yml
 ```
 
-O profile deve apontar para o mesmo DuckDB usado pela ingestao. Se voce sempre roda `dbt` a partir da raiz do projeto, pode usar caminho relativo:
-
-```yaml
-lab_medicao:
-  target: dev
-  outputs:
-    dev:
-      type: duckdb
-      path: github_ingest/data/github.duckdb
-```
-
-## 3. Rodar a ingestao
-
-Coleta padrao dos 1.000 repositorios com mais estrelas:
+Rodar todos os modelos e testes do Lab01:
 
 ```bash
-cd lab-medicao/github_ingest
-source .venv/bin/activate
-python ingest_github.py
+dbt run --select staging.lab01 gold.lab01
+dbt test --select staging.lab01 gold.lab01
 ```
 
-Se a coleta parar por rate limit ou interrupcao, rode o mesmo comando novamente. O script usa checkpoint e pula repositorios ja coletados.
+## GitHub Token (`.env` na raiz)
 
-Para refazer a coleta do zero:
+Tanto a ingestao de cada lab quanto o snapshot do Kanban usam o mesmo `GITHUB_TOKEN`, lido de um
+`.env` **na raiz do repositorio** (nunca commitado):
+
+```env
+GITHUB_TOKEN=github_pat_seu_token_aqui
+```
+
+O token de ingestao (`labs/*/ingest.py`) precisa de acesso de leitura ao GitHub normal. O de
+snapshot do Kanban (`shared/kanban/export_project_snapshot.py`) precisa do escopo `read:project`
+(PAT classico) ou da permissao "Projects: Read" (fine-grained).
+
+## Snapshot de fechamento de sprint (Kanban)
+
+O GitHub Projects (v2) nao guarda historico de mudanca de coluna consultavel via API. Por isso, ao
+final de cada sprint, qualquer lab pode rodar (a partir da raiz do repositorio):
 
 ```bash
-python ingest_github.py --no-resume
+python -m shared.kanban.export_project_snapshot --sprint Lab01S01
 ```
 
-## 4. Rodar dbt
+Gera `data/kanban_snapshots/snapshot_<sprint>_<data>.csv`. Esses CSVs sao versionados -- formam a
+serie historica que serve de base para os labs de analise de processo.
 
-```bash
-cd lab-medicao
-dbt run --select staging.github gold.github
-dbt test --select staging.github gold.github
-```
+## Dados que nao sobem para o Git
 
-As tabelas finais ficam no DuckDB:
+- `.env` (raiz)
+- `.venv/`
+- `data/*.duckdb` (warehouse, regenerado a partir dos parquets versionados)
+- `labs/*/data/checkpoints/*.jsonl`
+- `target/`, `logs/`
 
-- `gold_rq05_popular_languages`
-- `gold_rq06_closed_issues`
-- `gold_rq07_popular_language_comparison`
-
-## 5. Abrir DuckDB UI
-
-Feche o dbt antes de abrir a UI, porque DuckDB usa lock no arquivo.
-
-```bash
-cd lab-medicao/github_ingest
-duckdb -ui data/github.duckdb
-```
-
-Quando a UI estiver aberta, voce pode consultar:
-
-```sql
-select * from gold_rq05_popular_languages;
-select * from gold_rq06_closed_issues;
-select * from gold_rq07_popular_language_comparison;
-```
-
-## 6. Preparar para subir no remoto
-
-Inicialize o Git se ainda nao existir:
-
-```bash
-cd lab-medicao
-git init
-git status --short
-```
-
-Confira que `.env`, `.duckdb`, `.venv`, `target/` e `logs/` nao aparecem como arquivos a commitar. O Parquet `github_ingest/data/parquet/repositories.parquet` e o CSV `github_ingest/data/csv/repositories.csv` devem aparecer porque sao entregues junto com o projeto.
-
-Depois:
-
-```bash
-git add .
-git commit -m "Add GitHub mining pipeline with dbt gold tables"
-git remote add origin URL_DO_REPOSITORIO_REMOTO
-git branch -M main
-git push -u origin main
-```
+Os parquets/CSVs finais de cada lab (ex.: `labs/lab01_repos_populares/data/parquet/repositories.parquet`)
+sobem para o repositorio para facilitar a avaliacao sem reprocessar a API.
