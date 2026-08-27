@@ -67,7 +67,115 @@ RQ_BUCKETS: dict[str, dict] = {
             ("Inativo (> 365 dias)", "days_since_last_update > 365"),
         ],
     },
+    "rq06_closed_issues": {
+        "title": "RQ06 - Distribuicao do percentual de issues fechadas",
+        "xlabel": "Repositorios",
+        "buckets": [
+            ("Sem issues", "total_issues_count = 0"),
+            ("0-24%", "total_issues_count > 0 and closed_issues_ratio < 0.25"),
+            ("25-49%", "closed_issues_ratio >= 0.25 and closed_issues_ratio < 0.50"),
+            ("50-74%", "closed_issues_ratio >= 0.50 and closed_issues_ratio < 0.75"),
+            ("75-89%", "closed_issues_ratio >= 0.75 and closed_issues_ratio < 0.90"),
+            ("90-100%", "closed_issues_ratio >= 0.90"),
+        ],
+    },
 }
+
+COLOR_GROUP_POPULAR = "#2a78d6"
+COLOR_GROUP_OTHER = "#eb6834"
+
+
+def fetch_top_languages(conn: duckdb.DuckDBPyConnection, limit: int = 10) -> list[tuple[str, int]]:
+    query = f"""
+        select coalesce(primary_language, 'Sem linguagem primaria') as lang, count(*) as total
+        from repos
+        group by 1
+        order by total desc
+        limit {limit}
+    """
+    return conn.execute(query).fetchall()
+
+
+def plot_rq05_languages(conn: duckdb.DuckDBPyConnection, output_path: Path) -> None:
+    rows = fetch_top_languages(conn)
+    plot_distribution(
+        rows,
+        "RQ05 - Linguagens primarias mais frequentes",
+        "Repositorios",
+        output_path,
+    )
+    print(f"OK: {output_path} ({sum(count for _, count in rows)} repositorios)")
+
+
+def fetch_language_group_medians(conn: duckdb.DuckDBPyConnection) -> dict[str, dict[str, float]]:
+    query = """
+        select
+            case when is_popular_language then 'linguagem_popular' else 'outras_linguagens' end as grupo,
+            median(accepted_pull_requests) as median_prs,
+            median(releases_count) as median_releases,
+            median(days_since_last_update) as median_dias
+        from repos
+        group by 1
+    """
+    rows = conn.execute(query).fetchall()
+    return {grupo: {"prs": prs, "releases": releases, "dias": dias} for grupo, prs, releases, dias in rows}
+
+
+def plot_rq07_comparison(conn: duckdb.DuckDBPyConnection, output_path: Path) -> None:
+    medians = fetch_language_group_medians(conn)
+    popular = medians["linguagem_popular"]
+    other = medians["outras_linguagens"]
+
+    metrics = [
+        ("prs", "Mediana de PRs aceitas"),
+        ("releases", "Mediana de releases"),
+        ("dias", "Mediana de dias desde update"),
+    ]
+
+    fig, axes = plt.subplots(1, 3, figsize=(11, 4), dpi=150)
+    fig.patch.set_facecolor(SURFACE)
+    fig.suptitle(
+        "RQ07 - Linguagens populares vs. demais linguagens",
+        color=COLOR_INK,
+        fontsize=13,
+        fontweight="bold",
+        x=0.02,
+        ha="left",
+    )
+
+    labels = ["Linguagens\npopulares", "Demais\nlinguagens"]
+    colors = [COLOR_GROUP_POPULAR, COLOR_GROUP_OTHER]
+
+    for ax, (key, subtitle) in zip(axes, metrics):
+        values = [popular[key], other[key]]
+        ax.set_facecolor(SURFACE)
+        bars = ax.bar(labels, values, width=0.55, color=colors, zorder=3)
+        ax.set_title(subtitle, color=COLOR_INK, fontsize=10.5, pad=10)
+        ax.grid(axis="y", color=COLOR_GRID, linewidth=1, zorder=0)
+        ax.set_axisbelow(True)
+        for spine in ax.spines.values():
+            spine.set_visible(False)
+        ax.spines["left"].set_visible(True)
+        ax.spines["left"].set_color(COLOR_AXIS)
+        ax.tick_params(axis="both", length=0, colors=COLOR_MUTED)
+        max_value = max(values)
+        ax.set_ylim(0, max_value * 1.22)
+        for bar, value in zip(bars, values):
+            ax.text(
+                bar.get_x() + bar.get_width() / 2,
+                bar.get_height() + max_value * 0.03,
+                f"{value:,.1f}".replace(",", "."),
+                ha="center",
+                va="bottom",
+                fontsize=9.5,
+                color=COLOR_INK,
+            )
+
+    fig.tight_layout(rect=(0, 0, 1, 0.90))
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(output_path, facecolor=SURFACE)
+    plt.close(fig)
+    print(f"OK: {output_path}")
 
 
 def fetch_distribution(conn: duckdb.DuckDBPyConnection, buckets: list[tuple[str, str]]) -> list[tuple[str, int]]:
@@ -127,6 +235,10 @@ def plot_distribution(rows: list[tuple[str, int]], title: str, xlabel: str, outp
     plt.close(fig)
 
 
+SPECIAL_CHARTS = ["rq05_language", "rq07_comparison"]
+ALL_CHARTS = sorted(RQ_BUCKETS) + SPECIAL_CHARTS
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Gera graficos de distribuicao por faixa para as RQs, a partir do parquet coletado."
@@ -134,8 +246,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--rq",
         nargs="*",
-        choices=sorted(RQ_BUCKETS),
-        default=sorted(RQ_BUCKETS),
+        choices=ALL_CHARTS,
+        default=ALL_CHARTS,
         help="Quais RQs gerar (default: todas as configuradas).",
     )
     return parser.parse_args()
@@ -151,11 +263,16 @@ def main() -> None:
     conn.execute(f"create view repos as select * from read_parquet('{PARQUET_PATH.as_posix()}')")
 
     for key in args.rq:
-        spec = RQ_BUCKETS[key]
-        rows = fetch_distribution(conn, spec["buckets"])
-        output_path = ASSETS_DIR / f"{key}_distribuicao.png"
-        plot_distribution(rows, spec["title"], spec["xlabel"], output_path)
-        print(f"OK: {output_path} ({sum(count for _, count in rows)} repositorios)")
+        if key == "rq05_language":
+            plot_rq05_languages(conn, ASSETS_DIR / "rq05_language_distribuicao.png")
+        elif key == "rq07_comparison":
+            plot_rq07_comparison(conn, ASSETS_DIR / "rq07_comparacao.png")
+        else:
+            spec = RQ_BUCKETS[key]
+            rows = fetch_distribution(conn, spec["buckets"])
+            output_path = ASSETS_DIR / f"{key}_distribuicao.png"
+            plot_distribution(rows, spec["title"], spec["xlabel"], output_path)
+            print(f"OK: {output_path} ({sum(count for _, count in rows)} repositorios)")
 
 
 if __name__ == "__main__":
