@@ -45,6 +45,28 @@ RQ_BUCKETS: dict[str, dict] = {
             ("Muito alto (>= 2.000)", "accepted_pull_requests >= 2000"),
         ],
     },
+    "rq03_releases": {
+        "title": "RQ03 - Distribuicao de releases lancadas",
+        "xlabel": "Repositorios",
+        "buckets": [
+            ("Sem releases (0)", "releases_count = 0"),
+            ("Poucas releases (1-9)", "releases_count >= 1 and releases_count < 10"),
+            ("Moderado (10-49)", "releases_count >= 10 and releases_count < 50"),
+            ("Frequente (50-199)", "releases_count >= 50 and releases_count < 200"),
+            ("Muito frequente (>= 200)", "releases_count >= 200"),
+        ],
+    },
+    "rq04_updates": {
+        "title": "RQ04 - Distribuicao de dias desde a ultima atualizacao",
+        "xlabel": "Repositorios",
+        "buckets": [
+            ("Muito Recente (0-7 dias)", "days_since_last_update >= 0 and days_since_last_update <= 7"),
+            ("Recente (8-30 dias)", "days_since_last_update >= 8 and days_since_last_update <= 30"),
+            ("Medio Prazo (31-90 dias)", "days_since_last_update >= 31 and days_since_last_update <= 90"),
+            ("Longo Prazo (91-365 dias)", "days_since_last_update >= 91 and days_since_last_update <= 365"),
+            ("Inativo (> 365 dias)", "days_since_last_update > 365"),
+        ],
+    },
 }
 
 
