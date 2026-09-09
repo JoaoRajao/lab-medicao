@@ -1,0 +1,34 @@
+version: 2
+
+models:
+  - name: stg_lab02_trials
+    description: "Trials do experimento Lab02 com tempo, testes de aceitacao e metricas estaticas."
+    columns:
+      - name: trial_id
+        tests:
+          - not_null
+          - unique
+      - name: participant
+        tests:
+          - not_null
+      - name: kata
+        tests:
+          - not_null
+      - name: treatment
+        tests:
+          - not_null
+      - name: timebox_seconds
+        tests:
+          - not_null
+      - name: time_to_green_seconds
+        tests:
+          - not_null
+      - name: tests_passed
+        tests:
+          - not_null
+      - name: tests_failed
+        tests:
+          - not_null
+      - name: acceptance_success_rate
+        tests:
+          - not_null
