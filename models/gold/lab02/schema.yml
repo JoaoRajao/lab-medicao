@@ -1,0 +1,44 @@
+version: 2
+
+models:
+  - name: gold_lab02_rq01_time
+    description: "Agregacao por tratamento para RQ1: tempo ate passar nos testes."
+    columns:
+      - name: treatment
+        tests:
+          - not_null
+          - unique
+      - name: trials_count
+        tests:
+          - not_null
+      - name: median_time_to_green_seconds
+        tests:
+          - not_null
+
+  - name: gold_lab02_rq02_defects
+    description: "Agregacao por tratamento para RQ2: defeitos e taxa de sucesso."
+    columns:
+      - name: treatment
+        tests:
+          - not_null
+          - unique
+      - name: trials_count
+        tests:
+          - not_null
+      - name: median_acceptance_success_rate
+        tests:
+          - not_null
+
+  - name: gold_lab02_rq03_static_metrics
+    description: "Agregacao por tratamento para RQ3: complexidade, manutencao, LOC e duplicacao."
+    columns:
+      - name: treatment
+        tests:
+          - not_null
+          - unique
+      - name: trials_count
+        tests:
+          - not_null
+      - name: median_cyclomatic_complexity
+        tests:
+          - not_null

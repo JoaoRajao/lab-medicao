@@ -8,6 +8,11 @@ __pycache__/
 *.parquet
 !github_ingest/data/parquet/
 !github_ingest/data/parquet/repositories.parquet
+!lab02/data/parquet/
+!lab02/data/parquet/trials.parquet
+lab02/data/raw/trials.jsonl
+lab02/data/raw/static_metrics.jsonl
+lab02/data/static_metrics/
 target/
 dbt_packages/
 logs/

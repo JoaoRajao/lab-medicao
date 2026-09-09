@@ -1,0 +1,8 @@
+{
+  "scripts": {
+    "lab02:duplication": "jscpd --reporters json --output lab02/data/static_metrics"
+  },
+  "devDependencies": {
+    "jscpd": "^4.0.5"
+  }
+}
