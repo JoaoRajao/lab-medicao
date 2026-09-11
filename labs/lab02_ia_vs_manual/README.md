@@ -82,6 +82,72 @@ Depois de coletar os trials reais, junte os dois JSONL (tempo + metricas estatic
 por trial e rode `ingest_trials_to_parquet.py` de novo apontando para o arquivo consolidado, antes de
 rodar `dbt run`/`dbt test` para atualizar as tabelas gold.
 
+## Orquestracao diaria com Airflow
+
+O ambiente em `docker-compose.yml` usa Airflow 3.3.1 com LocalExecutor e PostgreSQL para os
+metadados. A interface fica em <http://localhost:8080> e, no ambiente local, o usuario e senha
+padrao sao `airflow` / `airflow`.
+
+Inicialize e suba os servicos a partir da raiz:
+
+```bash
+docker compose build
+docker compose up airflow-init
+docker compose up -d
+```
+
+Em Linux, execute os comandos com `AIRFLOW_UID=$(id -u)` para que os logs criados pelo container
+continuem pertencendo ao seu usuario. Para encerrar os servicos sem remover os metadados:
+
+```bash
+docker compose down
+```
+
+As DAGs ficam em `airflow/dags/lab02_pipeline.py`:
+
+- `lab02_ingestion_daily`: roda todos os dias as 03:00 no fuso `America/Sao_Paulo` e publica o
+  Parquet como um Asset do Airflow.
+- `lab02_dbt_models`: e disparada quando o Asset e atualizado; roda os modelos e, em seguida, os
+  testes dbt de `staging.lab02` e `gold.lab02`.
+
+Por padrao, a ingestao usa `trials_sample.jsonl`. Para processar os trials reais, informe um caminho
+visivel dentro do volume `/opt/airflow/project`, por exemplo:
+
+```bash
+LAB02_TRIALS_INPUT=/opt/airflow/project/labs/lab02_ia_vs_manual/data/raw/trials.jsonl \
+  docker compose up -d
+```
+
+O Parquet e exportado para um arquivo temporario e substituido apenas depois de uma escrita bem
+sucedida. Cada DAG permite somente uma execucao ativa, e todas as tarefas que acessam o warehouse
+usam o pool `lab02_duckdb`, de uma vaga, para impedir escrita concorrente entre as duas DAGs. Feche
+a DuckDB UI antes de executar o fluxo, pois ela pode manter um lock externo no warehouse.
+
+```mermaid
+flowchart LR
+    CRON["Cron diario<br/>03:00 America/Sao_Paulo"] --> INGEST_DAG["DAG lab02_ingestion_daily"]
+    INPUT["Trials JSONL ou CSV"] --> INGEST_DAG
+    INGEST_DAG --> PYTHON["Ingestao Python"]
+    PYTHON --> DB[("DuckDB<br/>lab02_trials")]
+    PYTHON --> PARQUET["Parquet<br/>trials.parquet"]
+    PARQUET --> ASSET["Asset do Airflow"]
+    ASSET --> DBT_DAG["DAG lab02_dbt_models"]
+    DBT_DAG --> STAGING["dbt staging.lab02"]
+    STAGING --> GOLD["dbt gold.lab02"]
+    GOLD --> TESTS["Testes dbt"]
+    STAGING --> DB
+    GOLD --> DB
+```
+
+Para diagnosticar o ambiente pela linha de comando:
+
+```bash
+docker compose run --rm airflow-cli dags list
+docker compose run --rm airflow-cli dags list-import-errors
+docker compose run --rm airflow-cli dags test lab02_ingestion_daily 2026-09-11
+docker compose run --rm airflow-cli dags test lab02_dbt_models 2026-09-11
+```
+
 ## Katas
 
 | Kata | Descricao |
