@@ -14,7 +14,18 @@ A arquitetura separa dois planos:
 
 ## Diagrama da arquitetura
 
-O bloco abaixo pode ser usado como referencia ou importado no draw.io como Mermaid.
+Uma versao editavel e ilustrada esta disponivel em
+[`lab02_pipeline_architecture.excalidraw`](lab02_pipeline_architecture.excalidraw). Abra o arquivo
+diretamente no Excalidraw por **Open** ou arraste-o para a area de desenho. Os logos de Airflow,
+Python, DuckDB, PostgreSQL e Parquet ja estao incorporados ao arquivo, portanto ele nao depende de
+imagens externas.
+
+![Arquitetura ilustrada do pipeline do Lab 2](lab02_pipeline_architecture.svg)
+
+O bloco abaixo e uma alternativa simplificada para Mermaid. Ao usar **Import Mermaid** no
+Excalidraw ou no draw.io, copie somente o conteudo entre as cercas de codigo: a primeira linha
+colada deve ser `flowchart LR`. Nao inclua as linhas de abertura e fechamento da cerca de codigo e
+mantenha as aspas duplas do exemplo.
 
 ```mermaid
 flowchart LR
