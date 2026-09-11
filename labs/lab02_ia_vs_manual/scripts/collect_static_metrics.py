@@ -60,14 +60,15 @@ def collect_radon_metrics(solution_path: Path) -> dict[str, Any]:
 
 
 def collect_duplication_pct(solution_path: Path) -> float | None:
-    if shutil.which("npx") is None:
+    npx_path = shutil.which("npx")
+    if npx_path is None:
         return None
 
     output_dir = LAB_DIR / "data" / "static_metrics"
     output_dir.mkdir(parents=True, exist_ok=True)
     completed = subprocess.run(
         [
-            "npx",
+            npx_path,
             "--yes",
             "jscpd",
             "--reporters",
@@ -111,7 +112,7 @@ def main() -> None:
         "participant": args.participant,
         "kata": args.kata,
         "treatment": args.treatment,
-        "solution_path": str(solution_path.relative_to(ROOT_DIR)),
+        "solution_path": solution_path.relative_to(ROOT_DIR).as_posix(),
         "collected_at": datetime.now(timezone.utc).isoformat(),
         **metrics,
     }

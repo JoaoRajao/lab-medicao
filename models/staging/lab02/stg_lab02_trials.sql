@@ -20,6 +20,6 @@ select
     sloc,
     duplication_pct,
     solution_path,
-    cast(started_at as timestamptz) as started_at,
-    cast(finished_at as timestamptz) as finished_at
-from read_parquet('labs/lab02_ia_vs_manual/data/parquet/trials.parquet')
+    started_at,
+    finished_at
+from lab02_trials

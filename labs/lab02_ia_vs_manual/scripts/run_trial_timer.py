@@ -47,13 +47,19 @@ def parse_args() -> argparse.Namespace:
 
 
 def count_pytest_results(output: str) -> tuple[int, int]:
+    # Pytest's short summary uses space-separated tokens, e.g. "1 failed, 2 passed
+    # in 0.06s" -- the count and its label are always two separate tokens.
     passed = 0
     failed = 0
-    for token in output.replace(",", " ").split():
-        if token.endswith("passed") and token[:-6].isdigit():
-            passed += int(token[:-6])
-        if token.endswith("failed") and token[:-6].isdigit():
-            failed += int(token[:-6])
+    tokens = output.replace(",", " ").split()
+    for index, token in enumerate(tokens[:-1]):
+        if not token.isdigit():
+            continue
+        label = tokens[index + 1]
+        if label == "passed":
+            passed += int(token)
+        elif label == "failed":
+            failed += int(token)
     return passed, failed
 
 
@@ -113,7 +119,7 @@ def main() -> None:
         "tests_passed": tests_passed,
         "tests_failed": tests_failed,
         "acceptance_success_rate": tests_passed / max(tests_passed + tests_failed, 1),
-        "solution_path": str(solution_path.relative_to(ROOT_DIR)),
+        "solution_path": solution_path.relative_to(ROOT_DIR).as_posix(),
         "started_at": started_at.isoformat(),
         "finished_at": datetime.now(timezone.utc).isoformat(),
         "pytest_output_tail": pytest_tail,
