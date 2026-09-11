@@ -11,8 +11,9 @@ from statistics import mean
 from typing import Any
 
 
-ROOT_DIR = Path(__file__).resolve().parents[2]
-DEFAULT_OUTPUT = ROOT_DIR / "lab02" / "data" / "raw" / "static_metrics.jsonl"
+ROOT_DIR = Path(__file__).resolve().parents[3]
+LAB_DIR = Path(__file__).resolve().parents[1]
+DEFAULT_OUTPUT = LAB_DIR / "data" / "raw" / "static_metrics.jsonl"
 
 
 def parse_args() -> argparse.Namespace:
@@ -62,7 +63,7 @@ def collect_duplication_pct(solution_path: Path) -> float | None:
     if shutil.which("npx") is None:
         return None
 
-    output_dir = ROOT_DIR / "lab02" / "data" / "static_metrics"
+    output_dir = LAB_DIR / "data" / "static_metrics"
     output_dir.mkdir(parents=True, exist_ok=True)
     completed = subprocess.run(
         [

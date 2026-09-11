@@ -1,4 +1,4 @@
-from lab02.katas.warehouse_batches.solution import consolidate_batches
+from labs.lab02_ia_vs_manual.katas.warehouse_batches.solution import consolidate_batches
 
 
 def test_consolidates_valid_batches_by_sku() -> None:

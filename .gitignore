@@ -15,3 +15,5 @@ logs/
 dbt_internal_packages/
 .tmp_dbt_profiles/
 labs/*/data/checkpoints/*.jsonl
+labs/*/data/static_metrics/
+node_modules/

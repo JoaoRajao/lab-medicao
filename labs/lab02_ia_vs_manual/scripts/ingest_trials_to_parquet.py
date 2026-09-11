@@ -14,9 +14,9 @@ except ImportError:  # pragma: no cover - fallback for local CLI-only environmen
     duckdb = None
 
 
-ROOT_DIR = Path(__file__).resolve().parents[2]
-DEFAULT_INPUT = ROOT_DIR / "lab02" / "data" / "raw" / "trials_sample.jsonl"
-DEFAULT_OUTPUT = ROOT_DIR / "lab02" / "data" / "parquet" / "trials.parquet"
+ROOT_DIR = Path(__file__).resolve().parents[3]
+DEFAULT_INPUT = ROOT_DIR / "labs" / "lab02_ia_vs_manual" / "data" / "raw" / "trials_sample.jsonl"
+DEFAULT_OUTPUT = ROOT_DIR / "labs" / "lab02_ia_vs_manual" / "data" / "parquet" / "trials.parquet"
 
 
 BOOLEAN_FIELDS = {"censored"}
@@ -82,7 +82,7 @@ def main() -> None:
         duckdb_cli = shutil.which("duckdb")
         if duckdb_cli is None:
             raise RuntimeError(
-                "Instale duckdb com `pip install -r github_ingest/requirements.txt` "
+                "Instale duckdb com `pip install -r requirements.txt` "
                 "ou deixe o comando `duckdb` disponivel no PATH."
             )
         input_sql = str(input_path).replace("'", "''")

@@ -1,4 +1,4 @@
-from lab02.katas.support_queue.solution import prioritize_tickets
+from labs.lab02_ia_vs_manual.katas.support_queue.solution import prioritize_tickets
 
 
 def test_prioritizes_overdue_and_severity() -> None:

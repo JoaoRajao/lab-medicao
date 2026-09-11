@@ -1,4 +1,4 @@
-from lab02.katas.route_reconciliation.solution import reconcile_routes
+from labs.lab02_ia_vs_manual.katas.route_reconciliation.solution import reconcile_routes
 
 
 def test_identifies_missed_extra_and_in_order_stops() -> None:

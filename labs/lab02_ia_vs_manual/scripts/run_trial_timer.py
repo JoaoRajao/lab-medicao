@@ -10,15 +10,16 @@ from pathlib import Path
 from typing import Any
 
 
-ROOT_DIR = Path(__file__).resolve().parents[2]
-DEFAULT_OUTPUT = ROOT_DIR / "lab02" / "data" / "raw" / "trials.jsonl"
+ROOT_DIR = Path(__file__).resolve().parents[3]
+LAB_DIR = Path(__file__).resolve().parents[1]
+DEFAULT_OUTPUT = LAB_DIR / "data" / "raw" / "trials.jsonl"
 TIMEBOX_SECONDS = 35 * 60
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Executa um trial Lab02 e registra tempo/testes.")
     parser.add_argument("--participant", required=True, help="Identificador do participante, ex.: P1.")
-    parser.add_argument("--kata", required=True, help="Nome do kata em lab02/katas.")
+    parser.add_argument("--kata", required=True, help="Nome do kata em labs/lab02_ia_vs_manual/katas.")
     parser.add_argument(
         "--treatment",
         required=True,
@@ -28,7 +29,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--solution-path",
         type=Path,
-        help="Arquivo de solucao a medir. Padrao: lab02/katas/<kata>/solution.py.",
+        help="Arquivo de solucao a medir. Padrao: labs/lab02_ia_vs_manual/katas/<kata>/solution.py.",
     )
     parser.add_argument(
         "--output",
@@ -57,7 +58,7 @@ def count_pytest_results(output: str) -> tuple[int, int]:
 
 
 def run_pytest(kata: str, timebox_seconds: int) -> tuple[bool, int, int, str]:
-    kata_path = ROOT_DIR / "lab02" / "katas" / kata
+    kata_path = LAB_DIR / "katas" / kata
     started = time.monotonic()
     completed = subprocess.run(
         [sys.executable, "-m", "pytest", str(kata_path), "-q"],
@@ -82,7 +83,7 @@ def append_record(path: Path, record: dict[str, Any]) -> None:
 
 def main() -> None:
     args = parse_args()
-    solution_path = args.solution_path or ROOT_DIR / "lab02" / "katas" / args.kata / "solution.py"
+    solution_path = args.solution_path or LAB_DIR / "katas" / args.kata / "solution.py"
 
     started_at = datetime.now(timezone.utc)
     try:

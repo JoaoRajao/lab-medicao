@@ -1,6 +1,6 @@
 import pytest
 
-from lab02.katas.dependency_unlock.solution import unlock_order
+from labs.lab02_ia_vs_manual.katas.dependency_unlock.solution import unlock_order
 
 
 def test_returns_stable_topological_order() -> None:

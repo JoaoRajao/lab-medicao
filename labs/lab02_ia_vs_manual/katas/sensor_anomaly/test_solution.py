@@ -1,4 +1,4 @@
-from lab02.katas.sensor_anomaly.solution import detect_anomalies
+from labs.lab02_ia_vs_manual.katas.sensor_anomaly.solution import detect_anomalies
 
 
 def test_detects_range_and_jump_anomalies() -> None:

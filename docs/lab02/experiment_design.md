@@ -63,10 +63,10 @@ Os katas foram definidos de forma autoral e com entrada/saida deterministica par
 
 Estrutura preparada:
 
-- `lab02/katas/`: enunciados, placeholders e testes de aceitacao.
-- `lab02/scripts/run_trial_timer.py`: cronometro e registro de resultados do trial.
-- `lab02/scripts/collect_static_metrics.py`: coleta Radon e jscpd.
-- `lab02/scripts/ingest_trials_to_parquet.py`: conversao de registros JSONL/CSV para Parquet.
+- `labs/lab02_ia_vs_manual/katas/`: enunciados, placeholders e testes de aceitacao.
+- `labs/lab02_ia_vs_manual/scripts/run_trial_timer.py`: cronometro e registro de resultados do trial.
+- `labs/lab02_ia_vs_manual/scripts/collect_static_metrics.py`: coleta Radon e jscpd.
+- `labs/lab02_ia_vs_manual/scripts/ingest_trials_to_parquet.py`: converte JSONL/CSV para a tabela `lab02_trials` no warehouse compartilhado + Parquet.
 - `models/staging/lab02/`: staging dbt dos trials.
 - `models/gold/lab02/`: agregacoes para RQ1, RQ2 e RQ3.
 
@@ -83,9 +83,11 @@ Estrutura preparada:
 ## Comandos de validacao da preparacao
 
 ```bash
-python3 -m pytest --collect-only lab02/katas
-python3 -m py_compile lab02/scripts/*.py
-python3 lab02/scripts/ingest_trials_to_parquet.py --input lab02/data/raw/trials_sample.jsonl --output lab02/data/parquet/trials.parquet
-DBT_PROFILES_DIR=.tmp_dbt_profiles dbt run --select staging.lab02 gold.lab02
-DBT_PROFILES_DIR=.tmp_dbt_profiles dbt test --select staging.lab02 gold.lab02
+python -m pytest --collect-only labs/lab02_ia_vs_manual/katas
+python -m py_compile labs/lab02_ia_vs_manual/scripts/*.py
+python -m labs.lab02_ia_vs_manual.scripts.ingest_trials_to_parquet \
+  --input labs/lab02_ia_vs_manual/data/raw/trials_sample.jsonl \
+  --output labs/lab02_ia_vs_manual/data/parquet/trials.parquet
+dbt run --select staging.lab02 gold.lab02
+dbt test --select staging.lab02 gold.lab02
 ```

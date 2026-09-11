@@ -1,4 +1,4 @@
-from lab02.katas.invoice_window.solution import calculate_invoice
+from labs.lab02_ia_vs_manual.katas.invoice_window.solution import calculate_invoice
 
 
 def test_applies_early_discount() -> None:
