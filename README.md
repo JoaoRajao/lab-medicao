@@ -136,8 +136,9 @@ docker compose up -d
 ```
 
 A interface fica em <http://localhost:8080>, com credenciais locais `airflow` / `airflow`. A
-configuracao detalhada e o diagrama da arquitetura estao no
-[`README do Lab02`](labs/lab02_ia_vs_manual/README.md#orquestracao-diaria-com-airflow).
+configuracao operacional esta no
+[`README do Lab02`](labs/lab02_ia_vs_manual/README.md#orquestracao-diaria-com-airflow), e o diagrama
+completo esta em [`docs/lab02/airflow_architecture.md`](docs/lab02/airflow_architecture.md).
 
 ## dbt
 

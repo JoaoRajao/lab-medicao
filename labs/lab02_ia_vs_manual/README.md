@@ -139,6 +139,10 @@ flowchart LR
     GOLD --> DB
 ```
 
+O diagrama completo, incluindo os servicos internos do Airflow, PostgreSQL, camadas de dados e as
+decisoes arquiteturais, esta em
+[`docs/lab02/airflow_architecture.md`](../../docs/lab02/airflow_architecture.md).
+
 Para diagnosticar o ambiente pela linha de comando:
 
 ```bash
