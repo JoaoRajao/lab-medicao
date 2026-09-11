@@ -1,0 +1,98 @@
+version: 2
+
+models:
+  - name: gold_lab01_rq05_popular_languages
+    description: "Tabela gold para RQ05: distribuicao dos repositorios populares por linguagem primaria e classificacao de linguagem popular."
+    columns:
+      - name: primary_language
+        tests:
+          - not_null
+      - name: repositories_count
+        tests:
+          - not_null
+      - name: popular_language_source
+        description: "Fonte usada de forma consistente para definir linguagens populares."
+
+  - name: gold_lab01_rq06_closed_issues
+    description: "Tabela gold para RQ06: distribuicao dos repositorios por faixa de percentual de issues fechadas."
+    columns:
+      - name: closed_issues_band
+        tests:
+          - not_null
+          - unique
+      - name: weighted_closed_issues_ratio
+        description: "Razao global ponderada: soma de issues fechadas dividida pela soma total de issues."
+
+  - name: gold_lab01_rq07_popular_language_comparison
+    description: "Tabela gold para RQ07: comparacao entre repositorios em linguagens populares e demais linguagens."
+    columns:
+      - name: language_group
+        tests:
+          - not_null
+          - unique
+      - name: avg_accepted_pull_requests
+        description: "Media de pull requests aceitas por grupo."
+      - name: avg_releases_count
+        description: "Media de releases por grupo."
+      - name: avg_days_since_last_update
+        description: "Media de dias desde a ultima atualizacao; menor valor indica atualizacao mais frequente."
+
+  - name: gold_lab01_rq01_age
+    description: "Tabela gold para RQ01: estatisticas de idade (em dias) dos repositorios populares."
+    columns:
+      - name: total_repositories
+        tests:
+          - not_null
+      - name: avg_age_days
+        description: "Media da idade dos repositorios em dias, arredondada em 2 casas decimais."
+      - name: median_age_days
+        description: "Mediana da idade dos repositorios em dias."
+      - name: min_age_days
+        description: "Idade minima observada, em dias."
+      - name: max_age_days
+        description: "Idade maxima observada, em dias."
+
+  - name: gold_lab01_rq02_pull_requests
+    description: "Tabela gold para RQ02: estatisticas de pull requests aceitas nos repositorios populares."
+    columns:
+      - name: total_repositories
+        tests:
+          - not_null
+      - name: avg_accepted_pull_requests
+        description: "Media de pull requests aceitas, arredondada em 2 casas decimais."
+      - name: median_accepted_pull_requests
+        description: "Mediana de pull requests aceitas."
+      - name: min_accepted_pull_requests
+        description: "Valor minimo de pull requests aceitas observado."
+      - name: max_accepted_pull_requests
+        description: "Valor maximo de pull requests aceitas observado."
+
+  - name: gold_lab01_rq03_releases
+    description: "Tabela gold para RQ03: estatisticas de quantidade de releases nos repositorios populares."
+    columns:
+      - name: total_repositories
+        tests:
+          - not_null
+      - name: avg_releases_count
+        description: "Media de releases, arredondada em 2 casas decimais."
+      - name: median_releases_count
+        description: "Mediana de releases."
+      - name: min_releases_count
+        description: "Valor minimo de releases observado."
+      - name: max_releases_count
+        description: "Valor maximo de releases observado."
+
+  - name: gold_lab01_rq04_updates
+    description: "Tabela gold para RQ04: estatisticas de dias desde a ultima atualizacao dos repositorios populares."
+    columns:
+      - name: total_repositories
+        tests:
+          - not_null
+      - name: avg_days_since_last_update
+        description: "Media de dias desde a ultima atualizacao, arredondada em 2 casas decimais."
+      - name: median_days_since_last_update
+        description: "Mediana de dias desde a ultima atualizacao."
+      - name: min_days_since_last_update
+        description: "Valor minimo de dias desde a ultima atualizacao observado."
+      - name: max_days_since_last_update
+        description: "Valor maximo de dias desde a ultima atualizacao observado."
