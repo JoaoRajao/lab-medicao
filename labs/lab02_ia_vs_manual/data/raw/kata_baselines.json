@@ -1,0 +1,80 @@
+[
+  {
+    "kata": "dependency_unlock",
+    "solution_path": "labs/lab02_ia_vs_manual/katas/dependency_unlock/reference_solution.py",
+    "collected_at": "2026-09-10T23:40:00-03:00",
+    "all_tests_passed": true,
+    "duplication_pct": 0.0,
+    "cyclomatic_complexity_avg": 11,
+    "cyclomatic_complexity_max": 11,
+    "maintainability_index": 55.9083,
+    "loc": 30,
+    "lloc": 25,
+    "sloc": 22
+  },
+  {
+    "kata": "invoice_window",
+    "solution_path": "labs/lab02_ia_vs_manual/katas/invoice_window/reference_solution.py",
+    "collected_at": "2026-09-10T23:40:00-03:00",
+    "all_tests_passed": true,
+    "duplication_pct": 0.0,
+    "cyclomatic_complexity_avg": 3,
+    "cyclomatic_complexity_max": 3,
+    "maintainability_index": 57.2809,
+    "loc": 27,
+    "lloc": 19,
+    "sloc": 22
+  },
+  {
+    "kata": "route_reconciliation",
+    "solution_path": "labs/lab02_ia_vs_manual/katas/route_reconciliation/reference_solution.py",
+    "collected_at": "2026-09-10T23:40:00-03:00",
+    "all_tests_passed": true,
+    "duplication_pct": 0.0,
+    "cyclomatic_complexity_avg": 7,
+    "cyclomatic_complexity_max": 7,
+    "maintainability_index": 56.77,
+    "loc": 32,
+    "lloc": 27,
+    "sloc": 26
+  },
+  {
+    "kata": "sensor_anomaly",
+    "solution_path": "labs/lab02_ia_vs_manual/katas/sensor_anomaly/reference_solution.py",
+    "collected_at": "2026-09-10T23:40:00-03:00",
+    "all_tests_passed": true,
+    "duplication_pct": 0.0,
+    "cyclomatic_complexity_avg": 6,
+    "cyclomatic_complexity_max": 6,
+    "maintainability_index": 59.961,
+    "loc": 19,
+    "lloc": 13,
+    "sloc": 15
+  },
+  {
+    "kata": "support_queue",
+    "solution_path": "labs/lab02_ia_vs_manual/katas/support_queue/reference_solution.py",
+    "collected_at": "2026-09-10T23:40:00-03:00",
+    "all_tests_passed": true,
+    "duplication_pct": 0.0,
+    "cyclomatic_complexity_avg": 2,
+    "cyclomatic_complexity_max": 2,
+    "maintainability_index": 73.1757,
+    "loc": 19,
+    "lloc": 10,
+    "sloc": 14
+  },
+  {
+    "kata": "warehouse_batches",
+    "solution_path": "labs/lab02_ia_vs_manual/katas/warehouse_batches/reference_solution.py",
+    "collected_at": "2026-09-10T23:40:00-03:00",
+    "all_tests_passed": true,
+    "duplication_pct": 0.0,
+    "cyclomatic_complexity_avg": 4,
+    "cyclomatic_complexity_max": 4,
+    "maintainability_index": 60.8914,
+    "loc": 27,
+    "lloc": 20,
+    "sloc": 22
+  }
+]
