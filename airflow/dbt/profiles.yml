@@ -1,0 +1,7 @@
+lab_medicao:
+  target: airflow
+  outputs:
+    airflow:
+      type: duckdb
+      path: /opt/airflow/project/data/warehouse.duckdb
+      threads: 1
