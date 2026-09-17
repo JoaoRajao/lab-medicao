@@ -13,8 +13,9 @@ Todos os comandos abaixo rodam a partir da raiz do repositorio, com o ambiente d
 labs/lab02_ia_vs_manual/
   katas/                        # 6 katas autorais com testes pytest de aceitacao
   scripts/
-    run_trial_timer.py           # Cronometra um trial (time-to-green, censura em 35 min)
+    run_trial_timer.py           # Acompanha pytest durante o trial (time-to-green, censura em 35 min)
     collect_static_metrics.py    # Coleta Radon (cc/raw/mi) e jscpd (duplicacao)
+    consolidate_trial_records.py # Une tempo e metricas dos seis trials reais P2
     ingest_trials_to_parquet.py  # Converte JSONL/CSV de trials para o warehouse + Parquet
   data/
     raw/trials_sample.jsonl      # Dados de exemplo para validar o pipeline dbt
@@ -59,28 +60,55 @@ dbt test --select staging.lab02 gold.lab02
 
 ## Executar um trial real (Sprint 2)
 
+Para o participante P2 (Joao), execute os katas nesta ordem. O tratamento `manual` nao permite
+assistente de IA durante a resolucao; `ai_assisted` permite ChatGPT. O arquivo de exemplo
+`trials_sample.jsonl` contem dados sinteticos e nao substitui os trials reais.
+
+| Ordem | Kata | Tratamento |
+| --- | --- | --- |
+| 1 | `warehouse_batches` | `ai_assisted` |
+| 2 | `route_reconciliation` | `manual` |
+| 3 | `invoice_window` | `ai_assisted` |
+| 4 | `sensor_anomaly` | `manual` |
+| 5 | `support_queue` | `ai_assisted` |
+| 6 | `dependency_unlock` | `manual` |
+
+Em um terminal, inicie o cronometro do primeiro kata e deixe-o rodando. Em outro terminal, edite o
+`solution.py` correspondente. O cronometro verifica os testes a cada 5 segundos e encerra quando
+todos passam ou quando o time-box de 35 minutos acaba. Nao interrompa o processo antes do fim:
+
 ```bash
 python -m labs.lab02_ia_vs_manual.scripts.run_trial_timer \
-  --participant P1 \
+  --participant P2 \
   --kata warehouse_batches \
-  --treatment manual
+  --treatment ai_assisted \
+  --output labs/lab02_ia_vs_manual/data/raw/trials_joao_timing.jsonl
 ```
 
-Isso grava em `labs/lab02_ia_vs_manual/data/raw/trials.jsonl` (tempo, testes passando/falhando,
-censura no time-box de 35 min). Depois, para metricas estaticas do mesmo trial:
+Depois de cada trial, antes de alterar a solucao, colete as metricas estaticas. Troque `kata` e
+`treatment` conforme a tabela para os outros cinco trials:
 
 ```bash
 python -m labs.lab02_ia_vs_manual.scripts.collect_static_metrics \
-  --trial-id P1-warehouse_batches-manual \
-  --participant P1 \
+  --trial-id P2-warehouse_batches-ai_assisted \
+  --participant P2 \
   --kata warehouse_batches \
-  --treatment manual \
-  --solution-path labs/lab02_ia_vs_manual/katas/warehouse_batches/solution.py
+  --treatment ai_assisted \
+  --solution-path labs/lab02_ia_vs_manual/katas/warehouse_batches/solution.py \
+  --output labs/lab02_ia_vs_manual/data/raw/trials_joao_metrics.jsonl
 ```
 
-Depois de coletar os trials reais, junte os dois JSONL (tempo + metricas estaticas) num so registro
-por trial e rode `ingest_trials_to_parquet.py` de novo apontando para o arquivo consolidado, antes de
-rodar `dbt run`/`dbt test` para atualizar as tabelas gold.
+Depois dos seis trials, consolide os dois JSONL. O script recusa IDs ausentes, duplicados, fora da
+ordem P2 ou com tratamentos inconsistentes:
+
+```bash
+python -m labs.lab02_ia_vs_manual.scripts.consolidate_trial_records
+```
+
+O resultado fica em `labs/lab02_ia_vs_manual/data/raw/trials_joao.jsonl`. Para testar a ingestao,
+aponte `ingest_trials_to_parquet.py --input` para esse arquivo. A ingestao substitui a tabela de
+trials e o Parquet compartilhados; combine com o grupo antes de substituir dados de outros
+participantes ou de usar o arquivo como entrada da DAG do Airflow.
 
 ## Orquestracao diaria com Airflow
 
