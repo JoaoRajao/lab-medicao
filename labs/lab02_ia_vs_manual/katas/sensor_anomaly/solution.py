@@ -7,5 +7,13 @@ def detect_anomalies(
     min_value: float,
     max_value: float,
 ) -> list[dict[str, float | int | str]]:
-    raise NotImplementedError
+    anomalies: list[dict[str, float | int | str]] = []
 
+    for index, value in enumerate(readings):
+        if value < min_value or value > max_value:
+            anomalies.append({"index": index, "value": value, "reason": "range"})
+            continue
+        if index > 0 and abs(value - readings[index - 1]) > max_jump:
+            anomalies.append({"index": index, "value": value, "reason": "jump"})
+
+    return anomalies
