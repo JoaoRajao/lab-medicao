@@ -26,6 +26,9 @@ labs/
     visualize.py               # graficos especificos do Lab01
     config/, data/
 
+airflow/                 # DAGs, imagem e profile dbt da orquestracao diaria do Lab02
+docker-compose.yml       # Airflow local com PostgreSQL e LocalExecutor
+
 models/
   staging/lab01/   gold/lab01/     # modelos dbt do Lab01 (um subdiretorio por lab)
 tests/lab01/                        # testes de consistencia do Lab01
@@ -120,6 +123,22 @@ pip install -r requirements.txt
 
 Isso instala `dbt-duckdb`, `duckdb`, `matplotlib` e `certifi` -- tudo que qualquer lab ou o dbt
 precisam. Nao ha ambiente virtual por pasta.
+
+## Airflow
+
+O Lab02 possui duas DAGs: uma ingestao diaria as 03:00 (`America/Sao_Paulo`) e uma transformacao
+dbt disparada quando o Parquet dos trials e atualizado. O ambiente completo sobe com:
+
+```bash
+docker compose build
+docker compose up airflow-init
+docker compose up -d
+```
+
+A interface fica em <http://localhost:8080>, com credenciais locais `airflow` / `airflow`. A
+configuracao operacional esta no
+[`README do Lab02`](labs/lab02_ia_vs_manual/README.md#orquestracao-diaria-com-airflow), e o diagrama
+completo esta em [`docs/lab02/airflow_architecture.md`](docs/lab02/airflow_architecture.md).
 
 ## dbt
 

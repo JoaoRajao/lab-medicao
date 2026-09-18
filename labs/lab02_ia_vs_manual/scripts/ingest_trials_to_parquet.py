@@ -101,7 +101,12 @@ def main() -> None:
         raise ValueError(f"Nenhum registro encontrado em {input_path}")
 
     create_and_load_table(TABLE_NAME, TABLE_COLUMNS, records)
-    export_table(TABLE_NAME, parquet_path=output_path)
+    temporary_output = output_path.with_name(f".{output_path.name}.tmp")
+    try:
+        export_table(TABLE_NAME, parquet_path=temporary_output)
+        temporary_output.replace(output_path)
+    finally:
+        temporary_output.unlink(missing_ok=True)
     print(f"OK: {len(records)} trials gravados na tabela {TABLE_NAME} e em {output_path}")
 
 

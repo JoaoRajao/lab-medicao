@@ -17,3 +17,7 @@ dbt_internal_packages/
 labs/*/data/checkpoints/*.jsonl
 labs/*/data/static_metrics/
 node_modules/
+airflow/logs/
+airflow/config/
+airflow/.env
+airflow/dbt/.user.yml
