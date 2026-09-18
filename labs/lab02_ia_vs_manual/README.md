@@ -59,15 +59,35 @@ dbt test --select staging.lab02 gold.lab02
 
 ## Executar um trial real (Sprint 2)
 
+O cronometro funciona em tres etapas -- `start` marca o inicio real da tentativa, `check` roda os
+testes quantas vezes quiser sem parar o relogio, e `stop` encerra o cronometro e grava o registro
+com o tempo decorrido de verdade (nao o tempo de execucao do `pytest`, que e quase instantaneo):
+
 ```bash
-python -m labs.lab02_ia_vs_manual.scripts.run_trial_timer \
+python -m labs.lab02_ia_vs_manual.scripts.run_trial_timer start \
+  --participant P1 \
+  --kata warehouse_batches \
+  --treatment manual
+
+# ... escreva a solucao em labs/lab02_ia_vs_manual/katas/warehouse_batches/solution.py ...
+
+python -m labs.lab02_ia_vs_manual.scripts.run_trial_timer check \
+  --participant P1 \
+  --kata warehouse_batches \
+  --treatment manual
+
+python -m labs.lab02_ia_vs_manual.scripts.run_trial_timer stop \
   --participant P1 \
   --kata warehouse_batches \
   --treatment manual
 ```
 
-Isso grava em `labs/lab02_ia_vs_manual/data/raw/trials.jsonl` (tempo, testes passando/falhando,
-censura no time-box de 35 min). Depois, para metricas estaticas do mesmo trial:
+Para trials `ai_assisted`, passe `--assistant "<nome>"` no `start` (ex.: `--assistant "Claude Code"`);
+sem isso o padrao e `"ChatGPT"`, so para nao quebrar registros antigos.
+
+O `stop` grava em `labs/lab02_ia_vs_manual/data/raw/trials.jsonl` (tempo real, testes passando/
+falhando, censura se o time-box de 35 min (2100s) for atingido sem sucesso). Depois, para metricas
+estaticas do mesmo trial:
 
 ```bash
 python -m labs.lab02_ia_vs_manual.scripts.collect_static_metrics \
