@@ -13,7 +13,7 @@ Todos os comandos abaixo rodam a partir da raiz do repositorio, com o ambiente d
 labs/lab02_ia_vs_manual/
   katas/                        # 6 katas autorais com testes pytest de aceitacao
   scripts/
-    run_trial_timer.py           # Acompanha pytest durante o trial (time-to-green, censura em 35 min)
+    run_trial_timer.py           # Cronometra um trial via start/check/stop (time-to-green, censura em 35 min)
     collect_static_metrics.py    # Coleta Radon (cc/raw/mi) e jscpd (duplicacao)
     consolidate_trial_records.py # Une tempo e metricas dos seis trials reais P2
     ingest_trials_to_parquet.py  # Converte JSONL/CSV de trials para o warehouse + Parquet
@@ -61,7 +61,7 @@ dbt test --select staging.lab02 gold.lab02
 ## Executar um trial real (Sprint 2)
 
 Para o participante P2 (Joao), execute os katas nesta ordem. O tratamento `manual` nao permite
-assistente de IA durante a resolucao; `ai_assisted` permite ChatGPT. O arquivo de exemplo
+assistente de IA durante a resolucao; `ai_assisted` permite. O arquivo de exemplo
 `trials_sample.jsonl` contem dados sinteticos e nao substitui os trials reais.
 
 | Ordem | Kata | Tratamento |
@@ -73,17 +73,34 @@ assistente de IA durante a resolucao; `ai_assisted` permite ChatGPT. O arquivo d
 | 5 | `support_queue` | `ai_assisted` |
 | 6 | `dependency_unlock` | `manual` |
 
-Em um terminal, inicie o cronometro do primeiro kata e deixe-o rodando. Em outro terminal, edite o
-`solution.py` correspondente. O cronometro verifica os testes a cada 5 segundos e encerra quando
-todos passam ou quando o time-box de 35 minutos acaba. Nao interrompa o processo antes do fim:
+O cronometro funciona em tres etapas -- `start` marca o inicio real da tentativa, `check` roda os
+testes quantas vezes quiser sem parar o relogio, e `stop` encerra o cronometro e grava o registro
+com o tempo decorrido de verdade (nao o tempo de execucao do `pytest`, que e quase instantaneo).
+Em um terminal, inicie o cronometro do primeiro kata; em outro, edite o `solution.py`
+correspondente:
 
 ```bash
-python -m labs.lab02_ia_vs_manual.scripts.run_trial_timer \
+python -m labs.lab02_ia_vs_manual.scripts.run_trial_timer start \
+  --participant P2 \
+  --kata warehouse_batches \
+  --treatment ai_assisted \
+  --assistant "<nome do assistente>"
+
+# ... escreva a solucao em labs/lab02_ia_vs_manual/katas/warehouse_batches/solution.py ...
+
+python -m labs.lab02_ia_vs_manual.scripts.run_trial_timer check \
+  --participant P2 \
+  --kata warehouse_batches \
+  --treatment ai_assisted
+
+python -m labs.lab02_ia_vs_manual.scripts.run_trial_timer stop \
   --participant P2 \
   --kata warehouse_batches \
   --treatment ai_assisted \
   --output labs/lab02_ia_vs_manual/data/raw/trials_joao_timing.jsonl
 ```
+
+Sem `--assistant` no `start`, o padrao e `"ChatGPT"`, so para nao quebrar registros antigos.
 
 Depois de cada trial, antes de alterar a solucao, colete as metricas estaticas. Troque `kata` e
 `treatment` conforme a tabela para os outros cinco trials:
