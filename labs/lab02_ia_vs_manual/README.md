@@ -204,10 +204,11 @@ docker compose run --rm airflow-cli dags test lab02_dbt_models 2026-09-11
 
 ```bash
 python -m labs.lab02_ia_vs_manual.analysis.dashboard           # dados reais -> docs/lab02/assets/ + docs/lab02/dashboard.html
-python -m labs.lab02_ia_vs_manual.analysis.dashboard --sample  # sintetico, so para testar (docs/lab02/assets/sample/, nao versionar)
+python -m labs.lab02_ia_vs_manual.analysis.dashboard --sample  # sintetico (docs/lab02/assets/sample/, versionado para revisao)
 ```
 
-Os PNGs (`docs/lab02/assets/`) sao para o relatorio. Alem deles, gera `dashboard.html`: pagina unica e
+Os PNGs (`docs/lab02/assets/`) sao para o relatorio. Uma amostra sintetica, ja gerada e marcada como SINTETICO, fica em
+`docs/lab02/assets/sample/` (abra `dashboard.html` no navegador) para revisar o layout sem depender dos dados reais. Alem deles, gera `dashboard.html`: pagina unica e
 autocontida (abre offline no navegador, segue o tema claro/escuro) com graficos SVG nativos e dica ao
 passar o mouse em cada trial, indicadores, tabelas de mediana/IQR e Cliff's delta por RQ, alerta de
 qualidade dos dados e tabela de trials ordenavel e filtravel por tratamento.
