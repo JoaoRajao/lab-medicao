@@ -169,3 +169,26 @@ def test_consolidation_cli_writes_complete_jsonl(tmp_path: Path, monkeypatch: py
     records = [json.loads(line) for line in output_path.read_text(encoding="utf-8").splitlines()]
     assert len(records) == 6
     assert not (tmp_path / ".trials_joao.jsonl.tmp").exists()
+
+
+def test_consolidation_supports_p3_order(tmp_path: Path) -> None:
+    timing = {}
+    metrics = {}
+    for index, (kata, treatment) in enumerate(consolidation.PARTICIPANT_ORDERS["P3"]):
+        trial_id = f"P3-{kata}-{treatment}"
+        common = {
+            "trial_id": trial_id,
+            "participant": "P3",
+            "kata": kata,
+            "treatment": treatment,
+            "solution_path": f"labs/lab02_ia_vs_manual/katas/{kata}/solution.py",
+        }
+        timing[trial_id] = {**common, "started_at": f"2026-09-24T10:{index:02d}:00+00:00"}
+        metrics[trial_id] = {**common, **{field: 1 for field in consolidation.STATIC_FIELDS}}
+
+    records = consolidation.consolidate(timing, metrics, participant="P3")
+    assert len(records) == 6
+    assert [record["treatment"] for record in records] == [
+        treatment for _, treatment in consolidation.PARTICIPANT_ORDERS["P3"]
+    ]
+

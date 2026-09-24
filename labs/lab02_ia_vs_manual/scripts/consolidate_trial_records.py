@@ -7,14 +7,41 @@ from typing import Any
 
 LAB_DIR = Path(__file__).resolve().parents[1]
 RAW_DIR = LAB_DIR / "data" / "raw"
-P2_ORDER = [
-    ("warehouse_batches", "ai_assisted"),
-    ("route_reconciliation", "manual"),
-    ("invoice_window", "ai_assisted"),
-    ("sensor_anomaly", "manual"),
-    ("support_queue", "ai_assisted"),
-    ("dependency_unlock", "manual"),
-]
+
+PARTICIPANT_ORDERS: dict[str, list[tuple[str, str]]] = {
+    "P1": [
+        ("warehouse_batches", "manual"),
+        ("route_reconciliation", "ai_assisted"),
+        ("invoice_window", "manual"),
+        ("sensor_anomaly", "ai_assisted"),
+        ("support_queue", "manual"),
+        ("dependency_unlock", "ai_assisted"),
+    ],
+    "P2": [
+        ("warehouse_batches", "ai_assisted"),
+        ("route_reconciliation", "manual"),
+        ("invoice_window", "ai_assisted"),
+        ("sensor_anomaly", "manual"),
+        ("support_queue", "ai_assisted"),
+        ("dependency_unlock", "manual"),
+    ],
+    "P3": [
+        ("warehouse_batches", "manual"),
+        ("route_reconciliation", "ai_assisted"),
+        ("invoice_window", "ai_assisted"),
+        ("sensor_anomaly", "manual"),
+        ("support_queue", "manual"),
+        ("dependency_unlock", "ai_assisted"),
+    ],
+}
+P2_ORDER = PARTICIPANT_ORDERS["P2"]
+
+PARTICIPANT_NAME_ALIASES: dict[str, str] = {
+    "P1": "pedro",
+    "P2": "joao",
+    "P3": "salomao",
+}
+
 STATIC_FIELDS = {
     "cyclomatic_complexity_avg",
     "cyclomatic_complexity_max",
@@ -27,11 +54,27 @@ STATIC_FIELDS = {
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Consolida os seis trials reais do participante P2.")
-    parser.add_argument("--timing", type=Path, default=RAW_DIR / "trials_joao_timing.jsonl")
-    parser.add_argument("--metrics", type=Path, default=RAW_DIR / "trials_joao_metrics.jsonl")
-    parser.add_argument("--output", type=Path, default=RAW_DIR / "trials_joao.jsonl")
-    return parser.parse_args()
+    parser = argparse.ArgumentParser(description="Consolida os seis trials reais de um participante.")
+    parser.add_argument(
+        "--participant",
+        choices=["P1", "P2", "P3"],
+        default="P2",
+        help="Identificador do participante (P1, P2, P3). Padrao: P2.",
+    )
+    parser.add_argument("--timing", type=Path, default=None)
+    parser.add_argument("--metrics", type=Path, default=None)
+    parser.add_argument("--output", type=Path, default=None)
+    args = parser.parse_args()
+
+    alias = PARTICIPANT_NAME_ALIASES.get(args.participant, args.participant.lower())
+    if args.timing is None:
+        args.timing = RAW_DIR / f"trials_{alias}_timing.jsonl"
+    if args.metrics is None:
+        args.metrics = RAW_DIR / f"trials_{alias}_metrics.jsonl"
+    if args.output is None:
+        args.output = RAW_DIR / f"trials_{alias}.jsonl"
+
+    return args
 
 
 def load_by_trial_id(path: Path) -> dict[str, dict[str, Any]]:
@@ -51,12 +94,18 @@ def load_by_trial_id(path: Path) -> dict[str, dict[str, Any]]:
 
 
 def consolidate(
-    timing: dict[str, dict[str, Any]], metrics: dict[str, dict[str, Any]]
+    timing: dict[str, dict[str, Any]],
+    metrics: dict[str, dict[str, Any]],
+    participant: str = "P2",
 ) -> list[dict[str, Any]]:
-    expected = [f"P2-{kata}-{treatment}" for kata, treatment in P2_ORDER]
+    order = PARTICIPANT_ORDERS.get(participant)
+    if not order:
+        raise ValueError(f"Participante desconhecido: {participant}")
+
+    expected = [f"{participant}-{kata}-{treatment}" for kata, treatment in order]
     if set(timing) != set(expected) or set(metrics) != set(expected):
         raise ValueError(
-            "Sao exigidos os seis IDs P2 em ambos os arquivos; "
+            f"Sao exigidos os seis IDs {participant} em ambos os arquivos; "
             f"tempo ausentes={sorted(set(expected) - set(timing))}, "
             f"metricas ausentes={sorted(set(expected) - set(metrics))}, "
             f"IDs inesperados={sorted((set(timing) | set(metrics)) - set(expected))}"
@@ -64,12 +113,12 @@ def consolidate(
 
     result = []
     previous_start = ""
-    for trial_id, (kata, treatment) in zip(expected, P2_ORDER, strict=True):
+    for trial_id, (kata, treatment) in zip(expected, order, strict=True):
         time_record = timing[trial_id]
         metric_record = metrics[trial_id]
         for record in (time_record, metric_record):
             if (record.get("participant"), record.get("kata"), record.get("treatment")) != (
-                "P2", kata, treatment
+                participant, kata, treatment
             ):
                 raise ValueError(f"Metadados inconsistentes em {trial_id}")
         if time_record.get("solution_path") != metric_record.get("solution_path"):
@@ -87,7 +136,11 @@ def consolidate(
 
 def main() -> None:
     args = parse_args()
-    records = consolidate(load_by_trial_id(args.timing), load_by_trial_id(args.metrics))
+    records = consolidate(
+        load_by_trial_id(args.timing),
+        load_by_trial_id(args.metrics),
+        participant=args.participant,
+    )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     temporary_output = args.output.with_name(f".{args.output.name}.tmp")
     try:
@@ -97,7 +150,7 @@ def main() -> None:
         temporary_output.replace(args.output)
     finally:
         temporary_output.unlink(missing_ok=True)
-    print(f"OK: {len(records)} trials P2 consolidados em {args.output}")
+    print(f"OK: {len(records)} trials {args.participant} consolidados em {args.output}")
 
 
 if __name__ == "__main__":
