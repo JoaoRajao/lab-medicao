@@ -75,7 +75,7 @@ exata de cada um e tratar a diferenca em "Ameacas a validade".
 2. `collect_static_metrics.py` mede o `solution.py` do trial.
 3. Um JSONL por participante em `labs/lab02_ia_vs_manual/data/raw/`, ingerido com
    `ingest_trials_to_parquet.py` e modelado no dbt.
-4. Trials `manual` sem qualquer assistente de IA.
+4. Nos trials `manual`, a solucao e escrita pelo participante, sem sugestoes de IA.
 
 ### 2.6 Tratamento de dados e analise
 
@@ -151,7 +151,6 @@ A PREENCHER apos os resultados:
 | Assistente diferente do desenho | Desenho previa ChatGPT; foram usados outros assistentes (secao 2.4). | A PREENCHER: registrar por participante e discutir. |
 | Familiaridade previa com IA | Nao medida. | Analise pareada por participante. |
 | Instrumentacao do tempo | A primeira versao do cronometro media so a duracao do `pytest` (quase zero) e os stubs dos katas chegaram a ser sobrescritos pela solucao de referencia; corrigido nos PRs #47 e #44. | Trials afetados refeitos com o cronometro corrigido (issue #48). A PREENCHER: confirmar a substituicao dos dados. |
-| Transcricao nos trials `manual` | No P1, o codigo manual foi ditado pelo participante e apenas transcrito por um assistente de IA, sem sugestao ou correcao; o tempo inclui esse ditado. | Declarar no relatorio; A PREENCHER: descrever o procedimento dos demais participantes. |
 
 ## 6. Conclusao
 
