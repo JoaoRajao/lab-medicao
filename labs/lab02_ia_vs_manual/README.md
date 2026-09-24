@@ -197,6 +197,24 @@ docker compose run --rm airflow-cli dags test lab02_ingestion_daily 2026-09-11
 docker compose run --rm airflow-cli dags test lab02_dbt_models 2026-09-11
 ```
 
+## Analise e dashboard
+
+`labs/lab02_ia_vs_manual/analysis/` consolida os trials dos tres participantes
+(`trials_pedro.jsonl`, `trials_joao.jsonl`, `trials_salomao.jsonl`) e gera os graficos:
+
+```bash
+python -m labs.lab02_ia_vs_manual.analysis.dashboard           # dados reais -> docs/lab02/assets/
+python -m labs.lab02_ia_vs_manual.analysis.dashboard --sample  # sintetico, so para testar (docs/lab02/assets/sample/, nao versionar)
+```
+
+- `data.py`: carrega os JSONL e valida a integridade (participante sem dados, ordem de tratamento
+  fora do desenho, `time_to_green_seconds = 0`, tempo divergente de `finished_at - started_at`).
+  Havendo qualquer aviso, os graficos saem com a marca d'agua **PRELIMINAR**.
+- `stats.py`: mediana/IQR por tratamento, outliers pela regra do boxplot e Cliff's delta
+  (tamanho de efeito). O teste de Wilcoxon fica com a issue de analise estatistica.
+- `dashboard.py`: RQ1 (boxplot com todos os pontos e tempo por kata), RQ2 (trials verdes),
+  RQ3 (boxplots das metricas estaticas, LOC x complexidade) e correlacao entre metricas.
+
 ## Katas
 
 | Kata | Descricao |
