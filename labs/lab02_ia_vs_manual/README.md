@@ -207,11 +207,14 @@ python -m labs.lab02_ia_vs_manual.analysis.dashboard           # dados reais -> 
 python -m labs.lab02_ia_vs_manual.analysis.dashboard --sample  # sintetico (docs/lab02/assets/sample/, versionado para revisao)
 ```
 
-Os PNGs (`docs/lab02/assets/`) sao para o relatorio. Uma amostra sintetica, ja gerada e marcada como SINTETICO, fica em
-`docs/lab02/assets/sample/` (abra `dashboard.html` no navegador) para revisar o layout sem depender dos dados reais. Alem deles, gera `dashboard.html`: pagina unica e
-autocontida (abre offline no navegador, segue o tema claro/escuro) com graficos SVG nativos e dica ao
-passar o mouse em cada trial, indicadores, tabelas de mediana/IQR e Cliff's delta por RQ, alerta de
-qualidade dos dados e tabela de trials ordenavel e filtravel por tratamento.
+Os PNGs (`docs/lab02/assets/`) sao para o relatorio. Alem deles, o comando gera `dashboard.html`: pagina
+unica e autocontida (abre offline no navegador, segue o tema claro/escuro) com graficos SVG nativos e
+dica ao passar o mouse em cada trial, indicadores, tabelas de mediana/IQR e Cliff's delta por RQ, alerta
+de qualidade dos dados e tabela de trials ordenavel e filtravel por tratamento.
+
+Uma amostra sintetica, ja gerada e marcada como SINTETICO, fica em `docs/lab02/assets/sample/` (abra
+`dashboard.html` no navegador) para revisar o layout sem depender dos dados reais. O HTML e um arquivo
+estatico: reflete os dados do momento em que foi gerado.
 
 - `data.py`: carrega os JSONL e valida a integridade (participante sem dados, ordem de tratamento
   fora do desenho, `time_to_green_seconds = 0`, tempo divergente de `finished_at - started_at`).
