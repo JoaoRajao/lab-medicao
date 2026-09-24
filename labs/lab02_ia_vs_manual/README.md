@@ -203,15 +203,20 @@ docker compose run --rm airflow-cli dags test lab02_dbt_models 2026-09-11
 (`trials_pedro.jsonl`, `trials_joao.jsonl`, `trials_salomao.jsonl`) e gera os graficos:
 
 ```bash
-python -m labs.lab02_ia_vs_manual.analysis.dashboard           # dados reais -> docs/lab02/assets/
+python -m labs.lab02_ia_vs_manual.analysis.dashboard           # dados reais -> docs/lab02/assets/ + docs/lab02/dashboard.html
 python -m labs.lab02_ia_vs_manual.analysis.dashboard --sample  # sintetico, so para testar (docs/lab02/assets/sample/, nao versionar)
 ```
+
+Alem dos PNGs, gera `dashboard.html`: pagina unica e autocontida (abre offline no navegador) com
+indicadores, tabelas de mediana/IQR e Cliff's delta por RQ, alerta de qualidade dos dados e tabela de
+trials ordenavel e filtravel por tratamento.
 
 - `data.py`: carrega os JSONL e valida a integridade (participante sem dados, ordem de tratamento
   fora do desenho, `time_to_green_seconds = 0`, tempo divergente de `finished_at - started_at`).
   Havendo qualquer aviso, os graficos saem com a marca d'agua **PRELIMINAR**.
 - `stats.py`: mediana/IQR por tratamento, outliers pela regra do boxplot e Cliff's delta
   (tamanho de efeito). O teste de Wilcoxon fica com a issue de analise estatistica.
+- `report_html.py`: monta o `dashboard.html`.
 - `dashboard.py`: RQ1 (boxplot com todos os pontos e tempo por kata), RQ2 (trials verdes),
   RQ3 (boxplots das metricas estaticas, LOC x complexidade) e correlacao entre metricas.
 

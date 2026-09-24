@@ -71,3 +71,18 @@ def test_sample_loads_and_is_marked_synthetic() -> None:
     df = data.load_trials(sample=True)
     assert len(df) == 18
     assert "SINTETICOS" in data.validate(df, sample=True)[0]
+
+
+def test_dashboard_html_is_self_contained_and_flags_status(tmp_path) -> None:
+    from labs.lab02_ia_vs_manual.analysis.dashboard import build_dashboard
+    from labs.lab02_ia_vs_manual.analysis.report_html import write_dashboard_html
+
+    df = data.load_trials(sample=True)
+    figures = {p.stem: p for p in build_dashboard(df, tmp_path, "SINTETICO")}
+    page = write_dashboard_html(df, figures, data.validate(df, sample=True), "SINTETICO", tmp_path / "d.html").read_text(encoding="utf-8")
+
+    assert "Dados sinteticos" in page
+    assert page.count("data:image/png;base64,") == 6
+    assert "http://" not in page and "https://" not in page
+    for section in ("RQ1", "RQ2", "RQ3", "Trials"):
+        assert f"<h2>{section}" in page

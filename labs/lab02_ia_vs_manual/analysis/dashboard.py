@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 
 from labs.lab02_ia_vs_manual.analysis.data import KATA_CODES, KATAS, load_trials, validate
+from labs.lab02_ia_vs_manual.analysis.report_html import write_dashboard_html
 from labs.lab02_ia_vs_manual.analysis.stats import TREATMENTS, effect_size, summarize
 from shared.viz.charts import COLOR_AXIS, COLOR_GRID, COLOR_INK, COLOR_MUTED, SURFACE
 
@@ -206,8 +207,12 @@ def main() -> None:
 
     output_dir = args.output_dir or (ASSETS_DIR / "sample" if args.sample else ASSETS_DIR)
     print_summary(df)
-    for path in build_dashboard(df, output_dir, warning):
+    figures = build_dashboard(df, output_dir, warning)
+    for path in figures:
         print(f"OK: {path}")
+    html_path = output_dir / "dashboard.html" if args.sample else REPO_ROOT / "docs" / "lab02" / "dashboard.html"
+    write_dashboard_html(df, {path.stem: path for path in figures}, problems, warning, html_path)
+    print(f"OK: {html_path}")
 
 
 if __name__ == "__main__":
