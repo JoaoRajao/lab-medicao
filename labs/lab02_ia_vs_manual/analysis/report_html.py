@@ -159,7 +159,6 @@ def _outliers(df: pd.DataFrame) -> str:
 
 
 def write_dashboard_html(df: pd.DataFrame, problems: list[str], warning: str | None, output_path: Path) -> Path:
-    label, css = STATUS[warning]
     box = lambda column, ylabel, digits=1: svg.box_strip(df, column, ylabel, digits)
     static_cards = "".join(f'<div class="card"><h3>{title}</h3>{box(col, title, 2 if col == "cyclomatic_complexity_avg" else 1)}</div>'
                            for col, title in STATIC_METRICS.items())
@@ -191,7 +190,7 @@ def write_dashboard_html(df: pd.DataFrame, problems: list[str], warning: str | N
     sources = ", ".join(p.name for p in TRIAL_FILES.values() if p.exists()) or "trials_sample.jsonl"
     page = f"""<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>Dashboard Lab02</title><style>{CSS}</style></head><body>
-<header><h1>Lab02 - Assistentes de IA vs codificacao manual<span class="pill {css}">{label}</span></h1>
+<header><h1>Lab02 - Assistentes de IA vs codificacao manual</h1>
 <div class="sub">Dashboard de resultados por questao de pesquisa. Mediana e IQR; cada ponto dos graficos e um trial.</div></header>
 <main>{sections}<footer>Gerado em {generated}. Fontes: {html.escape(sources)}. Legenda:
 <span class="dot m"></span>Manual <span class="dot a"></span>Com IA.</footer></main><script>{JS}</script></body></html>"""

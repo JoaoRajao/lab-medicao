@@ -1,14 +1,14 @@
 # Lab02 - Analise RQ1/RQ2
 
-Base analisada: 12 trials consolidados (P1, P2). Os demais trials ainda nao entram nesta versao.
+Base analisada: 18 trials consolidados (P1, P2, P3). Os demais trials ainda nao entram nesta versao.
 Os testes de Wilcoxon usam pares por participante: para cada participante, compara-se a media dos trials `ai_assisted` contra a media dos trials `manual`. O delta reportado e `ai_assisted - manual`.
 
 ## RQ1 - Tempo ate verde
 
 | Metrica | Tratamento | n | Mediana | Q1 | Q3 | IQR | Min | Max | Media |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Tempo ate verde (s) | manual | 6 | 780 | 422.25 | 1193.25 | 771 | 380 | 1622 | 866 |
-| Tempo ate verde (s) | ai_assisted | 6 | 31 | 20.25 | 45.50 | 25.25 | 14 | 51 | 32.33 |
+| Tempo ate verde (s) | manual | 9 | 510 | 393 | 1050 | 657 | 310 | 1622 | 757.33 |
+| Tempo ate verde (s) | ai_assisted | 9 | 30 | 22 | 35 | 13 | 14 | 51 | 31 |
 
 ### Outliers de tempo
 
@@ -19,13 +19,13 @@ Os testes de Wilcoxon usam pares por participante: para cada participante, compa
 
 | Metrica | Tratamento | n | Mediana | Q1 | Q3 | IQR | Min | Max | Media |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Taxa de sucesso | manual | 6 | 1 | 1 | 1 | 0 | 1 | 1 | 1 |
-| Taxa de sucesso | ai_assisted | 6 | 1 | 1 | 1 | 0 | 1 | 1 | 1 |
+| Taxa de sucesso | manual | 9 | 1 | 1 | 1 | 0 | 1 | 1 | 1 |
+| Taxa de sucesso | ai_assisted | 9 | 1 | 1 | 1 | 0 | 1 | 1 | 1 |
 
 | Metrica | Tratamento | n | Mediana | Q1 | Q3 | IQR | Min | Max | Media |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Falhas nos testes | manual | 6 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
-| Falhas nos testes | ai_assisted | 6 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| Falhas nos testes | manual | 9 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| Falhas nos testes | ai_assisted | 9 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 
 ### Outliers de sucesso/falhas
 
@@ -38,9 +38,9 @@ Os testes de Wilcoxon usam pares por participante: para cada participante, compa
 
 | Metrica | Pares por participante | Mediana do delta | Estatistica W | p-valor | Observacao |
 | --- | ---: | ---: | ---: | ---: | --- |
-| Tempo ate verde (s) | 2 | -833.67 | 0 | 0.5000 | exact two-sided p-value |
-| Taxa de sucesso | 2 | 0 | 0 | 1 | all differences are zero |
-| Falhas nos testes | 2 | 0 | 0 | 1 | all differences are zero |
+| Tempo ate verde (s) | 3 | -511.67 | 0 | 0.2500 | exact two-sided p-value |
+| Taxa de sucesso | 3 | 0 | 0 | 1 | all differences are zero |
+| Falhas nos testes | 3 | 0 | 0 | 1 | all differences are zero |
 
 Com alfa=0.05, nenhuma hipotese nula foi rejeitada: tempo, sucesso e falhas tiveram p-valor acima do limiar ou diferencas pareadas todas iguais a zero.
 

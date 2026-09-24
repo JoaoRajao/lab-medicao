@@ -16,6 +16,7 @@ LAB_DIR = Path(__file__).resolve().parents[1]
 DEFAULT_INPUTS = [
     LAB_DIR / "data" / "raw" / "trials_pedro.jsonl",
     LAB_DIR / "data" / "raw" / "trials_joao.jsonl",
+    LAB_DIR / "data" / "raw" / "trials_salomao.jsonl",
 ]
 DEFAULT_OUTPUT = ROOT_DIR / "docs" / "lab02" / "rq3_analise.md"
 
