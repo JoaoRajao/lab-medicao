@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import base64
 import html
 from datetime import datetime, timezone
 from pathlib import Path
@@ -8,6 +7,7 @@ from pathlib import Path
 import pandas as pd
 
 from labs.lab02_ia_vs_manual.analysis.data import KATA_CODES, KATAS, TRIAL_FILES
+from labs.lab02_ia_vs_manual.analysis import svg_charts as svg
 from labs.lab02_ia_vs_manual.analysis.stats import TREATMENTS, effect_size, iqr_outliers, summarize
 
 LABELS = {"manual": "Manual", "ai_assisted": "Com IA"}
@@ -36,8 +36,15 @@ header{padding:28px clamp(16px,4vw,48px) 8px}h1{margin:0 0 4px;font-size:24px}h2
 .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
 .kpi .v{font-size:26px;font-weight:700;line-height:1.2}.kpi .l{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.04em}
 .kpi .n{color:var(--muted);font-size:12px;margin-top:2px}
-section{margin-top:28px}.two{grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}
-img{max-width:100%;height:auto;border-radius:8px;display:block}
+section{margin-top:28px}.two{grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}.two4{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media (max-width:760px){.two4{grid-template-columns:1fr}}
+.chart{width:100%;height:auto;display:block}.chart .grid{stroke:var(--line);stroke-width:1}.chart .tx{fill:var(--muted);font-size:11px}
+.chart .ink{fill:var(--ink)}.chart .big{font-size:15px;font-weight:700}.chart .bad{fill:var(--bad)}
+.chart .ref{stroke:var(--bad);stroke-width:1;stroke-dasharray:4 3}.chart .wh{stroke:var(--muted);stroke-width:1.5}
+.chart .bx{fill:none;stroke:var(--muted);stroke-width:1.5}.chart .md{stroke:var(--ink);stroke-width:2.5}
+.chart .s-m{fill:var(--blue)}.chart .s-a{fill:var(--orange)}.chart .pt{stroke:var(--card);stroke-width:1.5;opacity:.92;cursor:pointer}
+.chart .pt:hover{stroke:var(--ink);stroke-width:2}.chart .pt.cens{stroke:var(--bad);stroke-width:2.5}.chart .hv{font-size:11px;fill:#111;pointer-events:none}
+h3{margin:0 0 8px;font-size:14px}.legend{display:flex;gap:16px;color:var(--muted);font-size:12px;margin-top:6px}
 table{border-collapse:collapse;width:100%;font-size:13px}th,td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
 th:first-child,td:first-child,td.l,th.l{text-align:left}th{color:var(--muted);font-weight:600;cursor:default}
 table.sortable th{cursor:pointer}table.sortable th:hover{color:var(--ink)}.scroll{overflow-x:auto}
@@ -67,11 +74,6 @@ def _num(value: float, digits: int = 1) -> str:
     if pd.isna(value):
         return "-"
     return f"{value:,.{digits}f}".replace(",", "X").replace(".", ",").replace("X", ".")
-
-
-def _img(path: Path, alt: str) -> str:
-    data = base64.b64encode(path.read_bytes()).decode("ascii")
-    return f'<img alt="{html.escape(alt)}" src="data:image/png;base64,{data}">'
 
 
 def _median(df: pd.DataFrame, treatment: str, column: str) -> float:
@@ -156,25 +158,31 @@ def _outliers(df: pd.DataFrame) -> str:
     return f"<p class='note'>Outliers de tempo (regra 1,5xIQR por tratamento):</p><ul>{items}</ul>"
 
 
-def write_dashboard_html(df: pd.DataFrame, figures: dict[str, Path], problems: list[str],
-                         warning: str | None, output_path: Path) -> Path:
+def write_dashboard_html(df: pd.DataFrame, problems: list[str], warning: str | None, output_path: Path) -> Path:
     label, css = STATUS[warning]
+    box = lambda column, ylabel, digits=1: svg.box_strip(df, column, ylabel, digits)
+    static_cards = "".join(f'<div class="card"><h3>{title}</h3>{box(col, title, 2 if col == "cyclomatic_complexity_avg" else 1)}</div>'
+                           for col, title in STATIC_METRICS.items())
+    corr_labels = {"cyclomatic_complexity_avg": "Complexidade", "maintainability_index": "Manutenib.", "loc": "LOC",
+                   "duplication_pct": "Duplicacao", "time_to_green_seconds": "Tempo"}
+    heat = svg.heatmap(df[list(corr_labels)].corr(method="spearman"), corr_labels)
+    legend = '<div class="legend"><span><span class="dot m"></span>Manual</span><span><span class="dot a"></span>Com IA</span><span>Passe o mouse nos pontos para ver o trial</span></div>'
     sections = f"""
 <section><h2>Visao geral</h2><div class="grid kpis">{_kpis(df)}</div></section>
 {_quality(problems, warning)}
 <section><h2>RQ1 - Tempo ate passar nos testes</h2>
-<div class="grid two"><div class="card">{_img(figures['rq1_tempo_boxplot'], 'Boxplot do tempo por tratamento')}</div>
-<div class="card">{_img(figures['rq1_tempo_por_kata'], 'Tempo por kata e tratamento')}</div></div>
+<div class="grid two"><div class="card"><h3>Distribuicao por tratamento (min)</h3>{svg.box_strip(df, 'time_to_green_min', 'Minutos', 1, 35.0, 'time-box 35 min', mark_censored=True)}{legend}</div>
+<div class="card"><h3>Por kata (compare dentro do mesmo kata)</h3>{svg.kata_dots(df)}{legend}</div></div>
 <div class="card" style="margin-top:14px">{_summary_table(df, {'time_to_green_seconds': 'Tempo ate verde (s)'}, 0)}
-{_outliers(df)}<div class="note">Teste de Wilcoxon: pendente (issue de analise estatistica).</div></div></section>
+{_outliers(df)}<div class="note">Teste de Wilcoxon: pendente (issue de analise estatistica). Contorno vermelho = trial censurado.</div></div></section>
 <section><h2>RQ2 - Taxa de sucesso e defeitos</h2>
-<div class="card">{_img(figures['rq2_sucesso'], 'Trials verdes por tratamento')}</div>
+<div class="card" style="max-width:680px"><h3>Trials com todos os testes passando</h3>{svg.green_bars(df)}</div>
 <div class="card" style="margin-top:14px">{_summary_table(df, {'acceptance_success_rate': 'Taxa de sucesso nos testes', 'tests_failed': 'Testes falhos por trial'}, 2)}
 <div class="note">Com a maioria dos trials verdes, a taxa e quase constante; a comparacao real depende de N maior.</div></div></section>
 <section><h2>RQ3 - Metricas estaticas</h2>
-<div class="grid two"><div class="card">{_img(figures['rq3_metricas_boxplot'], 'Metricas estaticas por tratamento')}</div>
-<div class="card">{_img(figures['rq3_loc_vs_complexidade'], 'LOC contra complexidade')}<div style="height:12px"></div>
-{_img(figures['correlacao_metricas'], 'Correlacao entre metricas')}</div></div>
+<div class="grid two4">{static_cards}</div>
+<div class="grid two" style="margin-top:14px"><div class="card"><h3>Verbosidade x complexidade</h3>{svg.scatter(df, 'loc', 'cyclomatic_complexity_avg', 'LOC', 'Complexidade media')}{legend}</div>
+<div class="card"><h3>Correlacao de Spearman</h3>{heat}<div class="note">Blocos vermelhos escuros indicam metricas redundantes.</div></div></div>
 <div class="card" style="margin-top:14px">{_summary_table(df, STATIC_METRICS, 2)}
 <div class="note">LOC e o controle de verbosidade: diferenca de complexidade que acompanha o LOC indica verbosidade, nao complexidade real.</div></div></section>
 <section><h2>Trials</h2><div class="card">{_trials_table(df)}</div></section>

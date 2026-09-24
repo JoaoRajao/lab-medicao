@@ -211,7 +211,7 @@ def main() -> None:
     for path in figures:
         print(f"OK: {path}")
     html_path = output_dir / "dashboard.html" if args.sample else REPO_ROOT / "docs" / "lab02" / "dashboard.html"
-    write_dashboard_html(df, {path.stem: path for path in figures}, problems, warning, html_path)
+    write_dashboard_html(df, problems, warning, html_path)
     print(f"OK: {html_path}")
 
 
