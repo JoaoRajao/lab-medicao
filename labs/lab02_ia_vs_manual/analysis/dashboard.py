@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from labs.lab02_ia_vs_manual.analysis.data import KATA_CODES, KATAS, load_trials, validate
+from labs.lab02_ia_vs_manual.analysis.data import KATA_CODES, KATAS, check_summary, load_checks, load_trials, validate
 from labs.lab02_ia_vs_manual.analysis.report_html import write_dashboard_html
 from labs.lab02_ia_vs_manual.analysis.stats import TREATMENTS, effect_size, summarize
 from shared.viz.charts import COLOR_AXIS, COLOR_GRID, COLOR_INK, COLOR_MUTED, SURFACE
@@ -21,6 +21,19 @@ ASSETS_DIR = REPO_ROOT / "docs" / "lab02" / "assets"
 COLORS = {"manual": "#2a78d6", "ai_assisted": "#e8833a"}
 LABELS = {"manual": "Manual", "ai_assisted": "Com IA"}
 TIMEBOX_MIN = 35
+TIME_TICKS = [10, 30, 60, 180, 600, 2100]
+
+
+def _time_label(seconds: float) -> str:
+    return f"{int(seconds)} s" if seconds < 60 else f"{int(seconds // 60)} min"
+
+
+def _log_time_axis(ax: plt.Axes) -> None:
+    ax.set_yscale("log")
+    ax.set_yticks(TIME_TICKS)
+    ax.set_yticklabels([_time_label(t) for t in TIME_TICKS])
+    ax.minorticks_off()
+    ax.set_ylim(TIME_TICKS[0] * 0.8, TIME_TICKS[-1] * 1.5)
 
 STATIC_METRICS = {
     "cyclomatic_complexity_avg": "Complexidade ciclomatica (media)",
@@ -61,7 +74,8 @@ def _save(fig: plt.Figure, output_dir: Path, name: str, warning: str | None) -> 
     return path
 
 
-def box_with_points(ax: plt.Axes, df: pd.DataFrame, column: str, ylabel: str, rng: np.random.Generator) -> None:
+def box_with_points(ax: plt.Axes, df: pd.DataFrame, column: str, ylabel: str, rng: np.random.Generator,
+                    unit: str = "", digits: int = 1) -> None:
     """Boxplot (mediana/IQR) por tratamento com todos os pontos: mostra a amostra inteira."""
     _style(ax)
     groups = [df.loc[df["treatment"] == t, column].dropna().to_numpy() for t in TREATMENTS]
@@ -75,23 +89,28 @@ def box_with_points(ax: plt.Axes, df: pd.DataFrame, column: str, ylabel: str, rn
         ax.scatter(position + rng.uniform(-0.12, 0.12, values.size), values, s=34,
                    color=COLORS[treatment], alpha=0.85, zorder=3, edgecolor="white", linewidth=0.6)
         if values.size:
-            ax.text(position + 0.27, np.median(values), f"mediana {np.median(values):.1f}",
+            ax.text(position + 0.27, np.median(values), f"mediana {np.median(values):.{digits}f}{unit}",
                     fontsize=8, color=COLOR_INK, va="center", ha="left")
     ax.set_xticks(range(len(TREATMENTS)))
     ax.set_xticklabels([f"{LABELS[t]}\n(n={len(g)})" for t, g in zip(TREATMENTS, groups)], color=COLOR_INK)
     ax.set_xlim(-0.6, len(TREATMENTS) - 0.4)
     ax.set_ylabel(ylabel, color=COLOR_MUTED, fontsize=9)
+    flat = np.concatenate([g for g in groups if g.size]) if any(g.size for g in groups) else np.array([0.0])
+    if flat.min() == flat.max():
+        ax.set_ylim(flat.min() - 1, flat.max() + 1)
+        ax.set_yticks([flat.min()])
 
 
 def plot_rq1_time(df: pd.DataFrame, output_dir: Path, warning: str | None) -> Path:
-    fig, ax = _new_figure("RQ1 - Tempo ate passar nos testes", "Mediana e IQR por tratamento; cada ponto e um trial. X = censurado.")
-    box_with_points(ax, df, "time_to_green_min", "Minutos", np.random.default_rng(0))
-    ax.axhline(TIMEBOX_MIN, color="#c0392b", linestyle="--", linewidth=1)
-    ax.text(ax.get_xlim()[1], TIMEBOX_MIN, " time-box 35 min", color="#c0392b", fontsize=8, va="bottom", ha="right")
+    fig, ax = _new_figure("RQ1 - Tempo ate passar nos testes", "Mediana e IQR por tratamento (escala logaritmica); cada ponto e um trial. X = censurado.")
+    box_with_points(ax, df, "time_to_green_seconds", "Tempo (escala log)", np.random.default_rng(0), unit=" s", digits=0)
+    _log_time_axis(ax)
+    ax.axhline(TIMEBOX_MIN * 60, color="#c0392b", linestyle="--", linewidth=1)
+    ax.text(ax.get_xlim()[1], TIMEBOX_MIN * 60, " time-box 35 min", color="#c0392b", fontsize=8, va="bottom", ha="right")
     censored = df[df["censored"]]
     for treatment in TREATMENTS:
         rows = censored[censored["treatment"] == treatment]
-        ax.scatter([TREATMENTS.index(treatment)] * len(rows), rows["time_to_green_min"], marker="x", s=60,
+        ax.scatter([TREATMENTS.index(treatment)] * len(rows), rows["time_to_green_seconds"], marker="x", s=60,
                    color="#c0392b", zorder=4)
     delta, magnitude = effect_size(df, "time_to_green_seconds")
     ax.set_title(f"Cliff's delta (IA vs manual) = {delta:.2f} ({magnitude})", loc="right", fontsize=9, color=COLOR_MUTED)
@@ -107,13 +126,14 @@ def plot_rq1_by_kata(df: pd.DataFrame, output_dir: Path, warning: str | None) ->
         rows = df[df["treatment"] == treatment]
         x = rows["kata"].map({kata: i for i, kata in enumerate(KATAS)}).to_numpy(dtype=float)
         ax.scatter(x + rng.uniform(-0.12, 0.12, len(rows)) + (0.14 if treatment == "ai_assisted" else -0.14),
-                   rows["time_to_green_min"], s=42, color=COLORS[treatment], label=LABELS[treatment],
+                   rows["time_to_green_seconds"], s=42, color=COLORS[treatment], label=LABELS[treatment],
                    edgecolor="white", linewidth=0.6, zorder=3)
-    ax.axhline(TIMEBOX_MIN, color="#c0392b", linestyle="--", linewidth=1)
+    _log_time_axis(ax)
+    ax.axhline(TIMEBOX_MIN * 60, color="#c0392b", linestyle="--", linewidth=1)
     ax.set_xticks(range(len(KATAS)))
     ax.set_xticklabels([f"{KATA_CODES[k]}\n{k.replace('_', ' ')}" for k in KATAS], fontsize=7.5, color=COLOR_INK)
-    ax.set_ylabel("Minutos", color=COLOR_MUTED, fontsize=9)
-    ax.legend(frameon=False, loc="upper left")
+    ax.set_ylabel("Tempo (escala log)", color=COLOR_MUTED, fontsize=9)
+    ax.legend(frameon=False, loc="upper center", ncol=2)
     return _save(fig, output_dir, "rq1_tempo_por_kata.png", warning)
 
 
@@ -134,6 +154,36 @@ def plot_rq2_success(df: pd.DataFrame, output_dir: Path, warning: str | None) ->
     ax.set_xticklabels([LABELS[t] for t in TREATMENTS], color=COLOR_INK)
     ax.set_xlim(-0.6, 1.6)
     return _save(fig, output_dir, "rq2_sucesso.png", warning)
+
+
+def plot_checks(df: pd.DataFrame, output_dir: Path, warning: str | None) -> Path | None:
+    checks = load_checks()
+    summary = check_summary(df, checks)
+    if summary.empty:
+        return None
+    fig, ax = _new_figure("RQ2 - Execucoes de teste (check) ate o verde - P1",
+                          "X vermelho = check com falha; ponto verde = passou; losango = fim do trial. Escala logaritmica.",
+                          width=9.5, height=4.6)
+    _style(ax)
+    ax.grid(axis="x", color=COLOR_GRID, linewidth=1, zorder=0)
+    for row_index, row in enumerate(summary.itertuples()):
+        y = len(summary) - 1 - row_index
+        events = checks[checks["trial_id"] == row.trial_id]
+        failed, passed = events[~events["success"]], events[events["success"]]
+        ax.scatter(failed["elapsed_seconds"], [y] * len(failed), marker="x", s=70, color="#c0392b", zorder=4, linewidths=2)
+        ax.scatter(passed["elapsed_seconds"], [y] * len(passed), marker="o", s=55, color="#1f8a4c", zorder=4)
+        ax.scatter([row.time_to_green_seconds], [y], marker="D", s=60, color=COLORS[row.treatment], zorder=5,
+                   edgecolor="white", linewidth=0.8)
+    ax.set_yticks(range(len(summary)))
+    ax.set_yticklabels([f"{r.kata_code} {r.kata.replace('_', ' ')} ({LABELS[r.treatment]}) - {r.check_runs} check(s), {r.failed_checks} com falha"
+                        for r in summary.itertuples()][::-1], fontsize=8, color=COLOR_INK)
+    ax.set_xscale("log")
+    ax.set_xticks(TIME_TICKS)
+    ax.set_xticklabels([_time_label(t) for t in TIME_TICKS])
+    ax.minorticks_off()
+    ax.set_xlim(TIME_TICKS[0] * 0.8, TIME_TICKS[-1] * 1.5)
+    ax.set_ylim(-0.6, len(summary) - 0.4)
+    return _save(fig, output_dir, "rq2_checks_p1.png", warning)
 
 
 def plot_rq3_boxplots(df: pd.DataFrame, output_dir: Path, warning: str | None) -> Path:
@@ -159,9 +209,14 @@ def plot_rq3_loc_vs_complexity(df: pd.DataFrame, output_dir: Path, warning: str 
 
 
 def plot_metric_correlation(df: pd.DataFrame, output_dir: Path, warning: str | None) -> Path:
-    columns = {**STATIC_METRICS, "time_to_green_seconds": "Tempo ate verde"}
+    all_columns = {**STATIC_METRICS, "time_to_green_seconds": "Tempo ate verde"}
+    columns = {c: label for c, label in all_columns.items() if df[c].nunique() > 1}
+    omitted = [label for c, label in all_columns.items() if c not in columns]
     corr = df[list(columns)].corr(method="spearman")
-    fig, ax = _new_figure("Correlacao de Spearman entre metricas", "Blocos vermelhos indicam metricas redundantes (multicolinearidade).", width=7.5, height=6)
+    subtitle = "Blocos vermelhos indicam metricas redundantes (multicolinearidade)."
+    if omitted:
+        subtitle += f" Omitida por ser constante: {', '.join(omitted)}."
+    fig, ax = _new_figure("Correlacao de Spearman entre metricas", subtitle, width=7.5, height=6)
     image = ax.imshow(corr, cmap="RdBu_r", vmin=-1, vmax=1)
     ax.set_xticks(range(len(columns)))
     ax.set_yticks(range(len(columns)))
@@ -176,9 +231,9 @@ def plot_metric_correlation(df: pd.DataFrame, output_dir: Path, warning: str | N
 
 
 def build_dashboard(df: pd.DataFrame, output_dir: Path, warning: str | None) -> list[Path]:
-    plots = [plot_rq1_time, plot_rq1_by_kata, plot_rq2_success, plot_rq3_boxplots,
+    plots = [plot_rq1_time, plot_rq1_by_kata, plot_rq2_success, plot_checks, plot_rq3_boxplots,
              plot_rq3_loc_vs_complexity, plot_metric_correlation]
-    return [plot(df, output_dir, warning) for plot in plots]
+    return [path for path in (plot(df, output_dir, warning) for plot in plots) if path is not None]
 
 
 def print_summary(df: pd.DataFrame) -> None:
