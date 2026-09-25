@@ -7,6 +7,8 @@ select
     median(time_to_green_seconds) as median_time_to_green_seconds,
     quantile_cont(time_to_green_seconds, 0.25) as q1_time_to_green_seconds,
     quantile_cont(time_to_green_seconds, 0.75) as q3_time_to_green_seconds,
+    quantile_cont(time_to_green_seconds, 0.75)
+        - quantile_cont(time_to_green_seconds, 0.25) as iqr_time_to_green_seconds,
     min(time_to_green_seconds) as min_time_to_green_seconds,
     max(time_to_green_seconds) as max_time_to_green_seconds,
     sum(case when censored then 1 else 0 end) as censored_trials
