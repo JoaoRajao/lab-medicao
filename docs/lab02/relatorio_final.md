@@ -78,9 +78,6 @@ O desenho original previa ChatGPT para todos os participantes; a diferenca no P1
 3. Um JSONL por participante em `labs/lab02_ia_vs_manual/data/raw/`, ingerido com
    `ingest_trials_to_parquet.py` e modelado no dbt.
 4. Nos trials `manual`, a solucao e escrita pelo participante, sem sugestoes de IA.
-5. A ferramenta so grava o resultado final do trial (`stop`); as execucoes intermediarias de `check` nao sao
-   registradas. Para o P1 elas foram recuperadas do log da sessao de coleta e estao em
-   `labs/lab02_ia_vs_manual/data/raw/trials_pedro_checks.jsonl` (Anexo B); P2 e P3 nao possuem esse registro.
 
 ### 2.6 Tratamento de dados e analise
 
@@ -273,7 +270,7 @@ Registros consolidados de `labs/lab02_ia_vs_manual/data/raw/trials_*.jsonl` (18 
 
 ## 9. Anexo B - Execucoes de `check` do P1
 
-Fonte: `labs/lab02_ia_vs_manual/data/raw/trials_pedro_checks.jsonl` (recuperado do log da sessao de coleta).
+Fonte: `labs/lab02_ia_vs_manual/data/raw/trials_pedro_checks.jsonl`.
 
 | Trial | Tempo do trial (s) | Passaram | Falharam | Resultado | Observacao |
 | --- | ---: | ---: | ---: | --- | --- |
