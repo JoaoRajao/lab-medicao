@@ -85,3 +85,14 @@ def test_dashboard_html_is_self_contained_and_flags_status(tmp_path) -> None:
     assert "http://" not in page and "https://" not in page
     for section in ("RQ1", "RQ2", "RQ3", "Trials"):
         assert f"<h2>{section}" in page
+
+
+def test_check_log_summary_counts_failures_per_trial() -> None:
+    trials, checks = data.load_trials(), data.load_checks()
+    summary = data.check_summary(trials, checks).set_index("kata")
+
+    assert len(checks) == 9
+    assert summary.loc["warehouse_batches", ["check_runs", "failed_checks"]].tolist() == [2, 1]
+    assert summary.loc["invoice_window", ["check_runs", "failed_checks"]].tolist() == [3, 2]
+    assert summary.loc[summary["treatment"] == "ai_assisted", "failed_checks"].sum() == 0
+    assert data.check_summary(trials, pd.DataFrame()).empty

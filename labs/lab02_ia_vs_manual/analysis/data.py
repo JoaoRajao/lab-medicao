@@ -13,6 +13,7 @@ TRIAL_FILES = {
     "P3": RAW_DIR / "trials_salomao.jsonl",
 }
 SAMPLE_FILE = RAW_DIR / "trials_sample.jsonl"
+CHECKS_FILE = RAW_DIR / "trials_pedro_checks.jsonl"
 
 KATAS = [
     "warehouse_batches",
@@ -49,6 +50,28 @@ def load_trials(sample: bool = False) -> pd.DataFrame:
     df["finished_at"] = pd.to_datetime(df["finished_at"], utc=True)
     df["time_to_green_min"] = df["time_to_green_seconds"] / 60
     return df
+
+
+def load_checks() -> pd.DataFrame:
+    """Execucoes intermediarias de `check` por trial (so o P1 tem esse registro)."""
+    if not CHECKS_FILE.exists():
+        return pd.DataFrame()
+    return pd.read_json(CHECKS_FILE, lines=True)
+
+
+def check_summary(trials: pd.DataFrame, checks: pd.DataFrame) -> pd.DataFrame:
+    """Uma linha por trial com log: n de checks, quantos falharam antes do verde e tempos."""
+    if checks.empty or trials.empty:
+        return pd.DataFrame()
+    grouped = checks.groupby("trial_id").agg(
+        check_runs=("success", "size"),
+        failed_checks=("success", lambda s: int((~s).sum())),
+        first_check_seconds=("elapsed_seconds", "min"),
+    ).reset_index()
+    info = trials[["trial_id", "participant", "kata", "kata_code", "treatment", "time_to_green_seconds"]]
+    merged = info.merge(grouped, on="trial_id", how="inner")
+    order = {k: i for i, k in enumerate(KATAS)}
+    return merged.assign(_k=merged["kata"].map(order)).sort_values("_k").drop(columns="_k").reset_index(drop=True)
 
 
 def validate(df: pd.DataFrame, sample: bool = False) -> list[str]:

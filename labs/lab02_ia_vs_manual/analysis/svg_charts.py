@@ -13,6 +13,16 @@ LABELS = {"manual": "Manual", "ai_assisted": "Com IA"}
 CLS = {"manual": "s-m", "ai_assisted": "s-a"}
 W, H = 560, 320
 ML, MR, MT, MB = 54, 16, 14, 46
+TIME_TICKS = [10, 30, 60, 180, 600, 2100]
+
+
+def _time_label(seconds: float) -> str:
+    return f"{int(seconds)} s" if seconds < 60 else f"{int(seconds // 60)} min"
+
+
+def _log_scale(r0: float, r1: float):
+    base = _scale(math.log10(TIME_TICKS[0] * 0.8), math.log10(TIME_TICKS[-1] * 1.5), r0, r1)
+    return lambda v: base(math.log10(v))
 
 
 def _ticks(lo: float, hi: float, n: int = 5) -> list[float]:
@@ -52,7 +62,7 @@ def _domain(values: list[float], extra: list[float] | None = None) -> list[float
     pool = values + (extra or [])
     lo, hi = min(pool), max(pool)
     if lo == hi:
-        lo, hi = lo - 1, hi + 1
+        lo, hi = (lo, hi + 1) if lo >= 0 else (lo - 1, hi)
     pad = (hi - lo) * 0.08
     floor = max(lo - pad, 0.0) if lo >= 0 else lo - pad
     return _ticks(floor, hi + pad)
@@ -68,16 +78,19 @@ def _point(cx: float, cy: float, cls: str, tip: str, censored: bool = False) -> 
 
 
 def box_strip(df: pd.DataFrame, column: str, ylabel: str, digits: int = 1, ref: float | None = None,
-              ref_label: str = "", mark_censored: bool = False) -> str:
+              ref_label: str = "", mark_censored: bool = False, log: bool = False, unit: str = "") -> str:
     """Boxplot (mediana/IQR, bigodes 1,5xIQR) com todos os trials como pontos."""
     groups = {t: df[df["treatment"] == t] for t in TREATMENTS}
     values = [float(v) for g in groups.values() for v in g[column].dropna()]
     if not values:
         return "<p class='note'>Sem dados.</p>"
-    ticks = _domain(values, [ref] if ref is not None else None)
-    ys = _scale(ticks[0], ticks[-1], H - MB, MT)
+    if log:
+        ticks, ys = TIME_TICKS, _log_scale(H - MB, MT)
+    else:
+        ticks = _domain(values, [ref] if ref is not None else None)
+        ys = _scale(ticks[0], ticks[-1], H - MB, MT)
     plot_w = W - ML - MR
-    out = [_y_axis(ticks, ys, ylabel, digits)]
+    out = [_y_axis(ticks, ys, ylabel, digits, fmt=_time_label if log else None)]
     if ref is not None:
         out.append(f'<line class="ref" x1="{ML}" x2="{W - MR}" y1="{ys(ref):.1f}" y2="{ys(ref):.1f}"/>'
                    f'<text class="tx bad" x="{W - MR}" y="{ys(ref) - 5:.1f}" text-anchor="end">{html.escape(ref_label)}</text>')
@@ -97,32 +110,54 @@ def box_strip(df: pd.DataFrame, column: str, ylabel: str, digits: int = 1, ref: 
                    f'<rect class="bx" x="{cx - bw:.1f}" y="{ys(q3):.1f}" width="{2 * bw:.1f}" height="{max(ys(q1) - ys(q3), 1):.1f}" rx="3">'
                    f'<title>{LABELS[treatment]}: mediana {_fmt(med, digits)} (Q1 {_fmt(q1, digits)} - Q3 {_fmt(q3, digits)})</title></rect>'
                    f'<line class="md" x1="{cx - bw:.1f}" x2="{cx + bw:.1f}" y1="{ys(med):.1f}" y2="{ys(med):.1f}"/>'
-                   f'<text class="tx ink" x="{cx + bw + 6:.1f}" y="{ys(med) + 4:.1f}">{_fmt(med, digits)}</text>')
+                   f'<text class="tx ink" x="{cx + bw + 6:.1f}" y="{ys(med) + 4:.1f}">{_fmt(med, digits)}{unit}</text>')
         for k, row in enumerate(rows.itertuples()):
             dx = ((k * 0.618) % 1 - 0.5) * bw * 1.3
             value = float(getattr(row, column))
-            out.append(_point(cx + dx, ys(value), CLS[treatment], f"{row.trial_id}: {_fmt(value, digits)}", mark_censored and bool(row.censored)))
+            out.append(_point(cx + dx, ys(value), CLS[treatment], f"{row.trial_id}: {_fmt(value, digits)}{unit}", mark_censored and bool(row.censored)))
     return _svg("".join(out))
 
 
 def kata_dots(df: pd.DataFrame) -> str:
-    """Tempo por kata: comparar dentro do mesmo kata controla a variacao de dificuldade."""
-    values = [float(v) for v in df["time_to_green_min"]]
-    if not values:
+    """Tempo por kata (escala log): comparar dentro do mesmo kata controla a variacao de dificuldade."""
+    if df.empty:
         return "<p class='note'>Sem dados.</p>"
-    ticks = _domain(values, [35.0])
-    ys = _scale(ticks[0], ticks[-1], H - MB, MT)
+    ys = _log_scale(H - MB, MT)
     slot = (W - ML - MR) / len(KATAS)
-    out = [_y_axis(ticks, ys, "Minutos"),
-           f'<line class="ref" x1="{ML}" x2="{W - MR}" y1="{ys(35):.1f}" y2="{ys(35):.1f}"/>']
+    out = [_y_axis(TIME_TICKS, ys, "Tempo (escala log)", fmt=_time_label),
+           f'<line class="ref" x1="{ML}" x2="{W - MR}" y1="{ys(2100):.1f}" y2="{ys(2100):.1f}"/>']
     for i, kata in enumerate(KATAS):
         cx = ML + slot * (i + 0.5)
         out.append(f'<text class="tx ink" x="{cx:.1f}" y="{H - 24}" text-anchor="middle">{KATA_CODES[kata]}</text>'
                    f'<text class="tx" x="{cx:.1f}" y="{H - 9}" text-anchor="middle">{html.escape(kata.split("_")[0])}</text>')
         for k, row in enumerate(df[df["kata"] == kata].itertuples()):
             dx = (-0.2 if row.treatment == "manual" else 0.2) * slot + ((k * 0.618) % 1 - 0.5) * 14
-            out.append(_point(cx + dx, ys(row.time_to_green_min), CLS[row.treatment],
-                              f"{row.trial_id}: {_fmt(row.time_to_green_min)} min", bool(row.censored)))
+            out.append(_point(cx + dx, ys(max(row.time_to_green_seconds, 1)), CLS[row.treatment],
+                              f"{row.trial_id}: {int(row.time_to_green_seconds)} s", bool(row.censored)))
+    return _svg("".join(out))
+
+
+def check_timeline(summary: pd.DataFrame, checks: pd.DataFrame) -> str:
+    """Linha do tempo dos checks por trial (escala log): falhas em vermelho, passou em verde, losango = fim."""
+    if summary.empty:
+        return "<p class='note'>Sem registro de checks.</p>"
+    left = 150
+    xs_base = _scale(math.log10(TIME_TICKS[0] * 0.8), math.log10(TIME_TICKS[-1] * 1.5), left, W - MR)
+    xs = lambda v: xs_base(math.log10(max(v, 1)))
+    step = (H - MT - MB) / len(summary)
+    out = []
+    for tick in TIME_TICKS:
+        out.append(f'<line class="grid" x1="{xs(tick):.1f}" x2="{xs(tick):.1f}" y1="{MT}" y2="{H - MB}"/>'
+                   f'<text class="tx" x="{xs(tick):.1f}" y="{H - MB + 16}" text-anchor="middle">{_time_label(tick)}</text>')
+    for i, row in enumerate(summary.itertuples()):
+        y = MT + step * (i + 0.5)
+        out.append(f'<text class="tx ink" x="{left - 10}" y="{y + 4:.1f}" text-anchor="end">{row.kata_code} {html.escape(row.kata.split("_")[0])}</text>'
+                   f'<text class="tx" x="{left - 10}" y="{y + 17:.1f}" text-anchor="end">{row.check_runs} check(s), {row.failed_checks} com falha</text>')
+        for ev in checks[checks["trial_id"] == row.trial_id].itertuples():
+            cls = "ck ok" if ev.success else "ck bad"
+            state = "passou" if ev.success else "falhou"
+            out.append(f'<circle class="{cls}" cx="{xs(ev.elapsed_seconds):.1f}" cy="{y:.1f}" r="6"><title>{html.escape(row.trial_id)}: check aos {ev.elapsed_seconds} s ({state}; {ev.tests_passed} passaram, {ev.tests_failed} falharam)</title></circle>')
+        out.append(f'<rect class="{CLS[row.treatment]}" x="{xs(row.time_to_green_seconds) - 5:.1f}" y="{y - 5:.1f}" width="10" height="10" transform="rotate(45 {xs(row.time_to_green_seconds):.1f} {y:.1f})"><title>{html.escape(row.trial_id)}: verde aos {int(row.time_to_green_seconds)} s</title></rect>')
     return _svg("".join(out))
 
 

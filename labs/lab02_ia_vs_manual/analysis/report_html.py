@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from labs.lab02_ia_vs_manual.analysis.data import KATA_CODES, KATAS, TRIAL_FILES
+from labs.lab02_ia_vs_manual.analysis.data import KATA_CODES, KATAS, TRIAL_FILES, check_summary, load_checks
 from labs.lab02_ia_vs_manual.analysis import svg_charts as svg
 from labs.lab02_ia_vs_manual.analysis.stats import TREATMENTS, effect_size, iqr_outliers, summarize
 
@@ -43,6 +43,7 @@ section{margin-top:28px}.two{grid-template-columns:repeat(auto-fit,minmax(340px,
 .chart .ref{stroke:var(--bad);stroke-width:1;stroke-dasharray:4 3}.chart .wh{stroke:var(--muted);stroke-width:1.5}
 .chart .bx{fill:none;stroke:var(--muted);stroke-width:1.5}.chart .md{stroke:var(--ink);stroke-width:2.5}
 .chart .s-m{fill:var(--blue)}.chart .s-a{fill:var(--orange)}.chart .pt{stroke:var(--card);stroke-width:1.5;opacity:.92;cursor:pointer}
+.chart .ck{stroke:var(--card);stroke-width:1.5;cursor:pointer}.chart .ck.ok{fill:var(--ok)}.chart .ck.bad{fill:var(--bad)}
 .chart .pt:hover{stroke:var(--ink);stroke-width:2}.chart .pt.cens{stroke:var(--bad);stroke-width:2.5}.chart .hv{font-size:11px;fill:#111;pointer-events:none}
 h3{margin:0 0 8px;font-size:14px}.legend{display:flex;gap:16px;color:var(--muted);font-size:12px;margin-top:6px}
 table{border-collapse:collapse;width:100%;font-size:13px}th,td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
@@ -119,24 +120,48 @@ def _summary_table(df: pd.DataFrame, rows: dict[str, str], digits: int = 1) -> s
     return f'<div class="scroll"><table><thead><tr>{head}</tr></thead><tbody>{"".join(body)}</tbody></table></div>'
 
 
+def _checks_block(df: pd.DataFrame) -> str:
+    checks = load_checks()
+    summary = check_summary(df, checks)
+    if summary.empty:
+        return ""
+    rows = "".join(
+        f"<tr><td class='l'>{r.kata_code} {html.escape(r.kata)}</td><td class='l'>{LABELS[r.treatment]}</td>"
+        f"<td>{r.check_runs}</td><td>{r.failed_checks}</td><td>{int(r.first_check_seconds)}</td><td>{int(r.time_to_green_seconds)}</td></tr>"
+        for r in summary.itertuples())
+    totals = summary.groupby("treatment")[["check_runs", "failed_checks"]].sum()
+    resume = " | ".join(f"{LABELS[t]}: {int(totals.loc[t, 'check_runs'])} check(s), {int(totals.loc[t, 'failed_checks'])} com falha"
+                        for t in ("manual", "ai_assisted") if t in totals.index)
+    head = "".join(f"<th{' class=\"l\"' if i < 2 else ''}>{h}</th>" for i, h in enumerate(
+        ["Kata", "Tratamento", "Checks", "Com falha", "1o check (s)", "Verde (s)"]))
+    return (f'<div class="card" style="margin-top:14px;max-width:760px"><h3>Execucoes de teste (check) ate o verde - P1</h3>{svg.check_timeline(summary, checks)}'
+            f'<div class="legend"><span>Vermelho = falhou</span><span>Verde = passou</span><span>Losango = fim do trial</span></div></div>'
+            f'<div class="card" style="margin-top:14px"><h3>Resumo dos checks</h3><div class="scroll"><table><thead><tr>{head}</tr></thead><tbody>{rows}</tbody></table></div>'
+            f'<div class="note">{resume}. Registro recuperado do log da sessao de coleta e disponivel apenas para P1; '
+            f'a ferramenta nao grava execucoes intermediarias. Falha = nenhum teste passou ou erro de coleta.</div></div>')
+
+
 def _trials_table(df: pd.DataFrame) -> str:
     order = {kata: i for i, kata in enumerate(KATAS)}
     ordered = df.assign(_k=df["kata"].map(order)).sort_values(["participant", "_k"])
+    counts = {r.trial_id: r for r in check_summary(df, load_checks()).itertuples()}
     body = []
     for row in ordered.itertuples():
         dot = "m" if row.treatment == "manual" else "a"
+        chk = counts.get(row.trial_id)
+        chk_cell = f"{chk.check_runs} ({chk.failed_checks} falha{'s' if chk.failed_checks != 1 else ''})" if chk is not None else "n/d"
         status = "censurado" if row.censored else ("verde" if row.tests_failed == 0 else "falhou")
         body.append(
             f'<tr data-t="{row.treatment}"><td class="l">{row.participant}</td>'
             f'<td class="l">{KATA_CODES.get(row.kata, "")} {html.escape(row.kata)}</td>'
             f'<td class="l"><span class="dot {dot}"></span>{LABELS[row.treatment]}</td>'
             f'<td data-v="{row.time_to_green_seconds}">{_num(row.time_to_green_min)}</td>'
-            f"<td>{row.tests_passed}/{row.tests_passed + row.tests_failed}</td><td class='l'>{status}</td>"
+            f"<td>{row.tests_passed}/{row.tests_passed + row.tests_failed}</td><td>{chk_cell}</td><td class='l'>{status}</td>"
             f"<td>{_num(row.cyclomatic_complexity_avg, 2)}</td><td>{_num(row.maintainability_index)}</td>"
             f"<td>{int(row.loc)}</td><td>{_num(row.duplication_pct)}</td></tr>"
         )
-    heads = ["Part.", "Kata", "Tratamento", "Tempo (min)", "Testes", "Status", "CC media", "MI", "LOC", "Dup. %"]
-    ths = "".join(f"<th class='{'l' if i < 3 or i == 5 else ''}'>{h}</th>" for i, h in enumerate(heads))
+    heads = ["Part.", "Kata", "Tratamento", "Tempo (min)", "Testes", "Checks", "Status", "CC media", "MI", "LOC", "Dup. %"]
+    ths = "".join(f"<th class='{'l' if i < 3 or i == 6 else ''}'>{h}</th>" for i, h in enumerate(heads))
     filters = '<div class="filters"><button class="on" data-f="all">Todos</button><button data-f="manual">Manual</button><button data-f="ai_assisted">Com IA</button></div>'
     return f'{filters}<div class="scroll"><table id="trials" class="sortable"><thead><tr>{ths}</tr></thead><tbody>{"".join(body)}</tbody></table></div>'
 
@@ -164,24 +189,27 @@ def write_dashboard_html(df: pd.DataFrame, problems: list[str], warning: str | N
                            for col, title in STATIC_METRICS.items())
     corr_labels = {"cyclomatic_complexity_avg": "Complexidade", "maintainability_index": "Manutenib.", "loc": "LOC",
                    "duplication_pct": "Duplicacao", "time_to_green_seconds": "Tempo"}
-    heat = svg.heatmap(df[list(corr_labels)].corr(method="spearman"), corr_labels)
+    varying = [c for c in corr_labels if df[c].nunique() > 1]
+    dropped = [corr_labels[c] for c in corr_labels if c not in varying]
+    heat = svg.heatmap(df[varying].corr(method="spearman"), corr_labels)
+    checks_block = _checks_block(df)
     legend = '<div class="legend"><span><span class="dot m"></span>Manual</span><span><span class="dot a"></span>Com IA</span><span>Passe o mouse nos pontos para ver o trial</span></div>'
     sections = f"""
 <section><h2>Visao geral</h2><div class="grid kpis">{_kpis(df)}</div></section>
 {_quality(problems, warning)}
 <section><h2>RQ1 - Tempo ate passar nos testes</h2>
-<div class="grid two"><div class="card"><h3>Distribuicao por tratamento (min)</h3>{svg.box_strip(df, 'time_to_green_min', 'Minutos', 1, 35.0, 'time-box 35 min', mark_censored=True)}{legend}</div>
+<div class="grid two"><div class="card"><h3>Distribuicao por tratamento (escala log)</h3>{svg.box_strip(df, 'time_to_green_seconds', 'Tempo (escala log)', 0, 2100.0, 'time-box 35 min', mark_censored=True, log=True, unit=' s')}{legend}</div>
 <div class="card"><h3>Por kata (compare dentro do mesmo kata)</h3>{svg.kata_dots(df)}{legend}</div></div>
 <div class="card" style="margin-top:14px">{_summary_table(df, {'time_to_green_seconds': 'Tempo ate verde (s)'}, 0)}
 {_outliers(df)}<div class="note">Teste de Wilcoxon: pendente (issue de analise estatistica). Contorno vermelho = trial censurado.</div></div></section>
 <section><h2>RQ2 - Taxa de sucesso e defeitos</h2>
 <div class="card" style="max-width:680px"><h3>Trials com todos os testes passando</h3>{svg.green_bars(df)}</div>
 <div class="card" style="margin-top:14px">{_summary_table(df, {'acceptance_success_rate': 'Taxa de sucesso nos testes', 'tests_failed': 'Testes falhos por trial'}, 2)}
-<div class="note">Com a maioria dos trials verdes, a taxa e quase constante; a comparacao real depende de N maior.</div></div></section>
+<div class="note">Com a maioria dos trials verdes, a taxa e quase constante; a comparacao real depende de N maior.</div></div>{checks_block}</section>
 <section><h2>RQ3 - Metricas estaticas</h2>
 <div class="grid two4">{static_cards}</div>
 <div class="grid two" style="margin-top:14px"><div class="card"><h3>Verbosidade x complexidade</h3>{svg.scatter(df, 'loc', 'cyclomatic_complexity_avg', 'LOC', 'Complexidade media')}{legend}</div>
-<div class="card"><h3>Correlacao de Spearman</h3>{heat}<div class="note">Blocos vermelhos escuros indicam metricas redundantes.</div></div></div>
+<div class="card"><h3>Correlacao de Spearman</h3>{heat}<div class="note">Blocos vermelhos escuros indicam metricas redundantes.{" Omitida por ser constante: " + ", ".join(dropped) + "." if dropped else ""}</div></div></div>
 <div class="card" style="margin-top:14px">{_summary_table(df, STATIC_METRICS, 2)}
 <div class="note">LOC e o controle de verbosidade: diferenca de complexidade que acompanha o LOC indica verbosidade, nao complexidade real.</div></div></section>
 <section><h2>Trials</h2><div class="card">{_trials_table(df)}</div></section>
