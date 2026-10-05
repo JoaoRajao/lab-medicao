@@ -21,3 +21,5 @@ airflow/logs/
 airflow/config/
 airflow/.env
 airflow/dbt/.user.yml
+labs/*/data/cache/
+.coverage
