@@ -80,7 +80,7 @@ def test_dashboard_html_is_self_contained_and_flags_status(tmp_path) -> None:
     page = write_dashboard_html(df, data.validate(df, sample=True), "SINTETICO", tmp_path / "d.html").read_text(encoding="utf-8")
 
     assert "Dados sinteticos" in page
-    assert "<img" not in page and page.count("<svg") == 9
+    assert "<img" not in page and page.count("<svg") == 10  # 9 graficos das RQs + linha do tempo dos checks
     assert 'P1-warehouse_batches-manual' in page
     assert "http://" not in page and "https://" not in page
     for section in ("RQ1", "RQ2", "RQ3", "Trials"):

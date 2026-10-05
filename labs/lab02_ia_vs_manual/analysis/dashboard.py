@@ -258,7 +258,7 @@ def main() -> None:
     problems = validate(df, sample=args.sample)
     for problem in problems:
         print(f"AVISO: {problem}")
-    warning = None  # Remover marcas d'água
+    warning = "SINTETICO" if args.sample else None  # dados reais saem sem marca d'agua
 
     output_dir = args.output_dir or (ASSETS_DIR / "sample" if args.sample else ASSETS_DIR)
     print_summary(df)
