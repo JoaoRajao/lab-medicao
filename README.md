@@ -1,5 +1,7 @@
 # Laboratorio de Experimentacao de Software
 
+[![testes](https://github.com/JoaoRajao/lab-medicao/actions/workflows/testes.yml/badge.svg)](https://github.com/JoaoRajao/lab-medicao/actions/workflows/testes.yml)
+
 Repositorio do grupo para os laboratorios da disciplina, com um pipeline analitico compartilhado
 (Python + DuckDB + dbt) e um lab por pasta em `labs/`.
 
@@ -8,6 +10,7 @@ Repositorio do grupo para os laboratorios da disciplina, com um pipeline analiti
 ```text
 shared/                  # infra reaproveitavel entre labs (nao sabe o tema de nenhum lab)
   github_client.py        # transporte GraphQL puro (auth, retry, rate limit)
+  github_rest.py           # transporte REST com cache em disco, retomada, rate limit e backoff
   pagination.py            # paginador generico por cursor
   warehouse.py              # leitura/escrita generica no DuckDB compartilhado
   checkpoint.py              # checkpoint JSONL generico para coletas longas
@@ -25,6 +28,7 @@ labs/
     ingest.py                 # UNICO arquivo especifico: query GraphQL + schema + mapeamento
     visualize.py               # graficos especificos do Lab01
     config/, data/
+  lab03_dora/               # Lab03: mineracao de metricas DORA (python -m labs.lab03_dora)
 
 airflow/                 # DAGs, imagem e profile dbt da orquestracao diaria do Lab02
 docker-compose.yml       # Airflow local com PostgreSQL e LocalExecutor
@@ -32,6 +36,8 @@ docker-compose.yml       # Airflow local com PostgreSQL e LocalExecutor
 models/
   staging/lab01/   gold/lab01/     # modelos dbt do Lab01 (um subdiretorio por lab)
 tests/lab01/                        # testes de consistencia do Lab01
+tests/lab03/                        # testes pytest do Lab03 (rodam no CI)
+.github/workflows/testes.yml        # CI: testes e cobertura do Lab03 a cada push
 docs/lab01/                         # relatorios do Lab01
 ```
 
@@ -44,6 +50,7 @@ Cada lab novo segue o mesmo padrao: uma pasta em `labs/`, um subdiretorio homoni
 | --- | --- | --- |
 | Lab01 | Mineracao de repositorios populares do GitHub (RQ01-RQ07) | [`labs/lab01_repos_populares/README.md`](labs/lab01_repos_populares/README.md), relatorios em [`docs/lab01/`](docs/lab01/) |
 | Lab02 | Assistentes de IA vs. codificacao manual, experimento controlado (RQ1-RQ3) | [`labs/lab02_ia_vs_manual/README.md`](labs/lab02_ia_vs_manual/README.md), relatorios em [`docs/lab02/`](docs/lab02/) |
+| Lab03 | Mineracao de metricas DORA em repositorios open-source (RQ01-RQ08) | [`labs/lab03_dora/README.md`](labs/lab03_dora/README.md) |
 
 ## Como criar um lab novo
 

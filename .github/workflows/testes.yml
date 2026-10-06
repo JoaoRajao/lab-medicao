@@ -1,0 +1,31 @@
+name: testes
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  testes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: Testes (cobertura do Lab03 e do cliente da API >= 80%)
+        run: >
+          python -m pytest tests
+          --cov=labs/lab03_dora --cov=shared.github_rest
+          --cov-report=term-missing --cov-fail-under=80
+
+      - name: Cobertura do modulo de metricas >= 80%
+        run: python -m coverage report --include="labs/lab03_dora/metricas/*" --fail-under=80

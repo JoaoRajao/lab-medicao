@@ -1,0 +1,23 @@
+# Configuracao do pipeline do Lab03 (metricas DORA).
+# Caminhos relativos sao resolvidos a partir da pasta deste arquivo.
+
+janela:
+  # 12 meses completos antes do inicio do Lab03 (AAAA-MM-DD). Se o professor fixar outras
+  # datas, troque aqui e rode de novo. Vazia ou fora de 12 meses, o pipeline se recusa a rodar.
+  inicio: 2025-10-01
+  fim: 2026-09-30
+
+inclusao:
+  min_releases: 5          # releases publicadas (draft = false) dentro da janela
+  min_workflow_runs: 50    # runs validos (push no default branch) dentro da janela
+
+amostra:
+  repositorios: 100        # meta da S01; a S02 exige no minimo 300 apos os filtros
+
+saida:
+  dados: data              # CSVs de metricas e funil de selecao
+  cache: data/cache        # uma resposta da API por arquivo; permite retomar a coleta
+
+api:
+  max_tentativas: 5        # novas tentativas em erro 5xx ou de rede (backoff 1, 2, 4, 8, 16 s)
+  timeout_segundos: 30
