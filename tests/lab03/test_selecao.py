@@ -74,9 +74,9 @@ def test_inspect_filters_actions_releases_and_valid_runs(monkeypatch, tmp_path):
         build_url("/repos/b/repo/actions/workflows", {"per_page": 1}): response({"total_count": 1}),
         build_url("/repos/c/repo/actions/workflows", {"per_page": 1}): response({"total_count": 1}),
         "/repos/b/repo/releases": [{"draft": False, "published_at": "2026-01-01T00:00:00Z"}],
-        "/repos/c/repo/releases": [{"draft": False, "published_at": "2026-01-01T00:00:00Z"}] * 5
-        + [{"draft": True, "published_at": "2026-01-01T00:00:00Z"},
-           {"prerelease": True, "published_at": "2026-01-01T00:00:00Z"}],
+        "/repos/c/repo/releases": [{"draft": True, "published_at": "2026-01-01T00:00:00Z"},
+                                     {"prerelease": True, "published_at": "2026-01-01T00:00:00Z"}]
+        + [{"draft": False, "published_at": "2026-01-01T00:00:00Z"}] * 5,
         build_url(run_path, run_params): response({"total_count": 2, "workflow_runs": [valid, invalid]}, next_page=2),
         build_url(run_path, {**run_params, "page": 2}): response({"total_count": 2, "workflow_runs": [valid] * 49}),
         build_url("/repos/c/repo/contributors", {"per_page": 1, "anon": "true"}): response([{}], last_page=7),
@@ -117,7 +117,7 @@ def test_month_at_cap_refuses_incomplete_count(monkeypatch, tmp_path):
     params = {"branch": "main", "event": "push", "created": "2025-10-01..2025-10-01", "per_page": 100}
     client = FakeClient({build_url("/repos/a/repo/actions/runs", params): response({"total_count": 1000, "workflow_runs": []})})
     with pytest.raises(RuntimeError, match="teto de 1.000"):
-        selecao._valid_runs(client, "a/repo", "main", date(2025, 10, 1), date(2026, 9, 30))
+        selecao._valid_runs(client, "a/repo", "main", date(2025, 10, 1), date(2026, 9, 30), 50)
 
 
 def test_run_count_splits_a_month_at_the_api_cap(monkeypatch):
@@ -133,4 +133,4 @@ def test_run_count_splits_a_month_at_the_api_cap(monkeypatch):
         key("2025-10-01", "2025-10-01"): response({"total_count": 1, "workflow_runs": [valid(1)]}),
         key("2025-10-02", "2025-10-02"): response({"total_count": 1, "workflow_runs": [valid(2)]}),
     })
-    assert selecao._valid_runs(client, "a/repo", "main", date(2025, 10, 1), date(2026, 9, 30)) == 2
+    assert selecao._valid_runs(client, "a/repo", "main", date(2025, 10, 1), date(2026, 9, 30), 2) == 2

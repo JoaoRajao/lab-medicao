@@ -63,40 +63,56 @@ def _months(start: date, end: date) -> Iterator[tuple[date, date]]:
         year += month == 1
 
 
-def _published_releases(client, repo: str, start: date, end: date) -> int:
-    return sum(
-        not release.get("draft", False)
-        and not release.get("prerelease", False)
-        and _in_window(release.get("published_at"), start, end)
-        for release in client.paginate(f"/repos/{repo}/releases")
-    )
+def _published_releases(client, repo: str, start: date, end: date, minimum: int) -> int:
+    count = 0
+    for release in client.paginate(f"/repos/{repo}/releases"):
+        if not release.get("draft", False) and not release.get("prerelease", False) and _in_window(
+            release.get("published_at"), start, end
+        ):
+            count += 1
+            if count >= minimum:
+                return count
+    return count
 
 
-def _valid_runs(client, repo: str, branch: str, start: date, end: date) -> int:
-    def between(first: date, last: date) -> int:
+def _valid_runs(client, repo: str, branch: str, start: date, end: date, minimum: int) -> int:
+    def valid_on_page(response: object, first: date, last: date) -> int:
+        return sum(
+            run.get("event") == "push"
+            and run.get("head_branch") == branch
+            and run.get("conclusion") in VALID_CONCLUSIONS
+            and _in_window(run.get("created_at"), first, last)
+            for run in response.data["workflow_runs"]
+        )
+
+    def between(first: date, last: date, needed: int) -> int:
         path = f"/repos/{repo}/actions/runs"
         params = {"branch": branch, "event": "push", "created": f"{first}..{last}", "per_page": 100}
         response = client.get(path, params)
         if response.data["total_count"] >= 1000:
+            if valid_on_page(response, first, last) >= needed:
+                return needed
             if first == last:
                 raise RuntimeError(f"{repo}: teto de 1.000 workflow runs em {first}; nao e possivel contar com exatidao.")
             middle = first + timedelta(days=(last - first).days // 2)
-            return between(first, middle) + between(middle + timedelta(days=1), last)
+            left = between(first, middle, needed)
+            return left if left >= needed else left + between(middle + timedelta(days=1), last, needed - left)
         count = 0
         while True:
-            count += sum(
-                run.get("event") == "push"
-                and run.get("head_branch") == branch
-                and run.get("conclusion") in VALID_CONCLUSIONS
-                and _in_window(run.get("created_at"), first, last)
-                for run in response.data["workflow_runs"]
-            )
+            count += valid_on_page(response, first, last)
+            if count >= needed:
+                return needed
             next_page = page_number(response.links.get("next"))
             if next_page is None:
                 return count
             response = client.get(path, {**params, "page": next_page})
 
-    return sum(between(first, last) for first, last in _months(start, end))
+    count = 0
+    for first, last in _months(start, end):
+        count += between(first, last, minimum - count)
+        if count >= minimum:
+            return count
+    return count
 
 
 def _contributors(client, repo: str) -> int:
@@ -114,13 +130,13 @@ def inspect(client, candidate: dict, config) -> tuple[dict, dict | None]:
             decision["reason"] = "no_actions"
             return decision, None
         start, end = config.window.start, config.window.end
-        releases = _published_releases(client, repo, start, end)
+        releases = _published_releases(client, repo, start, end, config.inclusion.min_releases)
         decision["releases"] = releases
         if releases < config.inclusion.min_releases:
             decision["reason"] = "insufficient_releases"
             return decision, None
         branch = candidate["default_branch"]
-        runs = _valid_runs(client, repo, branch, start, end)
+        runs = _valid_runs(client, repo, branch, start, end, config.inclusion.min_workflow_runs)
         decision["valid_workflow_runs"] = runs
         if runs < config.inclusion.min_workflow_runs:
             decision["reason"] = "insufficient_workflow_runs"

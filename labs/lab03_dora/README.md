@@ -45,7 +45,10 @@ descreve **os candidatos examinados**, nao todos os repositorios do GitHub com m
 Releases de rascunho e pre-releases nao contam na definicao principal; as pre-releases ficam para a
 analise de sensibilidade posterior. Runs contam apenas quando sao `push` no branch padrao, com conclusao
 `success`, `failure`, `timed_out` ou `startup_failure`. A coleta divide meses com 1.000 ou mais runs em
-intervalos menores para evitar a perda de resultados da API.
+intervalos menores para evitar a perda de resultados da API. As colunas `published_releases` e
+`valid_workflow_runs` sao contagens limitadas aos minimos configurados (5 e 50 por padrao): para um
+repositorio incluido, esses valores significam **pelo menos** 5 e **pelo menos** 50. As contagens completas
+serao produzidas pelas etapas de releases (#61) e workflow runs (#62).
 
 ## Configuracao
 
