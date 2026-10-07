@@ -24,7 +24,8 @@ Todos os comandos rodam a partir da raiz do repositorio, com o ambiente da raiz 
    python -m labs.lab03_dora --config labs/lab03_dora/config.yaml
    ```
 
-   Para rodar so uma etapa: `--etapa selecao` (pode repetir a opcao).
+   Para rodar so uma etapa: `--etapa selecao`, `--etapa releases` ou `--etapa workflow_runs`.
+   As duas ultimas etapas leem `saida.dados/repositories.csv`, produzido pela selecao.
 
 A coleta pode ser interrompida a qualquer momento (rate limit, queda de rede, `Ctrl+C`): rodar o mesmo
 comando de novo continua de onde parou, sem repetir chamadas ja feitas.
@@ -50,6 +51,34 @@ intervalos menores para evitar a perda de resultados da API. As colunas `publish
 repositorio incluido, esses valores significam **pelo menos** 5 e **pelo menos** 50. As contagens completas
 serao produzidas pelas etapas de releases (#61) e workflow runs (#62).
 
+### Saida de releases e lead time (#61)
+
+| Arquivo | Conteudo |
+| --- | --- |
+| `releases.csv` | Uma linha por release principal publicada na janela; inclui tag anterior, resultado do compare, commits examinados e lead time por release em horas. A release anterior pode estar fora da janela. |
+| `release_commits.csv` | Um commit por linha, com `commit.author.date` e lead time individual em horas. |
+| `pre_releases.csv` | Pre-releases publicadas na janela, separadas da definicao principal para a RQ 07. |
+| `tags.csv` | Tags cujos commits apontados tem `commit.author.date` na janela, com nome, SHA e data; `commit_404` registra tags sem commit acessivel. |
+| `lead_time_metrics.csv` | Por repositorio: contagens, compares 404 e medianas `lead_time_a_hours` (por release) e `lead_time_b_hours` (por commit). Valor vazio significa que nao houve observacao calculavel. |
+
+A primeira release da historia nao tem base de comparacao. Um compare 404 e registrado e a release sai das
+medianas. Releases sem commits novos tambem nao entram nas medianas. Datas negativas de lead time, se
+aparecerem por rebase ou datas inconsistentes, permanecem no CSV para auditoria.
+
+### Saida de workflow runs, CFR e recuperacao (#62)
+
+| Arquivo | Conteudo |
+| --- | --- |
+| `workflow_runs.csv` | Runs `push` no default branch criados na janela, inclusive conclusoes ignoradas, identificadas pela coluna `classification`. |
+| `workflow_run_months.csv` | Auditoria por mes: `api_total_count`, `hit_cap` e quantidade coletada. Meses com 1.000 ou mais resultados sao subdivididos ate que a coleta seja completa. |
+| `recovery_episodes.csv` | Episodios por workflow, com primeira falha, sucesso de recuperacao, duracao em horas ou `censored=true`. |
+| `workflow_metrics.csv` | Por repositorio: sucessos, falhas, ignorados, `cfr_a`, mediana de recuperacao em horas, proporcao de episodios censurados e primeiro/ultimo run observados. Valor vazio indica denominador zero. |
+
+O CFR usa todos os workflows juntos; o tempo de recuperacao nunca atravessa workflows diferentes. Um
+episodio so comeca na primeira falha apos um sucesso observado. A API do GitHub pode reter runs por menos
+tempo que a janela de 12 meses; meses sem resultados no CSV de auditoria precisam ser interpretados junto
+da politica de retencao do repositorio.
+
 ## Configuracao
 
 | Chave | Significado | Padrao |
@@ -68,8 +97,7 @@ Caminhos relativos sao resolvidos a partir da pasta do `config.yaml`.
 ## Etapas do pipeline
 
 O pipeline roda as etapas em ordem. Cada etapa e uma funcao `run(ctx)` registrada em
-[`pipeline.py`](pipeline.py) (`STAGES`). Enquanto o modulo de uma etapa nao existir, o pipeline para
-nela e indica a issue correspondente.
+[`pipeline.py`](pipeline.py) (`STAGES`).
 
 | Etapa | Modulo | Issue |
 | --- | --- | --- |
