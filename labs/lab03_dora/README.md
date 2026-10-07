@@ -29,6 +29,24 @@ Todos os comandos rodam a partir da raiz do repositorio, com o ambiente da raiz 
 A coleta pode ser interrompida a qualquer momento (rate limit, queda de rede, `Ctrl+C`): rodar o mesmo
 comando de novo continua de onde parou, sem repetir chamadas ja feitas.
 
+### Saida da selecao (#60)
+
+`python3 -m labs.lab03_dora --etapa selecao` grava tres CSVs em `saida.dados`:
+
+| Arquivo | Colunas | Origem e significado |
+| --- | --- | --- |
+| `repositories.csv` | `repository`, `stars`, `language`, `contributors`, `created_at`, `age_days`, `default_branch`, `published_releases`, `valid_workflow_runs` | Uma linha por repositorio incluido. Estrelas, linguagem, criacao e branch vem da busca; contribuidores incluem anonimos, contados pela ultima pagina da API; idade e dias entre criacao e fim da janela. As duas contagens se referem a janela configurada. |
+| `selection_decisions.csv` | `repository`, `decision`, `reason`, `stars`, `releases`, `valid_workflow_runs` | Uma linha por candidato examinado, na ordem de busca; campos de contagem ficam vazios quando o candidato e descartado antes daquela consulta. |
+| `selection_funnel.csv` | `stage`, `remaining`, `excluded` | Contagem dos candidatos examinados e de cada descarte (`no_actions`, `insufficient_releases`, `insufficient_workflow_runs`, `repository_unavailable`). A ultima linha mostra a amostra incluida. |
+
+A busca percorre faixas de estrelas acima de 1.000, das maiores para as menores, dividindo automaticamente
+qualquer faixa com mais de 1.000 resultados. Ela para ao atingir `amostra.repositorios`. Assim, o funil
+descreve **os candidatos examinados**, nao todos os repositorios do GitHub com mais de 1.000 estrelas.
+Releases de rascunho e pre-releases nao contam na definicao principal; as pre-releases ficam para a
+analise de sensibilidade posterior. Runs contam apenas quando sao `push` no branch padrao, com conclusao
+`success`, `failure`, `timed_out` ou `startup_failure`. A coleta divide meses com 1.000 ou mais runs em
+intervalos menores para evitar a perda de resultados da API.
+
 ## Configuracao
 
 | Chave | Significado | Padrao |
