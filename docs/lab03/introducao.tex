@@ -1,0 +1,128 @@
+\documentclass[12pt]{article}
+\usepackage{sbc-template}
+\usepackage{graphicx,url}
+\usepackage[utf8]{utf8}
+\usepackage[brazil]{babel}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{hyperref}
+
+\sloppy
+
+\title{Mineração de Métricas DORA em Repositórios Open-Source:\\Introdução e Hipóteses de Pesquisa}
+
+\author{João Vitor Pedersoli Rajao\inst{1}, Pedro Moreira Ramos\inst{1}, Otávio Salomão Ferreira\inst{1}}
+
+\address{Curso de Engenharia de Software -- Pontifícia Universidade Católica de Minas Gerais (PUC Minas)\\
+  Belo Horizonte -- MG -- Brasil
+  \email{joaorajao5@gmail.com, pedromoreiraramos1998@gmail.com, otavio.ferreira.mds@gmail.com}
+}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+  This document presents the introduction and initial research hypotheses for mining DORA (DevOps Research and Assessment) metrics across popular open-source repositories using GitHub Actions CI/CD workflows. We contextualize the challenge of measuring deployment frequency, lead time for changes, change failure rate, and recovery time when production environment logs are absent, requiring operational approximations. Prior to data collection and analysis, informal hypotheses are formally defined for Research Questions RQ01 through RQ07, grounded in DevOps literature and open-source software development dynamics.
+\end{abstract}
+
+\begin{resumo}
+  Este documento apresenta a introdução e as hipóteses informais iniciais de pesquisa para a mineração de métricas DORA (\textit{DevOps Research and Assessment}) em repositórios open-source populares que utilizam fluxos de CI/CD no GitHub Actions. Contextualiza-se o desafio de mensurar frequência de deploy, tempo de lead time, taxa de falhas e tempo de recuperação na ausência de registros diretos de ambiente de produção, exigindo aproximações operacionais. Antes do encerramento da coleta e análise dos dados, hipóteses informais são formalmente definidas para as Questões de Pesquisa RQ01 a RQ07, embasadas na literatura de DevOps e na dinâmica de desenvolvimento de software livre.
+\end{resumo}
+
+\section{Introdução}
+
+As métricas DORA (\textit{DevOps Research and Assessment}) estabeleceram-se como o padrão de mercado para avaliar o desempenho e a maturidade dos processos de entrega de software. Popularizadas pelo livro \textit{Accelerate} \cite{forsgren2018accelerate} e consolidadas pelos relatórios anuais \textit{State of DevOps}, essas métricas dividem-se em duas dimensões principais: \textbf{Velocidade} (\textit{throughput}) e \textbf{Estabilidade}.
+
+As quatro métricas clássicas do DORA são:
+\begin{enumerate}
+    \item \textbf{Frequência de Deploy (\textit{Deployment Frequency} - DF):} Mede a frequência com que a equipe realiza implantações de mudanças no ambiente de produção.
+    \item \textbf{Tempo de Lead Time para Mudanças (\textit{Lead Time for Changes} - LTC):} Mede o tempo decorrido desde a submissão de um commit até o momento em que esse código está em execução em produção.
+    \item \textbf{Taxa de Falha em Mudanças (\textit{Change Failure Rate} - CFR):} Mede a proporção de deploys que resultam em degradação do serviço ou falha em produção, demandando intervenção imediata (como \textit{rollback} ou \textit{hotfix}).
+    \item \textbf{Tempo de Recuperação de Falhas (\textit{Failed Deployment Recovery Time} / MTTR):} Mede o tempo mediano necessário para restaurar o serviço após a ocorrência de uma falha decorrente de um deploy.
+\end{enumerate}
+
+Em edições recentes do relatório DORA (2023 e 2024), novas perspectivas foram integradas, como a \textit{Deployment Rework Rate} (proporção de deploys não planejados realizados para refazer ou corrigir alterações anteriores).
+
+\subsection{O Desafio da Operacionalização em Repositórios Open-Source}
+
+A medição rigorosa de métricas DORA em ecossistemas de código aberto (\textit{Open Source Software} - OSS) impõe desafios metodológicos significativos. Repositórios públicos hospedados em plataformas como o GitHub frequentemente não registram eventos explícitos de "deploy em produção", uma vez que o software pode ser distribuído como biblioteca, pacote de linguagem, contêiner ou binário para execução por terceiros.
+
+Dessa forma, a mineração dessas métricas exige o uso de \textbf{aproximações operacionais} (\textit{proxies}):
+\begin{itemize}
+    \item \textbf{Eventos de Entrega:} Podem ser aproximados pela publicação de \textit{Releases}/\textit{Tags} oficiais ou por execuções concluídas com sucesso de \textit{workflows} de CI/CD voltados a \textit{publish}/\textit{deploy} na \textit{branch} principal.
+    \item \textbf{Lead Time:} Pode ser calculado em relação à data de publicação da release que contém o commit (variante por release) ou em relação ao tempo entre a criação do commit e sua incorporação na branch principal (variante por commit/PR).
+    \item \textbf{Falhas e Recuperação:} Podem ser aproximadas pela ocorrência de execuções com falha (\textit{failure}/\textit{cancelled}) em \textit{workflows} de CI, ou pela necessidade de lançar releases corretivas (ex: versões \textit{patch} ou \textit{hotfix}).
+\end{itemize}
+
+O objetivo deste trabalho é minerar e analisar tais métricas em repositórios open-source reais do GitHub Actions, compreendendo as propriedades estatísticas dessas distribuições e avaliando o impacto da escolha de definições operacionais sobre os resultados.
+
+\section{Questões de Pesquisa e Hipóteses Informais}
+
+Em conformidade com as boas práticas de pesquisa empírica em engenharia de software, as hipóteses informais a seguir foram estabelecidas \textbf{previamente} à finalização da coleta e análise dos dados.
+
+\subsection{RQ01 -- Frequência de Deploys em Repositórios Open-Source}
+\textbf{Questão:} Qual é a frequência de deploy típica de repositórios open-source populares?
+
+\textbf{Hipótese Informal (H01):} Espera-se que a maioria dos repositórios open-source populares se enquadre nas faixas \textit{"Medium"} (entre uma vez por mês e uma vez por semana) ou \textit{"High"} (uma vez por semana a algumas por dia), raramente atingindo o nível \textit{"Elite"} (múltiplos deploys diários).
+
+\textbf{Justificativa:} Diferente de empresas SaaS com equipes dedicadas e integração contínua rigorosa em produção, projetos open-source dependem fortemente de contribuições assíncronas e voluntárias, além de revisões manuais por mantenedores. Assim, os ciclos de lançamento tendem a ser mais espaçados no tempo.
+
+\subsection{RQ02 -- Lead Time para Mudanças}
+\textbf{Questão:} Qual é o lead time para mudanças em repositórios open-source populares?
+
+\textbf{Hipótese Informal (H02):} Espera-se um lead time mediano na faixa \textit{"High"} a \textit{"Medium"} (entre 1 dia e 30 dias). Adicionalmente, antecipa-se uma discrepância marcante entre as duas variantes operacionais: a variante baseada em \textit{releases} apresentará lead times substancialmente maiores do que a variante baseada em \textit{commits/PRs}.
+
+\textbf{Justificativa:} Um commit aceito na branch principal pode aguardar semanas ou meses até o fechamento da versão de uma release formal. Em contrapartida, a aprovação e \textit{merge} de Pull Requests ocorrem em prazos mais curtos, refletindo a dinâmica contínua da contribuição.
+
+\subsection{RQ03 -- Taxa de Falha em Mudanças (Change Failure Rate - CFR)}
+\textbf{Questão:} Qual é a taxa de falha de deploy/mudança em repositórios open-source populares?
+
+\textbf{Hipótese Informal (H03):} A taxa de falha varia significativamente conforme a definição operacional adotada. Para a variante (a), baseada em falhas de \textit{workflows} de CI, espera-se uma taxa moderada a alta ($\ge 30\%$). Para a variante (b), baseada em releases corretivas, espera-se uma taxa baixa (\textit{"Elite"} ou \textit{"High"}, $\le 15\%$).
+
+\textbf{Justificativa:} Pipelines de CI no GitHub Actions atuam como uma barreira rígida de validação antes da integração, interceptando testes quebrados com frequência. Já releases públicas passam por congelamento de código e testes intensivos antes da publicação, tornando raras as marcas de correção imediata.
+
+\subsection{RQ04 -- Tempo de Recuperação de Falhas (Recovery Time)}
+\textbf{Questão:} Quanto tempo leva para um repositório open-source se recuperar de uma falha de deploy/integração?
+
+\textbf{Hipótese Informal (H04):} Espera-se um tempo mediano de recuperação na faixa de horas a poucos dias (\textit{"High"} a \textit{"Medium"}).
+
+\textbf{Justificativa:} Projetos open-source não possuem SLAs corporativos de plantão 24/7. Falhas em execuções de CI ou compilações em ramificações secundárias podem aguardar até que o mantenedor responsável esteja disponível para analisar e submeter o \textit{fix}.
+
+\subsection{RQ05 -- Correlação entre Frequência de Deploy e Taxa de Falhas}
+\textbf{Questão:} Repositórios com maior frequência de deploy apresentam maior ou menor taxa de falhas?
+
+\textbf{Hipótese Informal (H05):} Espera-se que \textbf{não} exista uma correlação positiva forte entre frequência de deploy e taxa de falhas. A correlação esperada é neutra ou levemente negativa ($r \le 0$).
+
+\textbf{Justificativa:} Em consonância com as descobertas originais do DORA, a velocidade de entrega não deve comprometer a estabilidade. Repositórios com pipelines automatizados maduros conseguem realizar deploys com frequência sem aumentar a incidência de falhas em suas entregas.
+
+\subsection{RQ06 -- Relação entre Métricas DORA e Características dos Repositórios}
+\textbf{Questão:} Como as métricas DORA se correlacionam com características como número de contribuidores, estrelas e tipo de projeto?
+
+\textbf{Hipótese Informal (H06):} Repositórios com maior número de contribuidores ativos, maior volume de estrelas e categorizados como aplicações ou ferramentas de linha de comando (CLI) apresentarão maior frequência de deploy e menor lead time em comparação com bibliotecas de baixo nível.
+
+\textbf{Justificativa:} Ferramentas e aplicações possuem ciclos de feedback mais rápidos e menor risco sistêmico de quebra de retrocompatibilidade ao lançar atualizações, enquanto bibliotecas exigem maior cautela para não quebrar dependentes.
+
+\subsection{RQ07 -- Sensibilidade da Classificação DORA às Definições Operacionais}
+\textbf{Questão:} O nível de desempenho DORA (Elite, High, Medium, Low) de um repositório é sensível às aproximações operacionais adotadas?
+
+\textbf{Hipótese Informal (H07):} Espera-se uma alteração significativa nas classificações de desempenho ao variar as definições operacionais (por exemplo, alternando entre \textit{tags} e \textit{releases}, ou entre falhas de CI e \textit{hotfixes}), com índice de concordância (métrica de Kappa de Cohen) variando entre fraco e moderado.
+
+\textbf{Justificativa:} A inexistência de um padrão rígido de registro de deploys no GitHub faz com que a escolha do \textit{proxy} altere drasticamente as métricas absolutas calculadas, comprovando a sensibilidade das classificações DORA no universo open-source.
+
+\section{Metadados e Links do Repositório}
+
+Em cumprimento ao Critério de Aceitação e à Seção 8 das instruções da avaliação, os links para acompanhamento da execução e código-fonte do projeto estão listados a seguir:
+
+\begin{itemize}
+    \item \textbf{Repositório do Projeto (GitHub):} \url{https://github.com/JoaoRajao/lab-medicao}
+    \item \textbf{Quadro de Gestão do Projeto (GitHub Projects / Kanban):} \url{https://github.com/users/JoaoRajao/projects}
+\end{itemize}
+
+\bibliographystyle{sbc}
+\begin{thebibliography}{99}
+\bibitem{forsgren2018accelerate}
+Forsgren, N., Humble, J., \& Kim, G. (2018). \textit{Accelerate: The science of lean software and devops: Building and scaling high performing technology organizations}. IT Revolution.
+\end{thebibliography}
+
+\end{document}
