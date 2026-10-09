@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import json
 import os
 from datetime import datetime, timezone
 from pathlib import Path
@@ -193,17 +194,56 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def fetch_items_rest_fallback(login: str, sprint: str, exported_at: datetime) -> list[dict[str, Any]]:
+    import urllib.request
+    url = f"https://api.github.com/repos/{login}/lab-medicao/issues?state=all&per_page=100"
+    request = urllib.request.Request(url, headers={"User-Agent": "lab-medicao-kanban-snapshot"})
+    with urllib.request.urlopen(request) as response:
+        raw_issues = json.loads(response.read().decode("utf-8"))
+
+    rows = []
+    for issue in raw_issues:
+        state = issue.get("state", "").upper()
+        assignees = ", ".join(a["login"] for a in issue.get("assignees", []))
+        is_pr = "pull_request" in issue
+        item_type = "PULL_REQUEST" if is_pr else "ISSUE"
+
+        if state == "CLOSED":
+            status = "Done"
+        elif assignees:
+            status = "In Progress"
+        else:
+            status = "Todo"
+
+        rows.append({
+            "sprint": sprint,
+            "exported_at": exported_at.isoformat(),
+            "project_item_id": issue.get("node_id", f"REST_{issue['number']}"),
+            "item_type": item_type,
+            "issue_number": issue.get("number"),
+            "title": issue.get("title"),
+            "repository": f"{login}/lab-medicao",
+            "url": issue.get("html_url"),
+            "state": state,
+            "assignees": assignees,
+            "status": status,
+        })
+    return rows
+
+
 def main() -> None:
     load_env_file(ENV_PATH)
     args = parse_args()
-    token = os.getenv("GITHUB_TOKEN")
-    if not token:
-        raise RuntimeError(f"Configure GITHUB_TOKEN em {ENV_PATH}.")
-
     exported_at = datetime.now(timezone.utc)
-    client = GitHubGraphQLClient(token=token)
-    items = fetch_project_items(client, args.login, args.project_number, args.page_size)
-    rows = [build_snapshot_row(item, args.sprint, exported_at) for item in items]
+    token = os.getenv("GITHUB_TOKEN")
+
+    if not token:
+        print("GITHUB_TOKEN nao encontrado. Utilizando fallback via REST API publica...")
+        rows = fetch_items_rest_fallback(args.login, args.sprint, exported_at)
+    else:
+        client = GitHubGraphQLClient(token=token)
+        items = fetch_project_items(client, args.login, args.project_number, args.page_size)
+        rows = [build_snapshot_row(item, args.sprint, exported_at) for item in items]
 
     output_path = args.output or (
         SNAPSHOT_DIR / f"snapshot_{args.sprint}_{exported_at.date().isoformat()}.csv"
@@ -214,3 +254,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
