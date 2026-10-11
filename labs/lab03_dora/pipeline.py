@@ -33,6 +33,7 @@ STAGES: tuple[Stage, ...] = (
     Stage("selecao", "labs.lab03_dora.selecao:run", 60),
     Stage("releases", "labs.lab03_dora.releases:run", 61),
     Stage("workflow_runs", "labs.lab03_dora.workflow_runs:run", 62),
+    Stage("dataset", "labs.lab03_dora.consolidacao:run", 66),
 )
 
 
