@@ -178,9 +178,16 @@ class GitHubRestClient:
             "User-Agent": "lab-medicao-github-rest-client",
         }
 
-    def get(self, path_or_url: str, params: dict[str, Any] | None = None, use_cache: bool = True) -> Response:
+    def get(
+        self,
+        path_or_url: str,
+        params: dict[str, Any] | None = None,
+        use_cache: bool = True,
+        slim: Callable[[Any], Any] | None = None,
+    ) -> Response:
+        """`slim` reduz o corpo antes de gravar no cache (ex.: descartar os diffs do `compare`)."""
         url = build_url(path_or_url, params)
-        return self._request(url, url, None, use_cache)
+        return self._request(url, url, None, use_cache, slim)
 
     def graphql(self, query: str, variables: dict[str, Any], cache_key: str) -> dict[str, Any]:
         """Executa uma query GraphQL e devolve `data`.
@@ -205,7 +212,9 @@ class GitHubRestClient:
                 raise GitHubNotFoundError(404, key, json.dumps(errors)[:300])
             raise GitHubAPIError(200, key, json.dumps(errors)[:300])
 
-    def _request(self, cache_key: str, url: str, body: bytes | None, use_cache: bool) -> Response:
+    def _request(
+        self, cache_key: str, url: str, body: bytes | None, use_cache: bool, slim: Callable[[Any], Any] | None = None
+    ) -> Response:
         if use_cache and self.cache is not None:
             cached = self.cache.get(cache_key)
             if cached is not None:
@@ -232,6 +241,8 @@ class GitHubRestClient:
 
             if 200 <= status < 300:
                 data = json.loads(text) if text else None
+                if slim is not None and data is not None:
+                    data = slim(data)
                 kept = {k: headers[k] for k in KEPT_HEADERS if k in headers}
                 if use_cache and self.cache is not None:
                     self.cache.put(cache_key, status, data, kept)
@@ -255,13 +266,14 @@ class GitHubRestClient:
         params: dict[str, Any] | None = None,
         item_key: str | None = None,
         max_pages: int | None = None,
+        slim: Callable[[Any], Any] | None = None,
     ) -> Iterator[Any]:
         """Percorre todas as paginas seguindo `Link: rel="next"`."""
         base_params = {"per_page": 100, **(params or {})}
         url: str | None = build_url(path, base_params)
         pages = 0
         while url and (max_pages is None or pages < max_pages):
-            response = self.get(url)
+            response = self.get(url, slim=slim)
             items = response.data.get(item_key, []) if item_key else response.data
             yield from items or []
             pages += 1

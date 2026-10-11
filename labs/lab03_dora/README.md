@@ -138,6 +138,8 @@ client.rate_limit()                                                      # nao c
 
 - **Cache e retomada:** cada resposta e salva em `saida.cache/<repos>/<owner>/<repo>/<endpoint>/`, um JSON
   por requisicao. Uma requisicao ja feita e respondida do disco, sem chamar a API. O token nunca e gravado.
+  Paginas grandes sao enxugadas antes de gravar (`slim`): do `compare` ficam status, total e, de cada commit,
+  SHA, data e mensagem (sem os diffs); dos workflow runs e das releases, so os campos que as etapas leem.
 - **Rate limit:** le `X-RateLimit-Remaining`/`X-RateLimit-Reset` e pausa ate a renovacao quando a cota
   acaba; respeita `Retry-After` em rate limit secundario.
 - **Erros temporarios:** respostas 5xx e erros de rede sao repetidos com backoff exponencial

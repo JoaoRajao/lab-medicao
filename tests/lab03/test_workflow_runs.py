@@ -49,7 +49,7 @@ class Client:
         self.responses = responses
         self.calls = []
 
-    def get(self, path, params):
+    def get(self, path, params, slim=None):
         url = build_url(path, params)
         self.calls.append(url)
         return self.responses[url]

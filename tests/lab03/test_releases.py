@@ -36,7 +36,7 @@ class Client:
         self.statuses = statuses or {}
         self.calls = []
 
-    def paginate(self, path, params=None, item_key=None):
+    def paginate(self, path, params=None, item_key=None, slim=None):
         self.calls.append((path, item_key))
         if path.endswith("/releases"):
             return iter(self.release_items)
@@ -45,7 +45,7 @@ class Client:
             raise value
         return iter(value)
 
-    def get(self, path, params=None):
+    def get(self, path, params=None, slim=None):
         value = self.comparisons[path]
         if isinstance(value, Exception):
             raise value
@@ -168,10 +168,20 @@ def test_compare_with_missing_commits_fails_loudly():
     path = "/repos/group/repo/compare/v1...v2"
 
     class Truncated(Client):
-        def get(self, path, params=None):
+        def get(self, path, params=None, slim=None):
             return SimpleNamespace(data={"status": "ahead", "total_commits": 300})
 
     client = Truncated([release("v1", "2026-01-01T00:00:00Z"), release("v2", "2026-02-01T00:00:00Z")],
                        {path: [commit("a", "2026-01-20T00:00:00Z")]})
     with pytest.raises(RuntimeError, match="1 de 300"):
         releases.process_repository(client, "group/repo", START, END)
+
+
+def test_slim_compare_keeps_only_what_the_lab_uses():
+    page = {"status": "ahead", "total_commits": 1, "files": [{"patch": "x" * 10_000}], "base_commit": {},
+            "commits": [{"sha": "a", "url": "u", "author": {"login": "x"},
+                         "commit": {"author": {"date": "2026-03-02T00:00:00Z", "name": "n"}, "message": "fix: y" * 1000}}]}
+    slim = releases.slim_compare(page)
+    assert slim == {"status": "ahead", "total_commits": 1, "commits": [
+        {"sha": "a", "commit": {"author": {"date": "2026-03-02T00:00:00Z"}, "message": ("fix: y" * 1000)[:2000]}}
+    ]}

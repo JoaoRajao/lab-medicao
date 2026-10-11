@@ -16,7 +16,7 @@ class FakeClient:
         self.responses = responses
         self.calls = []
 
-    def get(self, path, params=None):
+    def get(self, path, params=None, slim=None):
         url = build_url(path, params)
         self.calls.append(url)
         value = self.responses[url]
@@ -24,7 +24,7 @@ class FakeClient:
             raise value
         return value
 
-    def paginate(self, path):
+    def paginate(self, path, slim=None):
         return self.responses[path]
 
 

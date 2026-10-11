@@ -4,7 +4,7 @@ from datetime import date
 
 import pytest
 
-from labs.lab03_dora.records import months, selected_repositories
+from labs.lab03_dora.records import RUN_KEYS, months, selected_repositories, slim_releases, slim_runs
 
 
 def test_months_cover_the_window_with_partial_edges():
@@ -25,3 +25,13 @@ def test_selected_repositories_rejects_missing_or_incomplete_samples(tmp_path):
     path.write_text("repository,default_branch\na/b,\n", encoding="utf-8")
     with pytest.raises(ValueError, match="incompleta"):
         selected_repositories(tmp_path)
+
+
+def test_slim_pages_keep_only_the_fields_the_stages_read():
+    run = {key: f"v-{key}" for key in RUN_KEYS} | {"repository": {"big": "x"}, "head_commit": {"message": "m"}}
+    assert slim_runs({"total_count": 1, "workflow_runs": [run]}) == {
+        "total_count": 1, "workflow_runs": [{key: f"v-{key}" for key in RUN_KEYS}]}
+    release = {"tag_name": "v1", "draft": False, "prerelease": False, "published_at": "2026-01-01T00:00:00Z",
+               "body": "x" * 10_000, "assets": [{}]}
+    assert slim_releases([release]) == [{"tag_name": "v1", "name": None, "draft": False, "prerelease": False,
+                                         "created_at": None, "published_at": "2026-01-01T00:00:00Z"}]

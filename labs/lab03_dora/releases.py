@@ -6,7 +6,7 @@ from urllib.parse import quote
 
 from labs.lab03_dora.metricas.lead_time import release_lead_times_hours, repository_lead_times_hours
 from labs.lab03_dora.pipeline import Context
-from labs.lab03_dora.records import in_window, selected_repositories, timestamp, write_csv
+from labs.lab03_dora.records import in_window, selected_repositories, slim_releases, timestamp, write_csv
 from shared.github_rest import GitHubNotFoundError
 
 RELEASE_FIELDS = (
@@ -26,7 +26,7 @@ METRIC_FIELDS = (
 def collect_releases(client, repo: str, start, end) -> tuple[list[dict], list[dict]]:
     regular: list[dict] = []
     prereleases: list[dict] = []
-    for release in client.paginate(f"/repos/{repo}/releases"):
+    for release in client.paginate(f"/repos/{repo}/releases", slim=slim_releases):
         if release.get("draft") or not release.get("published_at"):
             continue
         if release.get("prerelease"):
@@ -94,11 +94,27 @@ def collect_tags(client, repo: str, start, end) -> list[dict]:
         after = refs["pageInfo"]["endCursor"]
 
 
+MAX_MESSAGE_CHARS = 2000
+
+
+def slim_compare(data: dict) -> dict:
+    """So o que o lab usa do compare. Cada pagina traz ate 300 arquivos com diffs, que o cache nao precisa."""
+    commits = []
+    for item in data.get("commits") or []:
+        commit = item.get("commit") or {}
+        commits.append({"sha": item.get("sha"), "commit": {
+            "author": {"date": (commit.get("author") or {}).get("date")},
+            "message": (commit.get("message") or "")[:MAX_MESSAGE_CHARS],
+        }})
+    return {"status": data.get("status"), "total_commits": data.get("total_commits"), "commits": commits}
+
+
 def compare_commits(client, repo: str, base_tag: str, head_tag: str) -> tuple[list[dict], dict]:
     """Commits de `base...head`, paginando ate o fim, e o resumo do compare (status e total)."""
     path = f"/repos/{repo}/compare/{quote(base_tag, safe='')}...{quote(head_tag, safe='')}"
-    first = client.get(path, {"per_page": 100}).data  # mesma URL da 1a pagina do paginate: vem do cache
-    commits = list(client.paginate(path, item_key="commits"))
+    # mesma URL da 1a pagina do paginate: vem do cache
+    first = client.get(path, {"per_page": 100}, slim=slim_compare).data
+    commits = list(client.paginate(path, item_key="commits", slim=slim_compare))
     return commits, {"status": first.get("status", ""), "total_commits": first.get("total_commits", len(commits))}
 
 

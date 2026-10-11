@@ -19,6 +19,22 @@ def in_window(value: str | None, start: date, end: date) -> bool:
     return bool(value and start <= timestamp(value).date() <= end)
 
 
+RUN_KEYS = ("id", "workflow_id", "event", "head_branch", "status", "conclusion", "created_at", "run_started_at",
+            "updated_at")
+RELEASE_KEYS = ("tag_name", "name", "draft", "prerelease", "created_at", "published_at")
+
+
+def slim_runs(data: dict) -> dict:
+    """Pagina de workflow runs so com os campos usados (cada run traz o repositorio e o commit inteiros)."""
+    runs = [{key: run.get(key) for key in RUN_KEYS} for run in data.get("workflow_runs") or []]
+    return {"total_count": data.get("total_count"), "workflow_runs": runs}
+
+
+def slim_releases(items: list) -> list:
+    """Pagina de releases sem o texto das notas, que pode passar de 30 MB por pagina."""
+    return [{key: release.get(key) for key in RELEASE_KEYS} for release in items or []]
+
+
 def months(start: date, end: date) -> Iterator[tuple[date, date]]:
     """Fatia a janela em meses de calendario (o primeiro e o ultimo podem ser parciais)."""
     year, month = start.year, start.month

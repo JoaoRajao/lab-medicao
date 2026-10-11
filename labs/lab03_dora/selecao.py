@@ -8,6 +8,7 @@ from typing import Iterator
 from labs.lab03_dora.pipeline import Context
 from labs.lab03_dora.records import in_window as _in_window
 from labs.lab03_dora.records import months as _months
+from labs.lab03_dora.records import slim_releases, slim_runs
 from labs.lab03_dora.records import write_csv as _write_csv
 from shared.github_rest import GitHubAPIError, GitHubNotFoundError, page_number
 
@@ -53,7 +54,7 @@ def candidates(client) -> Iterator[dict]:
 
 def _published_releases(client, repo: str, start: date, end: date, minimum: int) -> int:
     count = 0
-    for release in client.paginate(f"/repos/{repo}/releases"):
+    for release in client.paginate(f"/repos/{repo}/releases", slim=slim_releases):
         if not release.get("draft", False) and not release.get("prerelease", False) and _in_window(
             release.get("published_at"), start, end
         ):
@@ -76,7 +77,7 @@ def _valid_runs(client, repo: str, branch: str, start: date, end: date, minimum:
     def between(first: date, last: date, needed: int) -> int:
         path = f"/repos/{repo}/actions/runs"
         params = {"branch": branch, "event": "push", "created": f"{first}..{last}", "per_page": 100}
-        response = client.get(path, params)
+        response = client.get(path, params, slim=slim_runs)
         if response.data["total_count"] >= 1000:
             if valid_on_page(response, first, last) >= needed:
                 return needed
@@ -93,7 +94,7 @@ def _valid_runs(client, repo: str, branch: str, start: date, end: date, minimum:
             next_page = page_number(response.links.get("next"))
             if next_page is None:
                 return count
-            response = client.get(path, {**params, "page": next_page})
+            response = client.get(path, {**params, "page": next_page}, slim=slim_runs)
 
     count = 0
     for first, last in _months(start, end):

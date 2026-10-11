@@ -6,7 +6,7 @@ from datetime import date, timedelta
 
 from labs.lab03_dora.metricas.workflows import cfr_a, classify, recovery_episodes, recovery_summary
 from labs.lab03_dora.pipeline import Context
-from labs.lab03_dora.records import in_window, months, selected_repositories, write_csv
+from labs.lab03_dora.records import in_window, months, selected_repositories, slim_runs, write_csv
 from shared.github_rest import page_number
 
 RUN_FIELDS = (
@@ -30,7 +30,7 @@ def collect_interval(client, repo: str, branch: str, first: date, last: date) ->
     """Coleta tudo; subdivide um intervalo que pode ter sido truncado em 1.000."""
     path = f"/repos/{repo}/actions/runs"
     params = {"branch": branch, "event": "push", "created": f"{first}..{last}", "per_page": 100}
-    response = client.get(path, params)
+    response = client.get(path, params, slim=slim_runs)
     total = response.data["total_count"]
     if total >= 1000:
         if first == last:
@@ -42,7 +42,7 @@ def collect_interval(client, repo: str, branch: str, first: date, last: date) ->
     runs = list(response.data["workflow_runs"])
     next_page = page_number(response.links.get("next"))
     while next_page is not None:
-        response = client.get(path, {**params, "page": next_page})
+        response = client.get(path, {**params, "page": next_page}, slim=slim_runs)
         runs.extend(response.data["workflow_runs"])
         next_page = page_number(response.links.get("next"))
     return runs, total, False

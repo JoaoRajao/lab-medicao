@@ -333,3 +333,13 @@ def test_graphql_errors_are_raised_without_cache(tmp_path):
     with pytest.raises(GitHubAPIError):
         make_client(broken, cache).graphql("q", {}, "x")
     assert not list(tmp_path.rglob("*.json"))
+
+
+def test_slim_reduces_the_body_before_caching(tmp_path):
+    cache = ResponseCache(tmp_path)
+    transport = FakeTransport({page_url(1): [(200, [{"id": 1, "big": "x" * 1000}], {})]})
+    slim = lambda items: [{"id": item["id"]} for item in items]
+
+    assert list(make_client(transport, cache).paginate("/repos/o/r/releases", slim=slim)) == [{"id": 1}]
+    assert list(make_client(FakeTransport({}), cache).paginate("/repos/o/r/releases")) == [{"id": 1}]
+    assert "big" not in next(tmp_path.rglob("*.json")).read_text(encoding="utf-8")
