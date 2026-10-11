@@ -48,6 +48,7 @@ de um commit e `commit.author.date`.
 | `compare_404_count` | inteiro | releases | Releases ignoradas porque o compare devolveu 404 (tag apagada ou reescrita) |
 | `releases_without_commits` | inteiro | releases | Releases sem commits novos em relacao a anterior (ficam fora das medianas) |
 | `releases_diverged` | inteiro | releases | Compares com `status = diverged`: a anterior por data nao e ancestral de R (ex.: backport). Entram no calculo e sao contadas como ameaca a validade |
+| `releases_incomplete_compare` | inteiro | releases | Releases em que o compare devolveu menos commits que o `total_commits` da API (paginacao de compares muito grandes); entram no calculo e sao contadas para auditoria |
 | `lead_time_a_hours` | decimal | horas | Variante (a), por release: mediana, entre as releases, de `published_at(R) - data do commit mais antigo de R` |
 | `lead_time_b_hours` | decimal | horas | Variante (b), por commit: mediana de `published_at(R) - data do commit` sobre todos os commits de todas as releases |
 
