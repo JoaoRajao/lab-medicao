@@ -4,7 +4,7 @@
 **Instituição:** Pontifícia Universidade Católica de Minas Gerais (PUC Minas) - Curso de Engenharia de Software  
 **Disciplina:** Laboratório de Experimentação de Software (Prof. Danilo Maia)  
 **Repositório:** [https://github.com/JoaoRajao/lab-medicao](https://github.com/JoaoRajao/lab-medicao)  
-**Quadro de Gestão (Kanban):** [https://github.com/users/JoaoRajao/projects](https://github.com/users/JoaoRajao/projects)  
+**Quadro de Gestão (Kanban):** [https://github.com/users/JoaoRajao/projects/4](https://github.com/users/JoaoRajao/projects/4)  
 **Autores:**
 - João Vitor Pedersoli Rajao (`joaorajao5@gmail.com`)
 - Pedro Moreira Ramos (`pedromoreiraramos1998@gmail.com`)
@@ -28,8 +28,8 @@ As métricas DORA (*DevOps Research and Assessment*) tornaram-se o padrão de me
 
 Diferente de ambientes corporativos fechados, o GitHub não registra "deploys em produção" nem "falhas em produção" por padrão. Por isso, a mineração depende de **aproximações operacionais** (*proxies*):
 - **Deploys:** Releases/Tags publicadas ou execuções bem-sucedidas de workflows de CI/CD.
-- **Lead Time:** Diferença de tempo entre o commit/PR e a publicação da release (por release) ou incorporação no branch principal (por commit).
-- **Falhas de Deploy:** Taxa de workflows de CI com falha (`failure`/`cancelled`) ou lançamentos de releases corretivas (*patch/hotfix*).
+- **Lead Time:** Diferença entre a data de autoria do commit (`commit.author.date`) e a publicação da release que o contém: por release (commit mais antigo da release) ou por commit (cada commit).
+- **Falhas de Deploy:** Taxa de execuções de CI com falha (`failure`, `timed_out` ou `startup_failure`; `cancelled` e demais conclusões são ignoradas) ou lançamentos de releases corretivas (*patch/hotfix*).
 - **Recuperação:** Intervalo entre a falha do workflow de CI e a próxima execução bem-sucedida.
 
 ---
@@ -40,17 +40,17 @@ Formuladas formalmente **antes** da finalização da coleta e análise de dados:
 
 ### RQ 01 — Frequência de Deploys
 - **Questão:** Qual é a frequência de deploy típica de repositórios open-source populares?
-- **Hipótese Informal (H01):** Espera-se frequência nas categorias **"Medium"** (1 por mês a 1 por semana) ou **"High"** (uma por semana a algumas por dia), e raramente **"Elite"** (diária).
+- **Hipótese Informal (H01):** Espera-se frequência nas categorias **"Medium"** (de 1 release por mês a menos de 1 por semana) ou **"High"** (de 1 a menos de 7 por semana), e raramente **"Elite"** (7 ou mais por semana, cerca de uma por dia).
 - **Justificativa:** Desenvolvimento assíncrono e voluntário em projetos open-source reduz a cadência diária de entregas em produção quando comparado a equipes SaaS corporativas.
 
 ### RQ 02 — Lead Time para Mudanças
 - **Questão:** Qual é o lead time para mudanças em repositórios open-source populares?
-- **Hipótese Informal (H02):** Espera-se lead time mediano em **"High"** ou **"Medium"** (1 dia a 30 dias), com discrepância marcante entre a variante por release (lead time maior) e a variante por commit/PR (lead time menor).
-- **Justificativa:** Commits integrados ao branch principal costumam aguardar o fechamento do ciclo de release formal antes da publicação da versão.
+- **Hipótese Informal (H02):** Espera-se lead time mediano em **"High"** ou **"Medium"** (1 dia a 30 dias), com discrepância marcante entre a variante por release (a), com lead time maior, e a variante por commit (b), com lead time menor.
+- **Justificativa:** A variante (a) usa o commit mais antigo da release, então um único commit antigo "esquecido" faz o valor explodir; na variante (b) ele é só um entre muitos e quase não move a mediana.
 
 ### RQ 03 — Taxa de Falha em Mudanças (Change Failure Rate - CFR)
 - **Questão:** Qual é a taxa de falha de deploy/mudança em repositórios open-source populares?
-- **Hipótese Informal (H03):** Para a variante (a) (CI workflows), espera-se taxa moderada a alta ($\ge 30\%$). Para a variante (b) (releases corretivas), espera-se taxa baixa (**"Elite"** ou **"High"**, $\le 15\%$).
+- **Hipótese Informal (H03):** Para a variante (a) (CI workflows), espera-se taxa moderada a alta ($\ge 30\%$). Para a variante (b) (releases corretivas), espera-se taxa baixa, na faixa **"Elite"** ($\le 15\%$).
 - **Justificativa:** CI atua como barreira estrita para barrar PRs quebrados, acumulando mais falhas registradas do que o histórico final de releases publicadas.
 
 ### RQ 04 — Tempo de Recuperação de Falhas (Recovery Time)
@@ -60,7 +60,7 @@ Formuladas formalmente **antes** da finalização da coleta e análise de dados:
 
 ### RQ 05 — Correlação entre Frequência e Taxa de Falhas
 - **Questão:** Repositórios com maior frequência de deploy apresentam maior ou menor taxa de falhas?
-- **Hipótese Informal (H05):** Não se espera correlação positiva forte entre frequência e falhas ($r \le 0$).
+- **Hipótese Informal (H05):** Não se espera correlação positiva forte entre frequência e falhas (Spearman $\rho \le 0$, nas variantes (a) e (b) do CFR).
 - **Justificativa:** Em alinhamento com a literatura DORA, entregas mais frequentes amparadas por CI/CD automatizado não sacrificam a estabilidade do produto.
 
 ### RQ 06 — Relação entre Métricas DORA e Características do Repositório
@@ -70,7 +70,7 @@ Formuladas formalmente **antes** da finalização da coleta e análise de dados:
 
 ### RQ 07 — Sensibilidade da Classificação DORA às Definições Operacionais
 - **Questão:** O nível de desempenho DORA (Elite, High, Medium, Low) é sensível às aproximações operacionais adotadas?
-- **Hipótese Informal (H07):** Espera-se alta sensibilidade e variações significativas de categoria (baixo a moderado Kappa de Cohen) ao alternar os *proxies* de deploy e falha.
+- **Hipótese Informal (H07):** Espera-se alta sensibilidade e variações significativas de categoria (kappa de Cohen ponderado entre fraco e moderado) ao alternar os *proxies* de deploy e falha.
 - **Justificativa:** A falta de registros diretos de produção no GitHub faz com que cada proxy reflita facetas distintas do processo de desenvolvimento.
 
 ---
@@ -79,4 +79,4 @@ Formuladas formalmente **antes** da finalização da coleta e análise de dados:
 
 - **Arquivo LaTeX para Submissão:** `docs/lab03/introducao.tex`
 - **Link do Repositório:** `https://github.com/JoaoRajao/lab-medicao`
-- **Link do Quadro de Gestão:** `https://github.com/users/JoaoRajao/projects`
+- **Link do Quadro de Gestão:** `https://github.com/users/JoaoRajao/projects/4`

@@ -1,7 +1,7 @@
 \documentclass[12pt]{article}
 \usepackage{sbc-template}
 \usepackage{graphicx,url}
-\usepackage[utf8]{utf8}
+\usepackage[utf8]{inputenc}
 \usepackage[brazil]{babel}
 \usepackage{amsmath}
 \usepackage{booktabs}
@@ -42,7 +42,7 @@ As quatro métricas clássicas do DORA são:
     \item \textbf{Tempo de Recuperação de Falhas (\textit{Failed Deployment Recovery Time} / MTTR):} Mede o tempo mediano necessário para restaurar o serviço após a ocorrência de uma falha decorrente de um deploy.
 \end{enumerate}
 
-Em edições recentes do relatório DORA (2023 e 2024), novas perspectivas foram integradas, como a \textit{Deployment Rework Rate} (proporção de deploys não planejados realizados para refazer ou corrigir alterações anteriores).
+Em edições recentes do relatório DORA (2023 e 2024), novas perspectivas foram integradas, como a \textit{Deployment Rework Rate} (proporção de deploys não planejados realizados para refazer ou corrigir alterações anteriores) \cite{dora2024history}.
 
 \subsection{O Desafio da Operacionalização em Repositórios Open-Source}
 
@@ -51,8 +51,8 @@ A medição rigorosa de métricas DORA em ecossistemas de código aberto (\texti
 Dessa forma, a mineração dessas métricas exige o uso de \textbf{aproximações operacionais} (\textit{proxies}):
 \begin{itemize}
     \item \textbf{Eventos de Entrega:} Podem ser aproximados pela publicação de \textit{Releases}/\textit{Tags} oficiais ou por execuções concluídas com sucesso de \textit{workflows} de CI/CD voltados a \textit{publish}/\textit{deploy} na \textit{branch} principal.
-    \item \textbf{Lead Time:} Pode ser calculado em relação à data de publicação da release que contém o commit (variante por release) ou em relação ao tempo entre a criação do commit e sua incorporação na branch principal (variante por commit/PR).
-    \item \textbf{Falhas e Recuperação:} Podem ser aproximadas pela ocorrência de execuções com falha (\textit{failure}/\textit{cancelled}) em \textit{workflows} de CI, ou pela necessidade de lançar releases corretivas (ex: versões \textit{patch} ou \textit{hotfix}).
+    \item \textbf{Lead Time:} É medido entre a data de autoria do commit (\texttt{commit.author.date}) e a publicação da release que o contém, em duas variantes: por release (data da release menos a data do commit mais antigo incluído nela) e por commit (data da release menos a data de cada commit).
+    \item \textbf{Falhas e Recuperação:} Podem ser aproximadas pelas execuções de CI com falha (\texttt{failure}, \texttt{timed\_out} ou \texttt{startup\_failure}; execuções \texttt{cancelled} e demais conclusões são ignoradas) ou pela necessidade de lançar releases corretivas (ex: versões \textit{patch} ou \textit{hotfix}).
 \end{itemize}
 
 O objetivo deste trabalho é minerar e analisar tais métricas em repositórios open-source reais do GitHub Actions, compreendendo as propriedades estatísticas dessas distribuições e avaliando o impacto da escolha de definições operacionais sobre os resultados.
@@ -64,21 +64,21 @@ Em conformidade com as boas práticas de pesquisa empírica em engenharia de sof
 \subsection{RQ01 -- Frequência de Deploys em Repositórios Open-Source}
 \textbf{Questão:} Qual é a frequência de deploy típica de repositórios open-source populares?
 
-\textbf{Hipótese Informal (H01):} Espera-se que a maioria dos repositórios open-source populares se enquadre nas faixas \textit{"Medium"} (entre uma vez por mês e uma vez por semana) ou \textit{"High"} (uma vez por semana a algumas por dia), raramente atingindo o nível \textit{"Elite"} (múltiplos deploys diários).
+\textbf{Hipótese Informal (H01):} Espera-se que a maioria dos repositórios open-source populares se enquadre nas faixas \textit{"Medium"} (de uma release por mês a menos de uma por semana) ou \textit{"High"} (de uma a menos de sete releases por semana), raramente atingindo o nível \textit{"Elite"} (sete ou mais releases por semana, ou seja, cerca de uma por dia).
 
 \textbf{Justificativa:} Diferente de empresas SaaS com equipes dedicadas e integração contínua rigorosa em produção, projetos open-source dependem fortemente de contribuições assíncronas e voluntárias, além de revisões manuais por mantenedores. Assim, os ciclos de lançamento tendem a ser mais espaçados no tempo.
 
 \subsection{RQ02 -- Lead Time para Mudanças}
 \textbf{Questão:} Qual é o lead time para mudanças em repositórios open-source populares?
 
-\textbf{Hipótese Informal (H02):} Espera-se um lead time mediano na faixa \textit{"High"} a \textit{"Medium"} (entre 1 dia e 30 dias). Adicionalmente, antecipa-se uma discrepância marcante entre as duas variantes operacionais: a variante baseada em \textit{releases} apresentará lead times substancialmente maiores do que a variante baseada em \textit{commits/PRs}.
+\textbf{Hipótese Informal (H02):} Espera-se um lead time mediano na faixa \textit{"High"} a \textit{"Medium"} (entre 1 dia e 30 dias). Adicionalmente, antecipa-se uma discrepância marcante entre as duas variantes operacionais: a variante por release (a) apresentará lead times substancialmente maiores do que a variante por commit (b).
 
-\textbf{Justificativa:} Um commit aceito na branch principal pode aguardar semanas ou meses até o fechamento da versão de uma release formal. Em contrapartida, a aprovação e \textit{merge} de Pull Requests ocorrem em prazos mais curtos, refletindo a dinâmica contínua da contribuição.
+\textbf{Justificativa:} A variante (a) usa o commit mais antigo de cada release, então um único commit antigo ``esquecido'' (por exemplo, de um \textit{branch} de longa duração) faz o valor da release explodir. Na variante (b), esse commit é apenas um entre muitos e quase não move a mediana, que tende a refletir os commits feitos pouco antes do fechamento da versão.
 
 \subsection{RQ03 -- Taxa de Falha em Mudanças (Change Failure Rate - CFR)}
 \textbf{Questão:} Qual é a taxa de falha de deploy/mudança em repositórios open-source populares?
 
-\textbf{Hipótese Informal (H03):} A taxa de falha varia significativamente conforme a definição operacional adotada. Para a variante (a), baseada em falhas de \textit{workflows} de CI, espera-se uma taxa moderada a alta ($\ge 30\%$). Para a variante (b), baseada em releases corretivas, espera-se uma taxa baixa (\textit{"Elite"} ou \textit{"High"}, $\le 15\%$).
+\textbf{Hipótese Informal (H03):} A taxa de falha varia significativamente conforme a definição operacional adotada. Para a variante (a), baseada em falhas de \textit{workflows} de CI, espera-se uma taxa moderada a alta ($\ge 30\%$). Para a variante (b), baseada em releases corretivas, espera-se uma taxa baixa, na faixa \textit{"Elite"} ($\le 15\%$).
 
 \textbf{Justificativa:} Pipelines de CI no GitHub Actions atuam como uma barreira rígida de validação antes da integração, interceptando testes quebrados com frequência. Já releases públicas passam por congelamento de código e testes intensivos antes da publicação, tornando raras as marcas de correção imediata.
 
@@ -92,7 +92,7 @@ Em conformidade com as boas práticas de pesquisa empírica em engenharia de sof
 \subsection{RQ05 -- Correlação entre Frequência de Deploy e Taxa de Falhas}
 \textbf{Questão:} Repositórios com maior frequência de deploy apresentam maior ou menor taxa de falhas?
 
-\textbf{Hipótese Informal (H05):} Espera-se que \textbf{não} exista uma correlação positiva forte entre frequência de deploy e taxa de falhas. A correlação esperada é neutra ou levemente negativa ($r \le 0$).
+\textbf{Hipótese Informal (H05):} Espera-se que \textbf{não} exista uma correlação positiva forte entre frequência de deploy e taxa de falhas. A correlação de Spearman esperada é neutra ou levemente negativa ($\rho \le 0$), nas variantes (a) e (b) do CFR.
 
 \textbf{Justificativa:} Em consonância com as descobertas originais do DORA, a velocidade de entrega não deve comprometer a estabilidade. Repositórios com pipelines automatizados maduros conseguem realizar deploys com frequência sem aumentar a incidência de falhas em suas entregas.
 
@@ -106,7 +106,7 @@ Em conformidade com as boas práticas de pesquisa empírica em engenharia de sof
 \subsection{RQ07 -- Sensibilidade da Classificação DORA às Definições Operacionais}
 \textbf{Questão:} O nível de desempenho DORA (Elite, High, Medium, Low) de um repositório é sensível às aproximações operacionais adotadas?
 
-\textbf{Hipótese Informal (H07):} Espera-se uma alteração significativa nas classificações de desempenho ao variar as definições operacionais (por exemplo, alternando entre \textit{tags} e \textit{releases}, ou entre falhas de CI e \textit{hotfixes}), com índice de concordância (métrica de Kappa de Cohen) variando entre fraco e moderado.
+\textbf{Hipótese Informal (H07):} Espera-se uma alteração significativa nas classificações de desempenho ao variar as definições operacionais (por exemplo, alternando entre \textit{tags} e \textit{releases}, ou entre falhas de CI e \textit{hotfixes}), com concordância entre as classificações (kappa de Cohen ponderado) variando entre fraca e moderada.
 
 \textbf{Justificativa:} A inexistência de um padrão rígido de registro de deploys no GitHub faz com que a escolha do \textit{proxy} altere drasticamente as métricas absolutas calculadas, comprovando a sensibilidade das classificações DORA no universo open-source.
 
@@ -116,13 +116,15 @@ Em cumprimento ao Critério de Aceitação e à Seção 8 das instruções da av
 
 \begin{itemize}
     \item \textbf{Repositório do Projeto (GitHub):} \url{https://github.com/JoaoRajao/lab-medicao}
-    \item \textbf{Quadro de Gestão do Projeto (GitHub Projects / Kanban):} \url{https://github.com/users/JoaoRajao/projects}
+    \item \textbf{Quadro de Gestão do Projeto (GitHub Projects / Kanban):} \url{https://github.com/users/JoaoRajao/projects/4}
 \end{itemize}
 
 \bibliographystyle{sbc}
 \begin{thebibliography}{99}
 \bibitem{forsgren2018accelerate}
 Forsgren, N., Humble, J., \& Kim, G. (2018). \textit{Accelerate: The science of lean software and devops: Building and scaling high performing technology organizations}. IT Revolution.
+\bibitem{dora2024history}
+DORA. (2024). \textit{A history of DORA's software delivery metrics}. Disponível em: \url{https://dora.dev/insights/dora-metrics-history/}.
 \end{thebibliography}
 
 \end{document}
