@@ -2,15 +2,17 @@
 
 from __future__ import annotations
 
-import csv
-import os
-from calendar import monthrange
 from datetime import date, timedelta
-from pathlib import Path
 from typing import Iterator
 
 from labs.lab03_dora.pipeline import Context
-from shared.github_rest import GitHubNotFoundError, page_number
+from labs.lab03_dora.records import in_window as _in_window
+from labs.lab03_dora.records import months as _months
+from labs.lab03_dora.records import write_csv as _write_csv
+from shared.github_rest import GitHubAPIError, GitHubNotFoundError, page_number
+
+# 403 sem rate limit (acesso bloqueado), 409 (repositorio vazio) e 451 (bloqueio legal): o candidato e descartado.
+UNAVAILABLE_STATUSES = {403, 409, 451}
 
 SEARCH_RANGES = ((10001, 1000000), (5001, 10000), (2001, 5000), (1001, 2000))
 VALID_CONCLUSIONS = {"success", "failure", "timed_out", "startup_failure"}
@@ -47,20 +49,6 @@ def _search_range(client, low: int, high: int) -> Iterator[dict]:
 def candidates(client) -> Iterator[dict]:
     for low, high in SEARCH_RANGES:
         yield from _search_range(client, low, high)
-
-
-def _in_window(value: str | None, start: date, end: date) -> bool:
-    return bool(value and start <= date.fromisoformat(value[:10]) <= end)
-
-
-def _months(start: date, end: date) -> Iterator[tuple[date, date]]:
-    year, month = start.year, start.month
-    while (year, month) <= (end.year, end.month):
-        first = max(start, date(year, month, 1))
-        last = min(end, date(year, month, monthrange(year, month)[1]))
-        yield first, last
-        month = month % 12 + 1
-        year += month == 1
 
 
 def _published_releases(client, repo: str, start: date, end: date, minimum: int) -> int:
@@ -115,8 +103,13 @@ def _valid_runs(client, repo: str, branch: str, start: date, end: date, minimum:
     return count
 
 
-def _contributors(client, repo: str) -> int:
-    response = client.get(f"/repos/{repo}/contributors", {"per_page": 1, "anon": "true"})
+def _contributors(client, repo: str) -> int | str:
+    try:
+        response = client.get(f"/repos/{repo}/contributors", {"per_page": 1, "anon": "true"})
+    except GitHubAPIError as error:
+        if error.status != 403:
+            raise
+        return ""  # "contributor list is too large": a API nao conta; fica vazio no CSV
     return page_number(response.links.get("last")) or len(response.data or [])
 
 
@@ -148,19 +141,11 @@ def inspect(client, candidate: dict, config) -> tuple[dict, dict | None]:
                         default_branch=branch, published_releases=releases, valid_workflow_runs=runs)
         decision.update(decision="included", reason="included")
         return decision, metadata
-    except GitHubNotFoundError:
+    except GitHubAPIError as error:
+        if not isinstance(error, GitHubNotFoundError) and error.status not in UNAVAILABLE_STATUSES:
+            raise
         decision["reason"] = "repository_unavailable"
         return decision, None
-
-
-def _write_csv(path: Path, fields: tuple[str, ...], rows: list[dict]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_name(path.name + ".tmp")
-    with temporary.open("w", newline="", encoding="utf-8") as file:
-        writer = csv.DictWriter(file, fieldnames=fields)
-        writer.writeheader()
-        writer.writerows(rows)
-    os.replace(temporary, path)
 
 
 def run(ctx: Context) -> None:

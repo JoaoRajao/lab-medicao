@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import csv
 import os
+from calendar import monthrange
 from datetime import date, datetime, timezone
 from pathlib import Path
+from typing import Iterator
 
 
 def timestamp(value: str) -> datetime:
@@ -15,6 +17,15 @@ def timestamp(value: str) -> datetime:
 
 def in_window(value: str | None, start: date, end: date) -> bool:
     return bool(value and start <= timestamp(value).date() <= end)
+
+
+def months(start: date, end: date) -> Iterator[tuple[date, date]]:
+    """Fatia a janela em meses de calendario (o primeiro e o ultimo podem ser parciais)."""
+    year, month = start.year, start.month
+    while (year, month) <= (end.year, end.month):
+        yield max(start, date(year, month, 1)), min(end, date(year, month, monthrange(year, month)[1]))
+        month = month % 12 + 1
+        year += month == 1
 
 
 def selected_repositories(output_dir: Path) -> list[tuple[str, str]]:

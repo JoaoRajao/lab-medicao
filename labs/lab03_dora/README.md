@@ -36,9 +36,9 @@ comando de novo continua de onde parou, sem repetir chamadas ja feitas.
 
 | Arquivo | Colunas | Origem e significado |
 | --- | --- | --- |
-| `repositories.csv` | `repository`, `stars`, `language`, `contributors`, `created_at`, `age_days`, `default_branch`, `published_releases`, `valid_workflow_runs` | Uma linha por repositorio incluido. Estrelas, linguagem, criacao e branch vem da busca; contribuidores incluem anonimos, contados pela ultima pagina da API; idade e dias entre criacao e fim da janela. As duas contagens se referem a janela configurada. |
+| `repositories.csv` | `repository`, `stars`, `language`, `contributors`, `created_at`, `age_days`, `default_branch`, `published_releases`, `valid_workflow_runs` | Uma linha por repositorio incluido. Estrelas, linguagem, criacao e branch vem da busca; contribuidores incluem anonimos, contados pela ultima pagina da API (vazio quando a API recusa a contagem por a lista ser grande demais); idade e dias entre criacao e fim da janela. As duas contagens se referem a janela configurada. |
 | `selection_decisions.csv` | `repository`, `decision`, `reason`, `stars`, `releases`, `valid_workflow_runs` | Uma linha por candidato examinado, na ordem de busca; campos de contagem ficam vazios quando o candidato e descartado antes daquela consulta. |
-| `selection_funnel.csv` | `stage`, `remaining`, `excluded` | Contagem dos candidatos examinados e de cada descarte (`no_actions`, `insufficient_releases`, `insufficient_workflow_runs`, `repository_unavailable`). A ultima linha mostra a amostra incluida. |
+| `selection_funnel.csv` | `stage`, `remaining`, `excluded` | Contagem dos candidatos examinados e de cada descarte (`no_actions`, `insufficient_releases`, `insufficient_workflow_runs`, `repository_unavailable`). A ultima linha mostra a amostra incluida. `repository_unavailable` cobre repositorios removidos (404), bloqueados (403/451) ou vazios (409), em qualquer etapa da inspecao. |
 
 A busca percorre faixas de estrelas acima de 1.000, das maiores para as menores, dividindo automaticamente
 qualquer faixa com mais de 1.000 resultados. Ela para ao atingir `amostra.repositorios`. Assim, o funil
@@ -55,15 +55,21 @@ serao produzidas pelas etapas de releases (#61) e workflow runs (#62).
 
 | Arquivo | Conteudo |
 | --- | --- |
-| `releases.csv` | Uma linha por release principal publicada na janela; inclui tag anterior, resultado do compare, commits examinados e lead time por release em horas. A release anterior pode estar fora da janela. |
+| `releases.csv` | Uma linha por release principal publicada na janela; inclui tag anterior, resultado do compare, `compare_api_status` (`ahead`, `diverged`...), commits examinados, commits com lead time negativo e lead time por release em horas. A release anterior pode estar fora da janela. |
 | `release_commits.csv` | Um commit por linha, com `commit.author.date` e lead time individual em horas. |
 | `pre_releases.csv` | Pre-releases publicadas na janela, separadas da definicao principal para a RQ 07. |
-| `tags.csv` | Tags cujos commits apontados tem `commit.author.date` na janela, com nome, SHA e data; `commit_404` registra tags sem commit acessivel. |
-| `lead_time_metrics.csv` | Por repositorio: contagens, compares 404 e medianas `lead_time_a_hours` (por release) e `lead_time_b_hours` (por commit). Valor vazio significa que nao houve observacao calculavel. |
+| `tags.csv` | Tags cujos commits apontados tem `commit.author.date` na janela, com nome, SHA e data; `not_a_commit` registra tags que apontam para outro tipo de objeto. Coletadas via GraphQL, 100 por chamada e ordenadas pela data do commit, parando ao sair da janela. |
+| `lead_time_metrics.csv` | Por repositorio: contagens, compares 404, releases `diverged`, commits com lead time negativo e medianas `lead_time_a_hours` (por release) e `lead_time_b_hours` (por commit). Valor vazio significa que nao houve observacao calculavel. |
 
 A primeira release da historia nao tem base de comparacao. Um compare 404 e registrado e a release sai das
 medianas. Releases sem commits novos tambem nao entram nas medianas. Datas negativas de lead time, se
-aparecerem por rebase ou datas inconsistentes, permanecem no CSV para auditoria.
+aparecerem por rebase ou datas inconsistentes, permanecem no CSV e sao contadas para auditoria.
+
+A release anterior e a publicada imediatamente antes por data, como no enunciado. Quando ela nao e
+ancestral de R (ex.: backport `v1.2.5` publicado depois de `v2.0.0`), o compare devolve `diverged` e o
+conjunto de commits pode nao representar a mudanca entregue; esses casos sao contados para a secao de
+ameacas a validade. Se o compare devolver menos commits que o `total_commits` informado pela API, a etapa
+para com erro em vez de calcular lead time com commits faltando.
 
 ### Saida de workflow runs, CFR e recuperacao (#62)
 
@@ -138,8 +144,10 @@ client.rate_limit()                                                      # nao c
   (1 s, 2 s, 4 s, 8 s, 16 s) ate `api.max_tentativas`.
 - **404/410** (ex.: `compare` com tag apagada) levantam `GitHubNotFoundError` e tambem ficam no cache, para
   a retomada nao repetir a chamada. Outros erros 4xx levantam `GitHubAPIError` e nao sao cacheados.
-- A coleta usa a API REST, implementada com a biblioteca padrao (sem PyGithub ou equivalentes, proibidos
-  pelo enunciado). O `shared/github_client.py` continua disponivel para consultas GraphQL.
+- **GraphQL:** `client.graphql(query, variables, cache_key)` usa o mesmo cache e o mesmo tratamento de
+  erros, e consome a cota do GraphQL, separada da cota REST. E usado nas tags.
+- A coleta usa a API REST e GraphQL, implementadas com a biblioteca padrao (sem PyGithub ou equivalentes,
+  proibidos pelo enunciado).
 
 ## Testes e CI
 

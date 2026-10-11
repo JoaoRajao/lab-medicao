@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-from calendar import monthrange
 from datetime import date, timedelta
 
 from labs.lab03_dora.metricas.workflows import cfr_a, classify, recovery_episodes, recovery_summary
 from labs.lab03_dora.pipeline import Context
-from labs.lab03_dora.records import in_window, selected_repositories, write_csv
+from labs.lab03_dora.records import in_window, months, selected_repositories, write_csv
 from shared.github_rest import page_number
 
 RUN_FIELDS = (
@@ -25,16 +24,6 @@ METRIC_FIELDS = (
     "censored_episode_ratio", "recovery_median_hours", "months_with_runs",
     "first_observed_run_at", "last_observed_run_at",
 )
-
-
-def months(start: date, end: date):
-    year, month = start.year, start.month
-    while (year, month) <= (end.year, end.month):
-        first = max(start, date(year, month, 1))
-        last = min(end, date(year, month, monthrange(year, month)[1]))
-        yield first, last
-        month = month % 12 + 1
-        year += month == 1
 
 
 def collect_interval(client, repo: str, branch: str, first: date, last: date) -> tuple[list[dict], int, bool]:

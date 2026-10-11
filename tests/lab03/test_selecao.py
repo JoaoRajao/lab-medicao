@@ -8,7 +8,7 @@ import pytest
 from labs.lab03_dora import selecao
 from labs.lab03_dora.config import Config, Inclusion, Window
 from labs.lab03_dora.pipeline import Context
-from shared.github_rest import Response, build_url
+from shared.github_rest import GitHubAPIError, Response, build_url
 
 
 class FakeClient:
@@ -19,7 +19,10 @@ class FakeClient:
     def get(self, path, params=None):
         url = build_url(path, params)
         self.calls.append(url)
-        return self.responses[url]
+        value = self.responses[url]
+        if isinstance(value, Exception):
+            raise value
+        return value
 
     def paginate(self, path):
         return self.responses[path]
@@ -134,3 +137,27 @@ def test_run_count_splits_a_month_at_the_api_cap(monkeypatch):
         key("2025-10-02", "2025-10-02"): response({"total_count": 1, "workflow_runs": [valid(2)]}),
     })
     assert selecao._valid_runs(client, "a/repo", "main", date(2025, 10, 1), date(2026, 9, 30), 2) == 2
+
+
+def test_contributor_list_too_large_keeps_the_repository_with_blank_count():
+    url = build_url("/repos/big/repo/contributors", {"per_page": 1, "anon": "true"})
+    client = FakeClient({url: GitHubAPIError(403, url, "contributor list is too large")})
+    assert selecao._contributors(client, "big/repo") == ""
+
+    client = FakeClient({url: GitHubAPIError(500, url, "falhou apos 5 novas tentativas")})
+    with pytest.raises(GitHubAPIError):
+        selecao._contributors(client, "big/repo")
+
+
+@pytest.mark.parametrize("status", [403, 409, 451])
+def test_blocked_or_empty_repository_is_counted_as_unavailable(tmp_path, status):
+    url = build_url("/repos/x/repo/actions/workflows", {"per_page": 1})
+    client = FakeClient({url: GitHubAPIError(status, url, "blocked")})
+    assert selecao.inspect(client, candidate("x/repo"), config(tmp_path))[0]["reason"] == "repository_unavailable"
+
+
+def test_unexpected_api_errors_stop_the_selection(tmp_path):
+    url = build_url("/repos/x/repo/actions/workflows", {"per_page": 1})
+    client = FakeClient({url: GitHubAPIError(500, url, "falhou")})
+    with pytest.raises(GitHubAPIError):
+        selecao.inspect(client, candidate("x/repo"), config(tmp_path))
