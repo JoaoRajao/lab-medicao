@@ -11,14 +11,16 @@ from shared.github_rest import GitHubNotFoundError
 
 RELEASE_FIELDS = (
     "repository", "tag_name", "published_at", "previous_tag", "compare_status", "compare_api_status",
-    "commits_compared", "commits_missing_author_date", "negative_lead_time_commits", "lead_time_release_hours",
+    "commits_compared", "commits_missing_from_compare", "commits_missing_author_date", "negative_lead_time_commits",
+    "lead_time_release_hours",
 )
 COMMIT_FIELDS = ("repository", "release_tag", "commit_sha", "commit_author_at", "lead_time_hours")
 TAG_FIELDS = ("repository", "tag_name", "commit_sha", "commit_author_at", "status")
 PRERELEASE_FIELDS = ("repository", "tag_name", "published_at")
 METRIC_FIELDS = (
     "repository", "published_releases", "pre_releases", "tags_in_window", "releases_compared",
-    "compare_404_count", "releases_without_commits", "releases_diverged", "commits_compared",
+    "compare_404_count", "releases_without_commits", "releases_diverged", "releases_incomplete_compare",
+    "commits_compared",
     "commits_missing_author_date", "negative_lead_time_commits", "lead_time_a_hours", "lead_time_b_hours",
 )
 
@@ -126,7 +128,7 @@ def process_repository(client, repo: str, start, end) -> tuple[list[dict], list[
     commit_rows: list[dict] = []
     by_release: list[float] = []
     by_commit: list[float] = []
-    compare_404 = no_commits = missing_author = compared = diverged = negative = 0
+    compare_404 = no_commits = missing_author = compared = diverged = negative = incomplete = 0
     in_window_releases = 0
     for index, release in enumerate(regular):
         if not in_window(release["published_at"], start, end):
@@ -135,7 +137,8 @@ def process_repository(client, repo: str, start, end) -> tuple[list[dict], list[
         previous = regular[index - 1] if index else None
         row = dict(repository=repo, tag_name=release["tag_name"], published_at=release["published_at"],
                    previous_tag=previous["tag_name"] if previous else "", compare_status="", compare_api_status="",
-                   commits_compared=0, commits_missing_author_date=0, negative_lead_time_commits=0,
+                   commits_compared=0, commits_missing_from_compare=0, commits_missing_author_date=0,
+                   negative_lead_time_commits=0,
                    lead_time_release_hours="")
         if previous is None:
             row["compare_status"] = "first_release"
@@ -148,9 +151,11 @@ def process_repository(client, repo: str, start, end) -> tuple[list[dict], list[
             row["compare_status"] = "compare_404"
             release_rows.append(row)
             continue
-        if len(commits) != summary["total_commits"]:
-            raise RuntimeError(f"{repo}: compare {previous['tag_name']}...{release['tag_name']} devolveu "
-                               f"{len(commits)} de {summary['total_commits']} commits.")
+        # Em compares muito grandes a paginacao da API pode devolver alguns commits a menos que `total_commits`:
+        # a release segue no calculo e a diferenca fica registrada para auditoria.
+        missing = max(0, (summary["total_commits"] or 0) - len(commits))
+        row["commits_missing_from_compare"] = missing
+        incomplete += missing > 0
         # "diverged": a release anterior por data nao e ancestral de R (ex.: backport em outro branch).
         row["compare_api_status"] = summary["status"]
         diverged += summary["status"] == "diverged"
@@ -188,7 +193,8 @@ def process_repository(client, repo: str, start, end) -> tuple[list[dict], list[
     metric = dict(repository=repo, published_releases=in_window_releases, pre_releases=len(pre_rows),
                   tags_in_window=sum(row["status"] == "ok" for row in tag_rows),
                   releases_compared=len(by_release), compare_404_count=compare_404,
-                  releases_without_commits=no_commits, releases_diverged=diverged, commits_compared=compared,
+                  releases_without_commits=no_commits, releases_diverged=diverged,
+                  releases_incomplete_compare=incomplete, commits_compared=compared,
                   commits_missing_author_date=missing_author, negative_lead_time_commits=negative,
                   lead_time_a_hours=lead_a if lead_a is not None else "",
                   lead_time_b_hours=lead_b if lead_b is not None else "")

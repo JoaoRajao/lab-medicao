@@ -164,17 +164,19 @@ def test_diverged_compare_and_negative_lead_time_are_flagged():
     assert metric["negative_lead_time_commits"] == 1
 
 
-def test_compare_with_missing_commits_fails_loudly():
+def test_compare_with_missing_commits_is_flagged_and_still_measured():
     path = "/repos/group/repo/compare/v1...v2"
 
     class Truncated(Client):
         def get(self, path, params=None, slim=None):
-            return SimpleNamespace(data={"status": "ahead", "total_commits": 300})
+            return SimpleNamespace(data={"status": "ahead", "total_commits": 4})
 
     client = Truncated([release("v1", "2026-01-01T00:00:00Z"), release("v2", "2026-02-01T00:00:00Z")],
                        {path: [commit("a", "2026-01-20T00:00:00Z")]})
-    with pytest.raises(RuntimeError, match="1 de 300"):
-        releases.process_repository(client, "group/repo", START, END)
+    rows, _, _, _, metric = releases.process_repository(client, "group/repo", START, END)
+    assert rows[1]["commits_missing_from_compare"] == 3
+    assert rows[1]["compare_status"] == "ok"
+    assert metric["releases_incomplete_compare"] == 1
 
 
 def test_slim_compare_keeps_only_what_the_lab_uses():

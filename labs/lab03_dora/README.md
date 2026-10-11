@@ -68,8 +68,9 @@ aparecerem por rebase ou datas inconsistentes, permanecem no CSV e sao contadas 
 A release anterior e a publicada imediatamente antes por data, como no enunciado. Quando ela nao e
 ancestral de R (ex.: backport `v1.2.5` publicado depois de `v2.0.0`), o compare devolve `diverged` e o
 conjunto de commits pode nao representar a mudanca entregue; esses casos sao contados para a secao de
-ameacas a validade. Se o compare devolver menos commits que o `total_commits` informado pela API, a etapa
-para com erro em vez de calcular lead time com commits faltando.
+ameacas a validade. Em compares muito grandes, a paginacao da API pode devolver alguns commits a menos que o
+`total_commits` informado (ex.: 5.992 de 5.995). A release continua no calculo e a diferenca fica em
+`commits_missing_from_compare` e `releases_incomplete_compare`.
 
 ### Saida de workflow runs, CFR e recuperacao (#62)
 
