@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from http.client import IncompleteRead
 from urllib.error import URLError
 
 import pytest
@@ -225,10 +226,11 @@ def test_gives_up_after_max_retries():
 def test_network_errors_are_retried():
     clock = FakeClock()
     url = build_url("/x")
-    transport = FakeTransport({url: [URLError("sem rede"), TimeoutError(), (200, {"ok": True}, {})]})
+    transport = FakeTransport({url: [URLError("sem rede"), TimeoutError(), IncompleteRead(b"", 31_447_339),
+                                     (200, {"ok": True}, {})]})
 
     assert make_client(transport, clock=clock).get("/x").data == {"ok": True}
-    assert clock.sleeps == [1, 2]
+    assert clock.sleeps == [1, 2, 4]
 
 
 def test_not_found_raises_and_is_cached(tmp_path):

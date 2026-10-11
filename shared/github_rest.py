@@ -8,6 +8,7 @@ import ssl
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from http.client import HTTPException
 from pathlib import Path
 from typing import Any, Callable, Iterator
 from urllib.error import HTTPError, URLError
@@ -221,7 +222,8 @@ class GitHubRestClient:
                     status, headers, raw = self.transport(url, self._headers(), self.timeout)
                 else:
                     status, headers, raw = self.transport(url, self._headers(), self.timeout, body)
-            except (URLError, TimeoutError, ConnectionError) as error:
+            # HTTPException cobre respostas cortadas no meio (IncompleteRead), comuns em paginas grandes.
+            except (URLError, TimeoutError, ConnectionError, HTTPException) as error:
                 attempt = self._backoff_or_raise(attempt, url, 0, f"erro de rede: {error}")
                 continue
             self.requests_made += 1
