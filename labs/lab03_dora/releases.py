@@ -10,16 +10,16 @@ from labs.lab03_dora.records import in_window, selected_repositories, timestamp,
 from shared.github_rest import GitHubNotFoundError
 
 RELEASE_FIELDS = (
-    "repository", "tag_name", "published_at", "previous_tag", "compare_status",
-    "commits_compared", "commits_missing_author_date", "lead_time_release_hours",
+    "repository", "tag_name", "published_at", "previous_tag", "compare_status", "compare_api_status",
+    "commits_compared", "commits_missing_author_date", "negative_lead_time_commits", "lead_time_release_hours",
 )
 COMMIT_FIELDS = ("repository", "release_tag", "commit_sha", "commit_author_at", "lead_time_hours")
 TAG_FIELDS = ("repository", "tag_name", "commit_sha", "commit_author_at", "status")
 PRERELEASE_FIELDS = ("repository", "tag_name", "published_at")
 METRIC_FIELDS = (
     "repository", "published_releases", "pre_releases", "tags_in_window", "releases_compared",
-    "compare_404_count", "releases_without_commits", "commits_compared", "commits_missing_author_date",
-    "lead_time_a_hours", "lead_time_b_hours",
+    "compare_404_count", "releases_without_commits", "releases_diverged", "commits_compared",
+    "commits_missing_author_date", "negative_lead_time_commits", "lead_time_a_hours", "lead_time_b_hours",
 )
 
 
@@ -38,30 +38,68 @@ def collect_releases(client, repo: str, start, end) -> tuple[list[dict], list[di
     return regular, prereleases
 
 
+TAGS_QUERY = """
+query($owner: String!, $name: String!, $after: String) {
+  repository(owner: $owner, name: $name) {
+    refs(refPrefix: "refs/tags/", first: 100, after: $after,
+         orderBy: {field: TAG_COMMIT_DATE, direction: DESC}) {
+      pageInfo { hasNextPage endCursor }
+      nodes {
+        name
+        target {
+          __typename
+          ... on Commit { oid authoredDate committedDate }
+          ... on Tag { target { __typename ... on Commit { oid authoredDate committedDate } } }
+        }
+      }
+    }
+  }
+}
+"""
+
+
+def _tag_commit(target: dict | None) -> dict | None:
+    """Commit apontado pela tag (leve ou anotada); None se apontar para outra coisa."""
+    if target and target.get("__typename") == "Tag":
+        target = target.get("target")
+    return target if target and target.get("__typename") == "Commit" else None
+
+
 def collect_tags(client, repo: str, start, end) -> list[dict]:
+    """Tags com a data do commit apontado (variante da RQ 07), via GraphQL.
+
+    As tags vem ordenadas pela data do commit, da mais nova para a mais antiga: a coleta para quando a
+    pagina ja chegou antes da janela, em vez de consultar um commit por tag em toda a historia.
+    """
+    owner, name = repo.split("/", 1)
     rows: list[dict] = []
-    commit_dates: dict[str, str | None] = {}
-    for tag in client.paginate(f"/repos/{repo}/tags"):
-        sha = tag["commit"]["sha"]
-        if sha not in commit_dates:
-            try:
-                commit_dates[sha] = client.get(f"/repos/{repo}/commits/{quote(sha, safe='')}").data["commit"]["author"]["date"]
-            except GitHubNotFoundError:
-                commit_dates[sha] = None
-        author_at = commit_dates[sha]
-        if author_at and in_window(author_at, start, end):
-            rows.append(dict(repository=repo, tag_name=tag["name"], commit_sha=sha,
-                             commit_author_at=author_at, status="ok"))
-        elif author_at is None:
-            rows.append(dict(repository=repo, tag_name=tag["name"], commit_sha=sha,
-                             commit_author_at="", status="commit_404"))
-    return rows
+    after = None
+    while True:
+        data = client.graphql(TAGS_QUERY, {"owner": owner, "name": name, "after": after}, f"repos/{repo}/tags")
+        refs = data["repository"]["refs"]
+        reached_before_window = False
+        for node in refs["nodes"]:
+            commit = _tag_commit(node.get("target"))
+            if commit is None:
+                rows.append(dict(repository=repo, tag_name=node["name"], commit_sha="",
+                                 commit_author_at="", status="not_a_commit"))
+                continue
+            if timestamp(commit["committedDate"]).date() < start:
+                reached_before_window = True
+            if in_window(commit["authoredDate"], start, end):
+                rows.append(dict(repository=repo, tag_name=node["name"], commit_sha=commit["oid"],
+                                 commit_author_at=commit["authoredDate"], status="ok"))
+        if reached_before_window or not refs["pageInfo"]["hasNextPage"]:
+            return rows
+        after = refs["pageInfo"]["endCursor"]
 
 
-def compare_commits(client, repo: str, base_tag: str, head_tag: str) -> list[dict]:
-    base = quote(base_tag, safe="")
-    head = quote(head_tag, safe="")
-    return list(client.paginate(f"/repos/{repo}/compare/{base}...{head}", item_key="commits"))
+def compare_commits(client, repo: str, base_tag: str, head_tag: str) -> tuple[list[dict], dict]:
+    """Commits de `base...head`, paginando ate o fim, e o resumo do compare (status e total)."""
+    path = f"/repos/{repo}/compare/{quote(base_tag, safe='')}...{quote(head_tag, safe='')}"
+    first = client.get(path, {"per_page": 100}).data  # mesma URL da 1a pagina do paginate: vem do cache
+    commits = list(client.paginate(path, item_key="commits"))
+    return commits, {"status": first.get("status", ""), "total_commits": first.get("total_commits", len(commits))}
 
 
 def process_repository(client, repo: str, start, end) -> tuple[list[dict], list[dict], list[dict], list[dict], dict]:
@@ -72,7 +110,7 @@ def process_repository(client, repo: str, start, end) -> tuple[list[dict], list[
     commit_rows: list[dict] = []
     by_release: list[float] = []
     by_commit: list[float] = []
-    compare_404 = no_commits = missing_author = compared = 0
+    compare_404 = no_commits = missing_author = compared = diverged = negative = 0
     in_window_releases = 0
     for index, release in enumerate(regular):
         if not in_window(release["published_at"], start, end):
@@ -80,19 +118,26 @@ def process_repository(client, repo: str, start, end) -> tuple[list[dict], list[
         in_window_releases += 1
         previous = regular[index - 1] if index else None
         row = dict(repository=repo, tag_name=release["tag_name"], published_at=release["published_at"],
-                   previous_tag=previous["tag_name"] if previous else "", compare_status="",
-                   commits_compared=0, commits_missing_author_date=0, lead_time_release_hours="")
+                   previous_tag=previous["tag_name"] if previous else "", compare_status="", compare_api_status="",
+                   commits_compared=0, commits_missing_author_date=0, negative_lead_time_commits=0,
+                   lead_time_release_hours="")
         if previous is None:
             row["compare_status"] = "first_release"
             release_rows.append(row)
             continue
         try:
-            commits = compare_commits(client, repo, previous["tag_name"], release["tag_name"])
+            commits, summary = compare_commits(client, repo, previous["tag_name"], release["tag_name"])
         except GitHubNotFoundError:
             compare_404 += 1
             row["compare_status"] = "compare_404"
             release_rows.append(row)
             continue
+        if len(commits) != summary["total_commits"]:
+            raise RuntimeError(f"{repo}: compare {previous['tag_name']}...{release['tag_name']} devolveu "
+                               f"{len(commits)} de {summary['total_commits']} commits.")
+        # "diverged": a release anterior por data nao e ancestral de R (ex.: backport em outro branch).
+        row["compare_api_status"] = summary["status"]
+        diverged += summary["status"] == "diverged"
         if not commits:
             no_commits += 1
             row["compare_status"] = "no_commits"
@@ -107,6 +152,9 @@ def process_repository(client, repo: str, start, end) -> tuple[list[dict], list[
                 continue
             author_dates.append(author_at)
             hours = (timestamp(release["published_at"]) - timestamp(author_at)).total_seconds() / 3600
+            if hours < 0:  # data de autoria posterior a release (relogio errado, rebase): mantido e contado
+                negative += 1
+                row["negative_lead_time_commits"] += 1
             commit_rows.append(dict(repository=repo, release_tag=release["tag_name"], commit_sha=commit["sha"],
                                     commit_author_at=author_at, lead_time_hours=hours))
         row["commits_compared"] = len(commits)
@@ -124,8 +172,8 @@ def process_repository(client, repo: str, start, end) -> tuple[list[dict], list[
     metric = dict(repository=repo, published_releases=in_window_releases, pre_releases=len(pre_rows),
                   tags_in_window=sum(row["status"] == "ok" for row in tag_rows),
                   releases_compared=len(by_release), compare_404_count=compare_404,
-                  releases_without_commits=no_commits, commits_compared=compared,
-                  commits_missing_author_date=missing_author,
+                  releases_without_commits=no_commits, releases_diverged=diverged, commits_compared=compared,
+                  commits_missing_author_date=missing_author, negative_lead_time_commits=negative,
                   lead_time_a_hours=lead_a if lead_a is not None else "",
                   lead_time_b_hours=lead_b if lead_b is not None else "")
     return release_rows, commit_rows, tag_rows, pre_rows, metric

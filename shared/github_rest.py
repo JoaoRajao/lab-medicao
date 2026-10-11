@@ -20,11 +20,12 @@ except ImportError:  # pragma: no cover - optional TLS certificate helper
     certifi = None
 
 API_URL = "https://api.github.com"
+GRAPHQL_URL = API_URL + "/graphql"
 CACHED_STATUSES = {404, 410}
-KEPT_HEADERS = ("link",)
+KEPT_HEADERS = ("link", "x-ratelimit-reset")
 
-# (url, headers, timeout) -> (status, headers em minusculas, corpo)
-Transport = Callable[[str, dict[str, str], float], tuple[int, dict[str, str], bytes]]
+# (url, headers, timeout[, corpo do POST]) -> (status, headers em minusculas, corpo)
+Transport = Callable[..., tuple[int, dict[str, str], bytes]]
 
 
 class GitHubAPIError(RuntimeError):
@@ -117,14 +118,17 @@ class ResponseCache:
             json.dump(record, file, ensure_ascii=False)
         os.replace(temporary, path)
 
+    def drop(self, url: str) -> None:
+        self.path_for(url).unlink(missing_ok=True)
+
 
 def urllib_transport(ssl_context: ssl.SSLContext | None = None) -> Transport:
     context = ssl_context or (
         ssl.create_default_context(cafile=certifi.where()) if certifi is not None else ssl.create_default_context()
     )
 
-    def send(url: str, headers: dict[str, str], timeout: float) -> tuple[int, dict[str, str], bytes]:
-        request = Request(url, headers=headers, method="GET")
+    def send(url: str, headers: dict[str, str], timeout: float, body: bytes | None = None) -> tuple[int, dict[str, str], bytes]:
+        request = Request(url, data=body, headers=headers, method="POST" if body is not None else "GET")
         try:
             with urlopen(request, timeout=timeout, context=context) as response:
                 return response.status, {k.lower(): v for k, v in response.headers.items()}, response.read()
@@ -175,11 +179,37 @@ class GitHubRestClient:
 
     def get(self, path_or_url: str, params: dict[str, Any] | None = None, use_cache: bool = True) -> Response:
         url = build_url(path_or_url, params)
+        return self._request(url, url, None, use_cache)
+
+    def graphql(self, query: str, variables: dict[str, Any], cache_key: str) -> dict[str, Any]:
+        """Executa uma query GraphQL e devolve `data`.
+
+        `cache_key` organiza o cache (ex.: `repos/owner/repo/tags`); a query e as variaveis entram no hash,
+        entao cada pagina tem seu proprio arquivo. A cota do GraphQL e separada da cota REST.
+        """
+        payload = json.dumps({"query": query, "variables": variables}, sort_keys=True)
+        digest = hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
+        key = f"{GRAPHQL_URL}/{cache_key.strip('/')}?q={digest}"
+        while True:
+            response = self._request(key, GRAPHQL_URL, payload.encode("utf-8"), True)
+            errors = (response.data or {}).get("errors") or []
+            if not errors:
+                return response.data["data"]
+            if self.cache is not None:
+                self.cache.drop(key)
+            if any(error.get("type") == "RATE_LIMITED" for error in errors):
+                self.sleep(self._rate_limit_wait({"x-ratelimit-remaining": "0", **response.headers}, 1))
+                continue
+            if all(error.get("type") == "NOT_FOUND" for error in errors):
+                raise GitHubNotFoundError(404, key, json.dumps(errors)[:300])
+            raise GitHubAPIError(200, key, json.dumps(errors)[:300])
+
+    def _request(self, cache_key: str, url: str, body: bytes | None, use_cache: bool) -> Response:
         if use_cache and self.cache is not None:
-            cached = self.cache.get(url)
+            cached = self.cache.get(cache_key)
             if cached is not None:
                 if cached["status"] in CACHED_STATUSES:
-                    raise GitHubNotFoundError(cached["status"], url, "(cache)")
+                    raise GitHubNotFoundError(cached["status"], cache_key, "(cache)")
                 return Response(cached["status"], cached["data"], cached.get("headers", {}), from_cache=True)
 
         attempt = 0
@@ -187,19 +217,22 @@ class GitHubRestClient:
         while True:
             self._wait_if_exhausted()
             try:
-                status, headers, body = self.transport(url, self._headers(), self.timeout)
+                if body is None:
+                    status, headers, raw = self.transport(url, self._headers(), self.timeout)
+                else:
+                    status, headers, raw = self.transport(url, self._headers(), self.timeout, body)
             except (URLError, TimeoutError, ConnectionError) as error:
                 attempt = self._backoff_or_raise(attempt, url, 0, f"erro de rede: {error}")
                 continue
             self.requests_made += 1
             self._update_rate_limit(headers)
-            text = body.decode("utf-8", errors="replace")
+            text = raw.decode("utf-8", errors="replace")
 
             if 200 <= status < 300:
                 data = json.loads(text) if text else None
                 kept = {k: headers[k] for k in KEPT_HEADERS if k in headers}
                 if use_cache and self.cache is not None:
-                    self.cache.put(url, status, data, kept)
+                    self.cache.put(cache_key, status, data, kept)
                 return Response(status, data, kept)
             if status in (403, 429) and self._is_rate_limited(status, headers, text):
                 rate_limit_waits += 1
@@ -210,7 +243,7 @@ class GitHubRestClient:
                 continue
             if status in CACHED_STATUSES:
                 if use_cache and self.cache is not None:
-                    self.cache.put(url, status, None, {})
+                    self.cache.put(cache_key, status, None, {})
                 raise GitHubNotFoundError(status, url, text)
             raise GitHubAPIError(status, url, text)
 

@@ -280,3 +280,54 @@ def test_sends_token_and_api_headers():
     headers = transport.headers_seen[0]
     assert headers["Authorization"] == f"Bearer {TOKEN}"
     assert headers["Accept"] == "application/vnd.github+json"
+
+
+class FakeGraphQL:
+    """Transporte para POST /graphql: responde em ordem e guarda os corpos enviados."""
+
+    def __init__(self, responses: list) -> None:
+        self.responses = list(responses)
+        self.bodies: list[dict] = []
+
+    def __call__(self, url, headers, timeout, body=None):
+        assert url == "https://api.github.com/graphql" and body is not None
+        self.bodies.append(json.loads(body))
+        status, payload, extra = self.responses.pop(0)
+        return status, extra, json.dumps(payload).encode("utf-8")
+
+
+def test_graphql_posts_query_and_caches_each_page_by_variables(tmp_path):
+    cache = ResponseCache(tmp_path)
+    transport = FakeGraphQL([(200, {"data": {"n": 1}}, {}), (200, {"data": {"n": 2}}, {})])
+    client = make_client(transport, cache)
+
+    assert client.graphql("query", {"after": None}, "repos/o/r/tags") == {"n": 1}
+    assert client.graphql("query", {"after": "x"}, "repos/o/r/tags") == {"n": 2}
+    assert make_client(FakeGraphQL([]), cache).graphql("query", {"after": "x"}, "repos/o/r/tags") == {"n": 2}
+    assert transport.bodies[1]["variables"] == {"after": "x"}
+    assert all(p.parent == tmp_path / "graphql" / "repos" / "o" / "r" for p in tmp_path.rglob("*.json"))
+    assert all(TOKEN not in p.read_text(encoding="utf-8") for p in tmp_path.rglob("*.json"))
+
+
+def test_graphql_waits_on_rate_limit_error_and_does_not_cache_it(tmp_path):
+    clock = FakeClock()
+    reset = str(int(clock.now) + 40)
+    transport = FakeGraphQL([
+        (200, {"errors": [{"type": "RATE_LIMITED"}]}, {"x-ratelimit-reset": reset}),
+        (200, {"data": {"ok": True}}, {}),
+    ])
+
+    assert make_client(transport, ResponseCache(tmp_path), clock=clock).graphql("q", {}, "x") == {"ok": True}
+    assert clock.sleeps == [41]
+
+
+def test_graphql_errors_are_raised_without_cache(tmp_path):
+    cache = ResponseCache(tmp_path)
+    missing = FakeGraphQL([(200, {"errors": [{"type": "NOT_FOUND"}], "data": {"repository": None}}, {})])
+    with pytest.raises(GitHubNotFoundError):
+        make_client(missing, cache).graphql("q", {}, "x")
+
+    broken = FakeGraphQL([(200, {"errors": [{"type": "INTERNAL", "message": "boom"}]}, {})])
+    with pytest.raises(GitHubAPIError):
+        make_client(broken, cache).graphql("q", {}, "x")
+    assert not list(tmp_path.rglob("*.json"))
