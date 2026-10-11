@@ -116,7 +116,9 @@ releases da janela (`random_state=42`). Grava em `labs/lab03_dora/amostra_ouro/`
 - `repositorios_sorteados.csv` e `releases_sorteadas.csv`: o sorteio, para auditoria;
 - `rotulagem_pedro.xlsx`, `rotulagem_joao.xlsx`, `rotulagem_salomao.xlsx`: uma planilha por avaliador, com
   links para o repositorio, para a pagina da release e para os commits desde a release anterior, e listas
-  de opcoes nas colunas de rotulo. As planilhas nao mostram a saida da heuristica.
+  de opcoes nas colunas de rotulo. Com `GITHUB_TOKEN` definido, a planilha tambem traz a descricao e os
+  topicos de cada repositorio, as notas de cada release e a primeira linha dos commits desde a release
+  anterior (respostas vindas do cache da coleta). As planilhas nao mostram a saida da heuristica.
 
 O comando se recusa a sobrescrever planilhas existentes (para nao apagar rotulos), a menos que receba
 `--forcar`. `amostra_ouro.read_labels(caminho)` le e valida uma planilha preenchida, para o calculo do

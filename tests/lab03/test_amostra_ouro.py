@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+from types import SimpleNamespace
+
 import pandas as pd
 import pytest
 from openpyxl import load_workbook
+
+from shared.github_rest import GitHubNotFoundError
 
 from labs.lab03_dora import amostra_ouro
 
@@ -72,11 +76,13 @@ def test_read_labels_accepts_complete_sheets_and_rejects_blanks(tmp_path):
         amostra_ouro.read_labels(path)
 
     book = load_workbook(path)
+    repo_col = {h: i + 1 for i, h in enumerate(amostra_ouro.REPO_HEADERS)}
+    rel_col = {h: i + 1 for i, h in enumerate(amostra_ouro.RELEASE_HEADERS)}
     for row in range(2, book["Repositorios"].max_row + 1):
-        book["Repositorios"].cell(row=row, column=3, value="biblioteca/framework")
-        book["Repositorios"].cell(row=row, column=4, value="sim")
+        book["Repositorios"].cell(row=row, column=repo_col["tipo_projeto"], value="biblioteca/framework")
+        book["Repositorios"].cell(row=row, column=repo_col["entregas_reais"], value="sim")
     for row in range(2, book["Releases"].max_row + 1):
-        book["Releases"].cell(row=row, column=6, value="nao")
+        book["Releases"].cell(row=row, column=rel_col["corretiva"], value="nao")
     book.save(path)
     repos, releases = amostra_ouro.read_labels(path)
     assert len(repos) == 60 and set(releases["corretiva"]) == {"nao"}
@@ -85,6 +91,49 @@ def test_read_labels_accepts_complete_sheets_and_rejects_blanks(tmp_path):
 def test_command_line_reports_missing_inputs(tmp_path):
     config = tmp_path / "config.yaml"
     config.write_text("janela:\n  inicio: 2025-10-01\n  fim: 2026-09-30\nsaida:\n  dados: .\n", encoding="utf-8")
-    assert amostra_ouro.main(["--config", str(config), "--saida", str(tmp_path / "ouro")]) == 1
+    no_token = lambda cfg: None
+    assert amostra_ouro.main(["--config", str(config), "--saida", str(tmp_path / "ouro")], no_token) == 1
     write_inputs(tmp_path)
-    assert amostra_ouro.main(["--config", str(config), "--saida", str(tmp_path / "ouro"), "--avaliadores", "x"]) == 0
+    args = ["--config", str(config), "--saida", str(tmp_path / "ouro"), "--avaliadores", "x"]
+    assert amostra_ouro.main(args, no_token) == 0
+
+
+class FakeClient:
+    """Responde /repos, /releases/tags e compare como a API, sem rede."""
+
+    def get(self, path, params=None):
+        parts = path.strip("/").split("/")
+        if len(parts) == 3:
+            return SimpleNamespace(data={"description": "=Biblioteca de exemplo\x07", "topics": ["python", "cli"]})
+        if "releases" in parts:
+            if parts[2] == "repo01":
+                raise GitHubNotFoundError(404, path, "")
+            return SimpleNamespace(data={"body": "## Bug fixes\r\n- fix crash ao abrir arquivo"})
+        return SimpleNamespace(data={"status": "ahead", "total_commits": 2})
+
+    def paginate(self, path, params=None, item_key=None):
+        return iter([{"commit": {"message": "fix: crash\n\ncorpo longo"}}, {"commit": {"message": "docs: readme"}}])
+
+
+def test_enriched_sheet_brings_notes_and_commit_messages_inline(tmp_path):
+    write_inputs(tmp_path)
+    path = amostra_ouro.generate(tmp_path, tmp_path / "ouro", ["pedro"], client=FakeClient())[0]
+    book = load_workbook(path)
+    repos = {h: c.value for h, c in zip(amostra_ouro.REPO_HEADERS, book["Repositorios"][2])}
+    assert repos["descricao"] == " =Biblioteca de exemplo"  # sem caractere de controle e sem virar formula
+    assert repos["topicos"] == "python, cli"
+    rows = [{h: c.value for h, c in zip(amostra_ouro.RELEASE_HEADERS, row)}
+            for row in book["Releases"].iter_rows(min_row=2)]
+    with_previous = next(r for r in rows if "compare" in r["link_commits"] and r["repositorio"] != "org/repo01")
+    assert with_previous["notas_da_release"] == "## Bug fixes\n- fix crash ao abrir arquivo"
+    assert with_previous["commits"] == "- fix: crash\n- docs: readme"
+    assert any(r["commits"].startswith("(primeira release") for r in rows)
+    assert all(r["notas_da_release"] == "(release nao encontrada na API)" for r in rows if r["repositorio"] == "org/repo01")
+
+
+def test_long_texts_are_cut_with_a_pointer_to_the_link():
+    assert amostra_ouro.cell_text("x" * 5000).endswith("[... texto cortado; veja o link]")
+    summary = amostra_ouro.commit_summary([f"commit {i}" for i in range(70)])
+    assert summary.splitlines()[-1] == "(+10 commits; veja o link)"
+    assert amostra_ouro.cell_text(None) == ""
+
