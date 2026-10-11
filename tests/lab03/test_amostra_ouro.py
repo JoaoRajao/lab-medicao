@@ -101,7 +101,7 @@ def test_command_line_reports_missing_inputs(tmp_path):
 class FakeClient:
     """Responde /repos, /releases/tags e compare como a API, sem rede."""
 
-    def get(self, path, params=None):
+    def get(self, path, params=None, slim=None):
         parts = path.strip("/").split("/")
         if len(parts) == 3:
             return SimpleNamespace(data={"description": "=Biblioteca de exemplo\x07", "topics": ["python", "cli"]})
@@ -111,7 +111,7 @@ class FakeClient:
             return SimpleNamespace(data={"body": "## Bug fixes\r\n- fix crash ao abrir arquivo"})
         return SimpleNamespace(data={"status": "ahead", "total_commits": 2})
 
-    def paginate(self, path, params=None, item_key=None):
+    def paginate(self, path, params=None, item_key=None, slim=None):
         return iter([{"commit": {"message": "fix: crash\n\ncorpo longo"}}, {"commit": {"message": "docs: readme"}}])
 
 
