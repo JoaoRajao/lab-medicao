@@ -12,7 +12,7 @@ inclusao:
   min_workflow_runs: 50    # runs validos (push no default branch) dentro da janela
 
 amostra:
-  repositorios: 100        # meta da S01; a S02 exige no minimo 300 apos os filtros
+  repositorios: 300        # S02: minimo de 300 repositorios apos os filtros (S01 usou 100)
 
 saida:
   dados: data              # CSVs de metricas e funil de selecao

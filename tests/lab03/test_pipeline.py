@@ -99,7 +99,9 @@ def test_resolve_returns_none_for_missing_function_and_reraises_inner_import_err
 
 
 def test_default_registry_points_to_the_component_issues():
-    assert [(s.name, s.issue) for s in pipeline.STAGES] == [("selecao", 60), ("releases", 61), ("workflow_runs", 62)]
+    assert [(s.name, s.issue) for s in pipeline.STAGES] == [
+        ("selecao", 60), ("releases", 61), ("workflow_runs", 62), ("dataset", 66)
+    ]
 
 
 def test_missing_token_is_reported(config_path, monkeypatch):

@@ -23,3 +23,6 @@ airflow/.env
 airflow/dbt/.user.yml
 labs/*/data/cache/
 .coverage
+# CSVs brutos do Lab03 grandes demais para o Git (centenas de MB); o pipeline os regenera a partir do cache
+labs/lab03_dora/data/release_commits.csv
+labs/lab03_dora/data/workflow_runs.csv

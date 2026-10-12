@@ -66,9 +66,13 @@ medianas. Releases sem commits novos tambem nao entram nas medianas. Datas negat
 aparecerem por rebase ou datas inconsistentes, permanecem no CSV e sao contadas para auditoria.
 
 A release anterior e a publicada imediatamente antes por data, como no enunciado. Quando ela nao e
-ancestral de R (ex.: backport `v1.2.5` publicado depois de `v2.0.0`), o compare devolve `diverged` e o
-conjunto de commits pode nao representar a mudanca entregue; esses casos sao contados para a secao de
-ameacas a validade. Em compares muito grandes, a paginacao da API pode devolver alguns commits a menos que o
+ancestral de R, o compare devolve `diverged`. Isso e comum em projetos que lancam a partir de branches de
+release (ex.: `vscode` 1.105.0 sai de `release/1.105`, que nao contem `release/1.104`): na coleta da S02,
+15% das releases e 155 dos 300 repositorios. O compare `anterior...R` usa o ancestral comum, entao conta os
+commits que entraram em R desde que as duas linhas se separaram. Esses casos ficam contados em
+`releases_diverged` para a secao de ameacas a validade.
+
+Em compares muito grandes, a paginacao da API pode devolver alguns commits a menos que o
 `total_commits` informado (ex.: 5.992 de 5.995). A release continua no calculo e a diferenca fica em
 `commits_missing_from_compare` e `releases_incomplete_compare`.
 
@@ -86,6 +90,51 @@ episodio so comeca na primeira falha apos um sucesso observado. A API do GitHub 
 tempo que a janela de 12 meses; meses sem resultados no CSV de auditoria precisam ser interpretados junto
 da politica de retencao do repositorio.
 
+### Dados da coleta versionados (S02)
+
+Os CSVs da coleta da S02 (janela 2025-10-01 a 2026-09-30, 300 repositorios) estao em `data/`. Dois arquivos
+brutos ficam fora do Git por tamanho e sao regenerados pelo pipeline: `release_commits.csv` (~440 MB, um
+commit por linha) e `workflow_runs.csv` (~390 MB, um run por linha). Todas as metricas do `dataset.csv`
+podem ser recalculadas a partir dos demais CSVs ou refazendo a coleta, que retoma do cache.
+
+### Dataset final e classificacao DORA (#65, #66)
+
+A etapa `dataset` junta `repositories.csv`, `lead_time_metrics.csv`, `workflow_metrics.csv` e, quando
+existir, `cfr_b_metrics.csv` em `dataset.csv`, uma linha por repositorio. Ela calcula a deployment frequency
+(releases na janela / semanas da janela) e a classificacao DORA de referencia (C1: release, lead time (a),
+CFR (a)) com os cortes da secao 5 do enunciado. Cada coluna esta documentada no
+[dicionario de dados](dicionario_de_dados.md).
+
+Como ela le apenas CSVs, da para refazer o dataset sem token e sem API:
+
+```bash
+python -m labs.lab03_dora.consolidacao --config labs/lab03_dora/config.yaml
+```
+
+A etapa de CFR (b) (#72) deve gravar `cfr_b_metrics.csv` com as colunas `repository`, `cfr_b`,
+`releases_evaluated` e `releases_censored`. Enquanto o arquivo nao existir, as colunas de CFR (b) do
+dataset ficam vazias.
+
+### Amostra-ouro (#67)
+
+```bash
+python -m labs.lab03_dora.amostra_ouro --config labs/lab03_dora/config.yaml
+```
+
+Sorteia 60 repositorios da amostra final (`repositories.sample(n=60, random_state=42)`) e, de cada um, ate 5
+releases da janela (`random_state=42`). Grava em `labs/lab03_dora/amostra_ouro/`:
+
+- `repositorios_sorteados.csv` e `releases_sorteadas.csv`: o sorteio, para auditoria;
+- `rotulagem_pedro.xlsx`, `rotulagem_joao.xlsx`, `rotulagem_salomao.xlsx`: uma planilha por avaliador, com
+  links para o repositorio, para a pagina da release e para os commits desde a release anterior, e listas
+  de opcoes nas colunas de rotulo. Com `GITHUB_TOKEN` definido, a planilha tambem traz a descricao e os
+  topicos de cada repositorio, as notas de cada release e a primeira linha dos commits desde a release
+  anterior (respostas vindas do cache da coleta). As planilhas nao mostram a saida da heuristica.
+
+O comando se recusa a sobrescrever planilhas existentes (para nao apagar rotulos), a menos que receba
+`--forcar`. `amostra_ouro.read_labels(caminho)` le e valida uma planilha preenchida, para o calculo do
+kappa (#71).
+
 ## Configuracao
 
 | Chave | Significado | Padrao |
@@ -93,7 +142,7 @@ da politica de retencao do repositorio.
 | `janela.inicio`, `janela.fim` | Janela de observacao de 12 meses (AAAA-MM-DD). Obrigatoria. | - |
 | `inclusao.min_releases` | Releases publicadas (`draft = false`) na janela | 5 |
 | `inclusao.min_workflow_runs` | Workflow runs validos (`event = push` no default branch) na janela | 50 |
-| `amostra.repositorios` | Tamanho alvo da amostra | 100 |
+| `amostra.repositorios` | Tamanho alvo da amostra (a S02 exige no minimo 300 apos os filtros) | 300 |
 | `saida.dados` | Pasta dos CSVs (metricas e funil) | `data` |
 | `saida.cache` | Pasta do cache da API (gitignored) | `data/cache` |
 | `api.max_tentativas` | Novas tentativas em erro 5xx ou de rede | 5 |
@@ -112,6 +161,7 @@ O pipeline roda as etapas em ordem. Cada etapa e uma funcao `run(ctx)` registrad
 | `selecao` | `labs/lab03_dora/selecao.py` | #60 (componente A) |
 | `releases` | `labs/lab03_dora/releases.py` | #61 (componente B) |
 | `workflow_runs` | `labs/lab03_dora/workflow_runs.py` | #62 (componente C) |
+| `dataset` | `labs/lab03_dora/consolidacao.py` | #66 |
 
 Contrato de uma etapa:
 
