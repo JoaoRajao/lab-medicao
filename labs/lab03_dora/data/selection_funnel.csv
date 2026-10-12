@@ -1,0 +1,6 @@
+stage,remaining,excluded
+candidates_examined,713,0
+no_actions,643,70
+insufficient_releases,346,297
+insufficient_workflow_runs,300,46
+repository_unavailable,300,0

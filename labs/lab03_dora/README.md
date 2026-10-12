@@ -66,9 +66,13 @@ medianas. Releases sem commits novos tambem nao entram nas medianas. Datas negat
 aparecerem por rebase ou datas inconsistentes, permanecem no CSV e sao contadas para auditoria.
 
 A release anterior e a publicada imediatamente antes por data, como no enunciado. Quando ela nao e
-ancestral de R (ex.: backport `v1.2.5` publicado depois de `v2.0.0`), o compare devolve `diverged` e o
-conjunto de commits pode nao representar a mudanca entregue; esses casos sao contados para a secao de
-ameacas a validade. Em compares muito grandes, a paginacao da API pode devolver alguns commits a menos que o
+ancestral de R, o compare devolve `diverged`. Isso e comum em projetos que lancam a partir de branches de
+release (ex.: `vscode` 1.105.0 sai de `release/1.105`, que nao contem `release/1.104`): na coleta da S02,
+15% das releases e 155 dos 300 repositorios. O compare `anterior...R` usa o ancestral comum, entao conta os
+commits que entraram em R desde que as duas linhas se separaram. Esses casos ficam contados em
+`releases_diverged` para a secao de ameacas a validade.
+
+Em compares muito grandes, a paginacao da API pode devolver alguns commits a menos que o
 `total_commits` informado (ex.: 5.992 de 5.995). A release continua no calculo e a diferenca fica em
 `commits_missing_from_compare` e `releases_incomplete_compare`.
 
@@ -85,6 +89,13 @@ O CFR usa todos os workflows juntos; o tempo de recuperacao nunca atravessa work
 episodio so comeca na primeira falha apos um sucesso observado. A API do GitHub pode reter runs por menos
 tempo que a janela de 12 meses; meses sem resultados no CSV de auditoria precisam ser interpretados junto
 da politica de retencao do repositorio.
+
+### Dados da coleta versionados (S02)
+
+Os CSVs da coleta da S02 (janela 2025-10-01 a 2026-09-30, 300 repositorios) estao em `data/`. Dois arquivos
+brutos ficam fora do Git por tamanho e sao regenerados pelo pipeline: `release_commits.csv` (~440 MB, um
+commit por linha) e `workflow_runs.csv` (~390 MB, um run por linha). Todas as metricas do `dataset.csv`
+podem ser recalculadas a partir dos demais CSVs ou refazendo a coleta, que retoma do cache.
 
 ### Dataset final e classificacao DORA (#65, #66)
 
