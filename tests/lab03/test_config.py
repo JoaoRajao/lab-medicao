@@ -88,3 +88,11 @@ def test_rejects_non_positive_criteria(tmp_path, value):
 def test_missing_file_is_reported(tmp_path):
     with pytest.raises(ConfigError, match="nao encontrado"):
         load_config(tmp_path / "nao_existe.yaml")
+
+
+def test_parallel_requests_default_and_validation(tmp_path):
+    assert load_config(DEFAULT_CONFIG).workers == 4
+    base = "janela:\n  inicio: 2025-10-01\n  fim: 2026-09-30\n"
+    assert load_config(write(tmp_path, base + "api:\n  requisicoes_paralelas: 1\n")).workers == 1
+    with pytest.raises(ConfigError, match="requisicoes_paralelas"):
+        load_config(write(tmp_path, base + "api:\n  requisicoes_paralelas: 0\n"))

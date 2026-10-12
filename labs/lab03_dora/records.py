@@ -4,10 +4,14 @@ from __future__ import annotations
 
 import csv
 import os
+from concurrent.futures import ThreadPoolExecutor
 from calendar import monthrange
 from datetime import date, datetime, timezone
 from pathlib import Path
-from typing import Iterator
+from typing import Callable, Iterator, TypeVar
+
+T = TypeVar("T")
+R = TypeVar("R")
 
 
 def timestamp(value: str) -> datetime:
@@ -66,3 +70,16 @@ def write_csv(path: Path, fields: tuple[str, ...], rows: list[dict]) -> None:
         writer.writeheader()
         writer.writerows(rows)
     os.replace(temporary, path)
+
+
+def map_repositories(function: Callable[[T], R], items: list[T], workers: int) -> list[R]:
+    """Aplica `function` a cada repositorio com ate `workers` em paralelo, mantendo a ordem de entrada.
+
+    A coleta e limitada pela latencia de cada requisicao (o `compare` leva ~2 s), nao pela cota: processar
+    varios repositorios ao mesmo tempo aproveita a cota de 5.000 requisicoes por hora. Um erro em qualquer
+    repositorio interrompe a etapa, como na versao sequencial; o cache garante a retomada.
+    """
+    if workers <= 1:
+        return [function(item) for item in items]
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        return list(pool.map(function, items))

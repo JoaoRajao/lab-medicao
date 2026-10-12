@@ -6,7 +6,7 @@ from datetime import date, timedelta
 
 from labs.lab03_dora.metricas.workflows import cfr_a, classify, recovery_episodes, recovery_summary
 from labs.lab03_dora.pipeline import Context
-from labs.lab03_dora.records import in_window, months, selected_repositories, slim_runs, write_csv
+from labs.lab03_dora.records import in_window, map_repositories, months, selected_repositories, slim_runs, write_csv
 from shared.github_rest import page_number
 
 RUN_FIELDS = (
@@ -98,10 +98,12 @@ def run(ctx: Context) -> None:
     all_audits: list[dict] = []
     all_episodes: list[dict] = []
     metrics: list[dict] = []
-    for repo, branch in selected_repositories(output):
-        runs, audits, episodes, metric = process_repository(
-            ctx.client, repo, branch, ctx.config.window.start, ctx.config.window.end
-        )
+    window = ctx.config.window
+    results = map_repositories(
+        lambda pair: process_repository(ctx.client, pair[0], pair[1], window.start, window.end),
+        selected_repositories(output), ctx.config.workers,
+    )
+    for runs, audits, episodes, metric in results:
         all_runs.extend(runs)
         all_audits.extend(audits)
         all_episodes.extend(episodes)

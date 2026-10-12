@@ -6,7 +6,9 @@ from urllib.parse import quote
 
 from labs.lab03_dora.metricas.lead_time import release_lead_times_hours, repository_lead_times_hours
 from labs.lab03_dora.pipeline import Context
-from labs.lab03_dora.records import in_window, selected_repositories, slim_releases, timestamp, write_csv
+from labs.lab03_dora.records import (
+    in_window, map_repositories, selected_repositories, slim_releases, timestamp, write_csv,
+)
 from shared.github_rest import GitHubNotFoundError
 
 RELEASE_FIELDS = (
@@ -208,10 +210,12 @@ def run(ctx: Context) -> None:
     all_tags: list[dict] = []
     all_prereleases: list[dict] = []
     metrics: list[dict] = []
-    for repo, _branch in selected_repositories(output):
-        releases, commits, tags, prereleases, metric = process_repository(
-            ctx.client, repo, ctx.config.window.start, ctx.config.window.end
-        )
+    window = ctx.config.window
+    results = map_repositories(
+        lambda pair: process_repository(ctx.client, pair[0], window.start, window.end),
+        selected_repositories(output), ctx.config.workers,
+    )
+    for releases, commits, tags, prereleases, metric in results:
         all_releases.extend(releases)
         all_commits.extend(commits)
         all_tags.extend(tags)

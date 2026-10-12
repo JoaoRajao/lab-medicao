@@ -21,3 +21,4 @@ saida:
 api:
   max_tentativas: 5        # novas tentativas em erro 5xx ou de rede (backoff 1, 2, 4, 8, 16 s)
   timeout_segundos: 30
+  requisicoes_paralelas: 4 # repositorios processados ao mesmo tempo nas etapas releases e workflow_runs

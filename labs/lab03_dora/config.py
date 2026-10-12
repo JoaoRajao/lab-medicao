@@ -44,6 +44,7 @@ class Config:
     cache_dir: Path
     max_retries: int
     timeout: int
+    workers: int = 1
 
 
 def _date(section: dict[str, Any], key: str) -> date:
@@ -96,4 +97,5 @@ def load_config(path: Path) -> Config:
         cache_dir=base / output_raw.get("cache", "data/cache"),
         max_retries=_positive_int(api_raw, "max_tentativas", 5, "api"),
         timeout=_positive_int(api_raw, "timeout_segundos", 30, "api"),
+        workers=_positive_int(api_raw, "requisicoes_paralelas", 4, "api"),
     )

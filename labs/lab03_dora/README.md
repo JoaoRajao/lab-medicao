@@ -98,6 +98,7 @@ da politica de retencao do repositorio.
 | `saida.cache` | Pasta do cache da API (gitignored) | `data/cache` |
 | `api.max_tentativas` | Novas tentativas em erro 5xx ou de rede | 5 |
 | `api.timeout_segundos` | Timeout de cada requisicao | 30 |
+| `api.requisicoes_paralelas` | Repositorios processados ao mesmo tempo nas etapas `releases` e `workflow_runs` (a coleta e limitada pela latencia, nao pela cota); `1` volta ao modo sequencial | 4 |
 
 Caminhos relativos sao resolvidos a partir da pasta do `config.yaml`.
 
