@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 from labs.lab03_dora.metricas.workflows import cfr_a, classify, recovery_episodes, recovery_summary
 from labs.lab03_dora.pipeline import Context
@@ -26,26 +26,50 @@ METRIC_FIELDS = (
 )
 
 
-def collect_interval(client, repo: str, branch: str, first: date, last: date) -> tuple[list[dict], int, bool]:
-    """Coleta tudo; subdivide um intervalo que pode ter sido truncado em 1.000."""
+API_CAP = 1000  # a listagem filtrada devolve no maximo 1.000 runs por consulta
+
+
+def _query(client, repo: str, branch: str, created: str) -> tuple[list[dict] | None, int]:
+    """Runs de uma faixa `created`, paginando ate o fim; None se a faixa atingiu o teto da API."""
     path = f"/repos/{repo}/actions/runs"
-    params = {"branch": branch, "event": "push", "created": f"{first}..{last}", "per_page": 100}
+    params = {"branch": branch, "event": "push", "created": created, "per_page": 100}
     response = client.get(path, params, slim=slim_runs)
     total = response.data["total_count"]
-    if total >= 1000:
-        if first == last:
-            raise RuntimeError(f"{repo}: >=1.000 workflow runs em {first}; nao e possivel garantir coleta completa.")
-        middle = first + timedelta(days=(last - first).days // 2)
-        left, _, _ = collect_interval(client, repo, branch, first, middle)
-        right, _, _ = collect_interval(client, repo, branch, middle + timedelta(days=1), last)
-        return left + right, total, True
+    if total >= API_CAP:
+        return None, total
     runs = list(response.data["workflow_runs"])
     next_page = page_number(response.links.get("next"))
     while next_page is not None:
         response = client.get(path, {**params, "page": next_page}, slim=slim_runs)
         runs.extend(response.data["workflow_runs"])
         next_page = page_number(response.links.get("next"))
-    return runs, total, False
+    return runs, total
+
+
+def collect_within_day(client, repo: str, branch: str, start: datetime, end: datetime) -> list[dict]:
+    """Divide um dia com 1.000 runs ou mais em faixas de horario (o filtro `created` aceita data e hora)."""
+    runs, _ = _query(client, repo, branch, f"{start:%Y-%m-%dT%H:%M:%SZ}..{end:%Y-%m-%dT%H:%M:%SZ}")
+    if runs is not None:
+        return runs
+    if end - start < timedelta(minutes=1):
+        raise RuntimeError(f"{repo}: >=1.000 workflow runs entre {start} e {end}; nao e possivel garantir coleta completa.")
+    middle = start + timedelta(seconds=int((end - start).total_seconds()) // 2)
+    return (collect_within_day(client, repo, branch, start, middle)
+            + collect_within_day(client, repo, branch, middle + timedelta(seconds=1), end))
+
+
+def collect_interval(client, repo: str, branch: str, first: date, last: date) -> tuple[list[dict], int, bool]:
+    """Coleta tudo; subdivide um intervalo que pode ter sido truncado em 1.000 (dias e, se preciso, horas)."""
+    runs, total = _query(client, repo, branch, f"{first}..{last}")
+    if runs is not None:
+        return runs, total, False
+    if first == last:
+        day = datetime(first.year, first.month, first.day)
+        return collect_within_day(client, repo, branch, day, day + timedelta(days=1, seconds=-1)), total, True
+    middle = first + timedelta(days=(last - first).days // 2)
+    left, _, _ = collect_interval(client, repo, branch, first, middle)
+    right, _, _ = collect_interval(client, repo, branch, middle + timedelta(days=1), last)
+    return left + right, total, True
 
 
 def collect_repository(client, repo: str, branch: str, start: date, end: date) -> tuple[list[dict], list[dict]]:

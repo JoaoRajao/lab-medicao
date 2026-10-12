@@ -77,7 +77,7 @@ ameacas a validade. Em compares muito grandes, a paginacao da API pode devolver 
 | Arquivo | Conteudo |
 | --- | --- |
 | `workflow_runs.csv` | Runs `push` no default branch criados na janela, inclusive conclusoes ignoradas, identificadas pela coluna `classification`. |
-| `workflow_run_months.csv` | Auditoria por mes: `api_total_count`, `hit_cap` e quantidade coletada. Meses com 1.000 ou mais resultados sao subdivididos ate que a coleta seja completa. |
+| `workflow_run_months.csv` | Auditoria por mes: `api_total_count`, `hit_cap` e quantidade coletada. Meses com 1.000 ou mais resultados sao subdivididos em dias e, se um dia ainda passar do teto, em faixas de horario (`created=AAAA-MM-DDTHH:MM:SSZ..`), ate que a coleta seja completa. |
 | `recovery_episodes.csv` | Episodios por workflow, com primeira falha, sucesso de recuperacao, duracao em horas ou `censored=true`. |
 | `workflow_metrics.csv` | Por repositorio: sucessos, falhas, ignorados, `cfr_a`, mediana de recuperacao em horas, proporcao de episodios censurados e primeiro/ultimo run observados. Valor vazio indica denominador zero. |
 

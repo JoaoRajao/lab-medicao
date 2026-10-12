@@ -84,10 +84,34 @@ def test_collection_splits_capped_interval_and_paginates(monkeypatch):
     assert len(client.calls) == 4
 
 
-def test_single_day_at_cap_fails_closed():
-    client = Client({key("2026-03-01", "2026-03-01"): response(1000, [])})
+def created_key(created, page=None):
+    params = {"branch": "main", "event": "push", "created": created, "per_page": 100}
+    if page:
+        params["page"] = page
+    return build_url("/repos/g/r/actions/runs", params)
+
+
+def test_single_day_at_cap_is_split_by_time_of_day():
+    morning = run(1, 10, "2026-03-01T09:00:00Z", "success")
+    evening = run(2, 10, "2026-03-01T20:00:00Z", "failure")
+    client = Client({
+        key("2026-03-01", "2026-03-01"): response(1231, []),
+        created_key("2026-03-01T00:00:00Z..2026-03-01T23:59:59Z"): response(1231, []),
+        created_key("2026-03-01T00:00:00Z..2026-03-01T11:59:59Z"): response(382, [morning]),
+        created_key("2026-03-01T12:00:00Z..2026-03-01T23:59:59Z"): response(849, [evening]),
+    })
+    runs, total, split = workflow_runs.collect_interval(client, "g/r", "main", date(2026, 3, 1), date(2026, 3, 1))
+    assert [item["id"] for item in runs] == [1, 2]
+    assert (total, split) == (1231, True)
+
+
+def test_a_minute_still_at_cap_fails_closed():
+    class Capped(Client):
+        def get(self, path, params, slim=None):
+            return response(1000, [])
+
     with pytest.raises(RuntimeError, match="nao e possivel garantir"):
-        workflow_runs.collect_interval(client, "g/r", "main", date(2026, 3, 1), date(2026, 3, 1))
+        workflow_runs.collect_interval(Capped({}), "g/r", "main", date(2026, 3, 1), date(2026, 3, 1))
 
 
 def test_stage_reads_selection_and_writes_metric_csvs(monkeypatch, tmp_path):
