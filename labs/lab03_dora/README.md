@@ -111,9 +111,23 @@ Como ela le apenas CSVs, da para refazer o dataset sem token e sem API:
 python -m labs.lab03_dora.consolidacao --config labs/lab03_dora/config.yaml
 ```
 
-A etapa de CFR (b) (#72) deve gravar `cfr_b_metrics.csv` com as colunas `repository`, `cfr_b`,
-`releases_evaluated` e `releases_censored`. Enquanto o arquivo nao existir, as colunas de CFR (b) do
-dataset ficam vazias.
+A etapa de CFR (b) (#72) grava `cfr_b_metrics.csv` com as colunas `repository`, `cfr_b`,
+`releases_evaluated` e `releases_censored`.
+
+### CFR (b) — heuristica inicial (#72)
+
+```bash
+python -m labs.lab03_dora.cfr_b --config labs/lab03_dora/config.yaml
+python -m labs.lab03_dora.consolidacao --config labs/lab03_dora/config.yaml
+```
+
+A versao `semver-patch-v1` marca uma release como corretiva se o numero patch do SemVer aumenta sem
+mudar major/minor. A funcao tambem reconhece palavras como `fix`, `hotfix` e `revert` quando ha texto
+disponivel; o `releases.csv` versionado nao contem notas nem mensagens dos commits, portanto a execucao
+sobre a amostra inteira usa apenas as tags. Este e um **proxy inicial**, ainda sem validacao contra o
+consenso da amostra-ouro. `cfr_b_releases.csv` registra a classificacao, sinal, versao, falha atribuida
+e censura para cada release; `cfr_b_metrics.csv` agrega por repositorio. Releases publicadas nos ultimos
+sete dias da janela sao censuradas. O dataset pode ser reconstruido sem token.
 
 ### Amostra-ouro (#67)
 
@@ -134,6 +148,37 @@ releases da janela (`random_state=42`). Grava em `labs/lab03_dora/amostra_ouro/`
 O comando se recusa a sobrescrever planilhas existentes (para nao apagar rotulos), a menos que receba
 `--forcar`. `amostra_ouro.read_labels(caminho)` le e valida uma planilha preenchida, para o calculo do
 kappa (#71).
+
+Para preparar a revisao independente de Joao, sem alterar a planilha:
+
+```bash
+python -m labs.lab03_dora.sugestoes_rotulagem
+python -m labs.lab03_dora.revisao_rotulagem
+```
+
+O arquivo `amostra_ouro/sugestoes_automaticas_joao.csv` contem 420 sugestoes (60 tipos de projeto,
+60 avaliacoes de entrega real e 300 releases). Elas sao **regras automaticas propostas por Codex**,
+identificadas como `regras-codex-v1`, e nao rotulos humanos nem inferencia de um modelo sobre cada item.
+`incerto` e confianca baixa indicam revisao obrigatoria. As colunas `rotulo_final`, `revisor` e
+`revisado_em` ficam vazias ate a revisao. Nao use esse arquivo como consenso nem para medir F1 da
+heuristica. Mesmo apos revisao, a procedencia correta e "automatico revisado por Joao".
+Abra `amostra_ouro/revisao_joao.html` no navegador para conferir as evidencias, selecionar cada
+rotulo e exportar `revisao_joao.csv`. O estado da pagina fica no armazenamento local do navegador;
+exporte o CSV para guardar uma copia. A planilha `rotulagem_joao.xlsx` permanece intacta ate que
+as decisoes sejam conferidas e incorporadas.
+
+Quando as tres planilhas estiverem completas, calcular concordancia e consenso com:
+
+```bash
+python -m labs.lab03_dora.validacao_amostra_ouro \
+  --predicoes labs/lab03_dora/data/cfr_b_releases.csv
+```
+
+O comando exige as tres planilhas completas, registra kappa de Fleiss por dimensao e gera
+`desempates_pendentes.csv`. Desempates 1-1-1 precisam ser resolvidos no arquivo `desempates.csv`
+(colunas `escopo,repositorio,tag,dimensao,rotulo,justificativa`) antes de gerar os CSVs de consenso
+e o F1. `validacao_relatorio.json` guarda os resultados calculados. O metodo e as decisoes devem ser
+descritos em `docs/lab03/validacao_amostra_ouro.md`.
 
 ## Configuracao
 
@@ -161,6 +206,7 @@ O pipeline roda as etapas em ordem. Cada etapa e uma funcao `run(ctx)` registrad
 | `selecao` | `labs/lab03_dora/selecao.py` | #60 (componente A) |
 | `releases` | `labs/lab03_dora/releases.py` | #61 (componente B) |
 | `workflow_runs` | `labs/lab03_dora/workflow_runs.py` | #62 (componente C) |
+| `cfr_b` | `labs/lab03_dora/cfr_b.py` | #72 |
 | `dataset` | `labs/lab03_dora/consolidacao.py` | #66 |
 
 Contrato de uma etapa:
