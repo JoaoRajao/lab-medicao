@@ -110,6 +110,41 @@ Em conformidade com as boas práticas de pesquisa empírica em engenharia de sof
 
 \textbf{Justificativa:} A inexistência de um padrão rígido de registro de deploys no GitHub faz com que a escolha do \textit{proxy} altere drasticamente as métricas absolutas calculadas, comprovando a sensibilidade das classificações DORA no universo open-source.
 
+\section{Metodologia}
+
+\subsection{Fonte de Dados e Janela Temporal}
+A coleta empírica baseia-se na extração automatizada de dados da API REST e GraphQL pública do GitHub. A janela temporal de observação abrange exatamente 12 meses: de \textbf{01/10/2025 a 30/09/2026}. Para mitigar oscilações transientes e garantir reprodutibilidade sob limites de taxa da API (\textit{rate limits}), todas as chamadas HTTP utilizam persistência de cache local em disco com retentativas exponenciais.
+
+Os dados minerados abrangem: metadados cadastrais dos repositórios (estrelas, tópicos, linguagem principal e contribuidores), histórico completo de releases e tags, execuções de fluxos de CI/CD via GitHub Actions e metadados de commits via Git API (\texttt{commit.author.date}, mensagens e comparações de histórico).
+
+\subsection{Funil de Seleção e Amostragem}
+A identificação dos projetos utilizou a busca particionada por faixas de estrelas decrescentes (\texttt{stars:>1000}), refinada pelos seguintes critérios sucessivos:
+\begin{enumerate}
+    \item \textbf{Candidatos Examinados:} 713 repositórios com maior popularidade (40.865 a 552.497 estrelas).
+    \item \textbf{Adoção de GitHub Actions:} 643 repositórios restantes (70 descartados por ausência de workflows declarados).
+    \item \textbf{Cadência Mínima de Releases:} 346 repositórios restantes (297 descartados por possuírem menos de 5 releases oficiais publicadas na janela temporal).
+    \item \textbf{Atividade Mínima de CI/CD:} 300 repositórios restantes (46 descartados por registrarem menos de 50 execuções válidas de workflow de CI com evento \texttt{push} na branch default).
+    \item \textbf{Amostra Final Consolidada:} 300 repositórios com cobertura completa de dados, abrangendo principalmente ecossistemas TypeScript (80), Python (71), Go (32), Rust (31) e JavaScript (29).
+\end{enumerate}
+
+\subsection{Definições Operacionais das Métricas DORA}
+Diante da ausência de registros nativos de deploy em produção na plataforma GitHub, as métricas foram operacionalizadas através das seguintes aproximações:
+\begin{itemize}
+    \item \textbf{Deployment Frequency (DF):} Número total de releases oficiais publicadas dividido pelo número de semanas da janela temporal.
+    \item \textbf{Lead Time for Changes (LTC):} Medido sob duas variantes: a variante por release (a), calculada entre a data da release e a data do commit mais antigo incorporado nela; e a variante por commit (b), calculada como a mediana do intervalo individual entre cada commit e a sua respectiva release.
+    \item \textbf{Change Failure Rate (CFR):} Medido sob duas variantes: a variante por CI (a), calculada como a razão entre execuções de CI falhas (\texttt{failure}, \texttt{timed\_out}, \texttt{startup\_failure}) e o total de execuções válidas; e a variante por release corretiva (b), fundamentada em heurística que identifica versões \textit{patch} (SemVer) lançadas em até 7 dias da anterior com termos corretivos nas notas ou commits.
+    \item \textbf{Failed Deployment Recovery Time (MTTR):} Tempo decorrido entre o encerramento de um workflow de CI que falhou e o término da primeira execução subsequente bem-sucedida na branch principal.
+\end{itemize}
+
+\subsection{Protocolo de Validação Manual (Amostra-Ouro)}
+Para calibrar e validar empiricamente a heurística de releases corretivas (CFR b) e caracterizar os repositórios, delineou-se um protocolo de validação manual cega:
+\begin{enumerate}
+    \item \textbf{Amostragem Reprodutível:} Com semente pseudoaleatória fixa (\texttt{SEED = 42}), foram sorteados 60 repositórios da amostra final e 5 releases de cada um, totalizando 300 releases.
+    \item \textbf{Avaliação Cega por Três Avaliadores:} Três pesquisadores avaliaram independentemente cada item sem visualização mútua das respostas e sem conhecimento da classificação prévia da heurística.
+    \item \textbf{Concordância Inter-Avaliadores:} O cálculo do coeficiente $\kappa$ de Fleiss revelou concordância razoável para a caracterização do tipo de projeto ($\kappa \approx 0{,}396$) e concordância leve para a classificação de releases corretivas ($\kappa \approx 0{,}088$ a $0{,}179$). Para a dimensão de entregas reais, a homogeneidade absoluta da amostra ($>98\%$ dos projetos realizam entregas reais) gerou o fenômeno estatístico conhecido como paradoxo da prevalência de Kappa ($\kappa \approx -0{,}011$).
+    \item \textbf{Consenso e Performance da Heurística:} O consenso derivado por maioria simples ($2/3$ dos votos) permitiu confrontar o padrão-ouro com a heurística automatizada \texttt{semver-patch-v1}. Os resultados demonstraram alta precisão de $91{,}30\%$, recall conservador de $52{,}94\%$ e F1-Score de $67{,}02\%$ ($0{,}6702$).
+\end{enumerate}
+
 \section{Metadados e Links do Repositório}
 
 Em cumprimento ao Critério de Aceitação e à Seção 8 das instruções da avaliação, os links para acompanhamento da execução e código-fonte do projeto estão listados a seguir:
