@@ -61,7 +61,7 @@ de um commit e `commit.author.date`.
 | `failed_runs` | inteiro | runs | Runs validos com `conclusion` em `failure`, `timed_out` ou `startup_failure` |
 | `ignored_runs` | inteiro | runs | Runs de push no default branch com outras conclusoes (`cancelled`, `skipped`, em andamento...) |
 | `cfr_a` | decimal | fracao (0 a 1) | Variante (a), proxy de CI: `failed_runs / workflow_runs_valid`, todos os workflows juntos |
-| `cfr_b` | decimal | fracao (0 a 1) | Variante (b), proxy de entrega: `releases que falharam / releases avaliadas`; R falhou se uma release corretiva foi publicada ate 7 dias depois. Vem de `cfr_b_metrics.csv` (heuristica da issue #72); vazio enquanto essa etapa nao existir |
+| `cfr_b` | decimal | fracao (0 a 1) | Variante (b), proxy de entrega: `releases que falharam / releases avaliadas`; R falhou se uma release corretiva foi publicada ate 7 dias depois. Vem de `cfr_b_metrics.csv` (heuristica inicial `semver-patch-v1` da issue #72, ainda sem validacao contra o consenso) |
 | `cfr_b_releases_evaluated` | inteiro | releases | Denominador do `cfr_b` |
 | `cfr_b_releases_censored` | inteiro | releases | Releases dos ultimos 7 dias da janela, fora do denominador (censura) |
 

@@ -66,7 +66,7 @@ def write_csv(path: Path, fields: tuple[str, ...], rows: list[dict]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(path.name + ".tmp")
     with temporary.open("w", newline="", encoding="utf-8") as file:
-        writer = csv.DictWriter(file, fieldnames=fields)
+        writer = csv.DictWriter(file, fieldnames=fields, lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
     os.replace(temporary, path)
