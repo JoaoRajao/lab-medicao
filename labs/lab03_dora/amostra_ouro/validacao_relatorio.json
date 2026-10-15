@@ -1,0 +1,36 @@
+{
+  "agreement": {
+    "tipo_projeto": {
+      "n": 60,
+      "categories": "aplicacao/servico|biblioteca/framework|ferramenta CLI|outro",
+      "kappa": 0.3963367443460315,
+      "interpretation": "razoavel"
+    },
+    "entregas_reais": {
+      "n": 60,
+      "categories": "incerto|sim",
+      "kappa": -0.011235955056187779,
+      "interpretation": "abaixo do acaso"
+    },
+    "corretiva": {
+      "n": 300,
+      "categories": "nao|sim",
+      "kappa": 0.0883921939361199,
+      "interpretation": "leve"
+    }
+  },
+  "pending_ties": 0,
+  "heuristic": {
+    "n": 300,
+    "precision": 0.9130434782608695,
+    "recall": 0.5294117647058824,
+    "f1": 0.6702127659574468,
+    "positive_support": 238,
+    "extra_predictions_ignored": 21830,
+    "heuristic_version": "semver-patch-v1",
+    "tn": 50,
+    "fp": 12,
+    "fn": 112,
+    "tp": 126
+  }
+}

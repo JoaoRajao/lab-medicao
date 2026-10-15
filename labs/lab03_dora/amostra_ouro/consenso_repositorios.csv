@@ -1,0 +1,61 @@
+repositorio,tag,tipo_projeto,tipo_projeto_criterio,entregas_reais,entregas_reais_criterio
+2dust/v2rayNG,,aplicacao/servico,maioria,sim,maioria
+ChromeDevTools/chrome-devtools-mcp,,aplicacao/servico,maioria,sim,maioria
+HKUDS/nanobot,,biblioteca/framework,maioria,sim,maioria
+MHSanaei/3x-ui,,outro,maioria,sim,maioria
+ManimCommunity/manim,,biblioteca/framework,maioria,sim,maioria
+NationalSecurityAgency/ghidra,,biblioteca/framework,maioria,sim,maioria
+OpenHands/OpenHands,,ferramenta CLI,maioria,sim,maioria
+PaddlePaddle/PaddleOCR,,biblioteca/framework,maioria,sim,maioria
+Panniantong/Agent-Reach,,ferramenta CLI,maioria,sim,maioria
+ToolJet/ToolJet,,biblioteca/framework,maioria,sim,maioria
+TryGhost/Ghost,,aplicacao/servico,maioria,sim,maioria
+abhigyanpatwari/GitNexus,,biblioteca/framework,maioria,sim,maioria
+anomalyco/opencode,,ferramenta CLI,maioria,sim,maioria
+apache/airflow,,aplicacao/servico,maioria,sim,maioria
+appwrite/appwrite,,aplicacao/servico,maioria,sim,maioria
+astral-sh/uv,,ferramenta CLI,maioria,sim,maioria
+axios/axios,,biblioteca/framework,maioria,sim,maioria
+career-ops-hq/career-ops,,ferramenta CLI,maioria,sim,maioria
+crewAIInc/crewAI,,biblioteca/framework,maioria,sim,maioria
+danielmiessler/Fabric,,biblioteca/framework,maioria,sim,maioria
+daytonaio/daytona,,aplicacao/servico,maioria,sim,maioria
+denoland/deno,,outro,maioria,sim,maioria
+files-community/Files,,aplicacao/servico,maioria,sim,maioria
+firecrawl/firecrawl,,biblioteca/framework,maioria,sim,maioria
+ggml-org/llama.cpp,,outro,maioria,sim,maioria
+harry0703/MoneyPrinterTurbo,,outro,maioria,sim,maioria
+hashicorp/terraform,,ferramenta CLI,maioria,sim,maioria
+headroomlabs-ai/headroom,,biblioteca/framework,maioria,sim,maioria
+huginn/huginn,,aplicacao/servico,maioria,sim,maioria
+langchain-ai/langchain,,biblioteca/framework,maioria,sim,maioria
+mermaid-js/mermaid,,outro,maioria,sim,maioria
+microsoft/monaco-editor,,biblioteca/framework,maioria,sim,maioria
+microsoft/playwright,,biblioteca/framework,maioria,sim,maioria
+mudler/LocalAI,,aplicacao/servico,maioria,sim,maioria
+multica-ai/multica,,aplicacao/servico,maioria,sim,maioria
+nestjs/nest,,biblioteca/framework,maioria,sim,maioria
+nuxt/nuxt,,biblioteca/framework,maioria,sim,maioria
+pathwaycom/pathway,,biblioteca/framework,maioria,sim,maioria
+prisma/orm,,ferramenta CLI,maioria,sim,maioria
+roboflow/supervision,,outro,maioria,sim,maioria
+rtk-ai/rtk,,ferramenta CLI,maioria,sim,maioria
+rust-lang/rust,,ferramenta CLI,maioria,sim,maioria
+ruvnet/ruflo,,biblioteca/framework,maioria,sim,maioria
+saadeghi/daisyui,,biblioteca/framework,maioria,sim,maioria
+serverless/serverless,,biblioteca/framework,maioria,sim,maioria
+sickn33/agentic-awesome-skills,,ferramenta CLI,maioria,sim,maioria
+starship/starship,,ferramenta CLI,maioria,sim,maioria
+storybookjs/storybook,,ferramenta CLI,maioria,sim,maioria
+streamlit/streamlit,,biblioteca/framework,maioria,sim,maioria
+supabase/supabase,,aplicacao/servico,maioria,sim,maioria
+sxyazi/yazi,,ferramenta CLI,maioria,sim,maioria
+thedotmack/claude-mem,,biblioteca/framework,maioria,sim,maioria
+tinyhumansai/openhuman,,aplicacao/servico,maioria,sim,maioria
+tt-a1i/archify,,ferramenta CLI,maioria,sim,maioria
+typst/typst,,ferramenta CLI,maioria,sim,maioria
+vectorize-io/hindsight,,biblioteca/framework,maioria,sim,maioria
+ventoy/Ventoy,,ferramenta CLI,maioria,sim,maioria
+vuetifyjs/vuetify,,biblioteca/framework,maioria,sim,maioria
+withastro/astro,,biblioteca/framework,maioria,sim,maioria
+yt-dlp/yt-dlp,,ferramenta CLI,maioria,sim,maioria
