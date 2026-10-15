@@ -149,23 +149,11 @@ O comando se recusa a sobrescrever planilhas existentes (para nao apagar rotulos
 `--forcar`. `amostra_ouro.read_labels(caminho)` le e valida uma planilha preenchida, para o calculo do
 kappa (#71).
 
-Para preparar a revisao independente de Joao, sem alterar a planilha:
-
-```bash
-python -m labs.lab03_dora.sugestoes_rotulagem
-python -m labs.lab03_dora.revisao_rotulagem
-```
-
-O arquivo `amostra_ouro/sugestoes_automaticas_joao.csv` contem 420 sugestoes (60 tipos de projeto,
-60 avaliacoes de entrega real e 300 releases). Elas sao **regras automaticas propostas por Codex**,
-identificadas como `regras-codex-v1`, e nao rotulos humanos nem inferencia de um modelo sobre cada item.
-`incerto` e confianca baixa indicam revisao obrigatoria. As colunas `rotulo_final`, `revisor` e
-`revisado_em` ficam vazias ate a revisao. Nao use esse arquivo como consenso nem para medir F1 da
-heuristica. Mesmo apos revisao, a procedencia correta e "automatico revisado por Joao".
-Abra `amostra_ouro/revisao_joao.html` no navegador para conferir as evidencias, selecionar cada
-rotulo e exportar `revisao_joao.csv`. O estado da pagina fica no armazenamento local do navegador;
-exporte o CSV para guardar uma copia. A planilha `rotulagem_joao.xlsx` permanece intacta ate que
-as decisoes sejam conferidas e incorporadas.
+A rotulagem de Joao sera transcrita das anotacoes em papel para
+`amostra_ouro/rotulagem_joao.csv` e depois para `rotulagem_joao.xlsx`. O CSV registra
+uma linha por decisao, com `escopo,repositorio,tag,dimensao,rotulo`. Sao esperadas 420
+decisoes: 60 tipos de projeto, 60 entregas reais e 300 releases. O arquivo nao deve
+ser preenchido por inferencia a partir dos demais avaliadores ou da heuristica.
 
 Quando as tres planilhas estiverem completas, calcular concordancia e consenso com:
 

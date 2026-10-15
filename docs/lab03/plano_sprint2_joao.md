@@ -15,13 +15,11 @@ Escopo de João: [#69](https://github.com/JoaoRajao/lab-medicao/issues/69),
 ## 1. #69 — rotulagem independente de João
 
 1. Usar `rotulagem_joao.xlsx` como registro final. Classificar `tipo_projeto` e `entregas_reais` nos 60 repositórios e `corretiva` nas 300 releases, sem consultar as planilhas dos outros avaliadores nem a saída da heurística.
-2. `labs/lab03_dora/sugestoes_rotulagem.py` já gerou `labs/lab03_dora/amostra_ouro/sugestoes_automaticas_joao.csv` com 420 sugestões e colunas vazias para decisão final, revisor e data. O método é `regras-codex-v1`: regras escritas pelo assistente, não uma inferência de modelo de linguagem por item. O arquivo não leu outras planilhas nem predições da #72 e não alterou `rotulagem_joao.xlsx`.
-3. A página `labs/lab03_dora/amostra_ouro/revisao_joao.html` já mostra evidências e sugestões para cada item, grava as escolhas no navegador e exporta `revisao_joao.csv`. Depois da revisão, conferir o CSV, preservar a sugestão e a origem por item e incorporar apenas os rótulos finais válidos a `rotulagem_joao.xlsx`. O registro por item deve usar `automatico_revisado` para decisões que partiram de sugestão; a planilha preserva o formato esperado por `read_labels()`.
+2. João declarou ter anotado as decisões independentemente em papel. Transcrever os 420 rótulos para `labs/lab03_dora/amostra_ouro/rotulagem_joao.csv`, com chaves `escopo,repositorio,tag,dimensao` e coluna `rotulo`. Não deduzir valores de sugestões automáticas ou das outras planilhas.
+3. Validar o CSV contra as chaves sorteadas, conferir valores e incorporar as decisões a `rotulagem_joao.xlsx`. Preservar o CSV para auditoria. A planilha mantém o formato esperado por `read_labels()`.
 4. Rodar `amostra_ouro.read_labels()` e verificar 60/300 linhas, chaves únicas, valores válidos e correspondência com os CSVs sorteados. Não executar `amostra_ouro.py --forcar`, que apagaria os rótulos. Commitar a planilha apenas após a revisão.
 
-**Registro no relatório:** em `docs/lab03/validacao_amostra_ouro.md`, criar a seção `Proveniência da rotulagem` com método, versão das regras, quantidade de rótulos humanos, revisados e não revisados, protocolo de revisão e limitações. O `labs/lab03_dora/README.md` aponta para essa seção. Assim, a origem fica registrada por item no CSV e resumida na metodologia do estudo.
-
-**Limite metodológico:** preenchimento inteiramente automático pode ser registrado como rotulagem por IA, mas não deve ser apresentado como julgamento independente de João. Para dispensar a revisão humana, o grupo precisa alterar e aprovar explicitamente o protocolo da amostra-ouro e os critérios de aceite da #69; nesse caso, usar um arquivo `rotulagem_ia.xlsx` separado e declarar na #71 e no relatório que o consenso inclui um avaliador automático. Não usar a heurística da #72 como rotulador, pois a validação ficaria circular.
+**Registro no relatório:** `docs/lab03/validacao_amostra_ouro.md` documenta a origem em papel e o processo de transcrição e conferência. Os rótulos só serão tratados como humanos depois que as decisões de João forem recebidas e transcritas.
 
 ## 2. #72 — heurística de release corretiva e CFR (b)
 
@@ -40,6 +38,6 @@ Escopo de João: [#69](https://github.com/JoaoRajao/lab-medicao/issues/69),
 ## Verificação e aceite
 
 - Fixar versões de `statsmodels` e `scikit-learn` em `requirements.txt`.
-- Adicionar testes com fixtures em `tests/lab03/` para a rotulagem assistida sem vazamento de dados, alinhamento por chave, planilhas incompletas, kappa, maioria, empate, precisão/recall/F1 e todos os casos de CFR (b). Atualizar `labs/lab03_dora/README.md` com os comandos reexecutáveis.
+- Adicionar testes com fixtures em `tests/lab03/` para a transcrição validada, alinhamento por chave, planilhas incompletas, kappa, maioria, empate, precisão/recall/F1 e todos os casos de CFR (b). Atualizar `labs/lab03_dora/README.md` com os comandos reexecutáveis.
 - Rodar `tests/lab03` e conferir os gates de cobertura do CI (Lab03 e `metricas/` >= 80%).
 - Aceite: planilha de João completa e auditável (#69); heurística versionada e CFR (b) por repositório (#72); três kappas, consenso sem pendências e avaliação da versão final da heurística (#71). A #71 aguarda a planilha do terceiro avaliador (#70), mesmo fora deste escopo.

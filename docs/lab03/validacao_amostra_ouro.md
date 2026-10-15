@@ -6,18 +6,11 @@ A amostra sorteada contém 60 repositórios e 300 releases. Pedro entregou sua p
 independente; as planilhas de João e Salomão ainda não têm rótulos finais. Nenhum kappa,
 consenso ou F1 foi reportado antes das três entregas.
 
-O arquivo `labs/lab03_dora/amostra_ouro/sugestoes_automaticas_joao.csv` contém 420
-sugestões preliminares, produzidas por `regras-codex-v1`. Esse método consiste em regras
-de texto propostas pelo assistente e executadas localmente, sem consultar rótulos de Pedro
-ou Salomão nem a saída da heurística da #72. As colunas `rotulo_final`, `revisor` e
-`revisado_em` permanecem vazias. As sugestões não compõem a amostra-ouro e não são
-tratadas como rótulos humanos.
-
-Quando João revisar cada item na página `labs/lab03_dora/amostra_ouro/revisao_joao.html`,
-exportar `revisao_joao.csv`, preservar a sugestão original e preencher
-`rotulagem_joao.xlsx` com os rótulos finais. A origem então será
-"automática revisada por João", mesmo que o rótulo final coincida com a sugestão.
-Rótulos inteiramente automáticos não podem ser apresentados como julgamento de João.
+João declarou ter registrado a rotulagem independentemente em papel. A transcrição para
+`labs/lab03_dora/amostra_ouro/rotulagem_joao.csv` e `rotulagem_joao.xlsx` está
+pendente do recebimento dessas anotações. O CSV deve conter 420 decisões identificadas
+por repositório, tag e dimensão. Nenhum valor será inferido de outras planilhas ou da
+heurística da #72.
 
 ## Protocolo de concordância
 
