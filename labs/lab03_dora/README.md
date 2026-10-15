@@ -149,11 +149,18 @@ O comando se recusa a sobrescrever planilhas existentes (para nao apagar rotulos
 `--forcar`. `amostra_ouro.read_labels(caminho)` le e valida uma planilha preenchida, para o calculo do
 kappa (#71).
 
-A rotulagem de Joao sera transcrita das anotacoes em papel para
-`amostra_ouro/rotulagem_joao.csv` e depois para `rotulagem_joao.xlsx`. O CSV registra
-uma linha por decisao, com `escopo,repositorio,tag,dimensao,rotulo`. Sao esperadas 420
-decisoes: 60 tipos de projeto, 60 entregas reais e 300 releases. O arquivo nao deve
-ser preenchido por inferencia a partir dos demais avaliadores ou da heuristica.
+A rotulagem de Joao foi registrada em `amostra_ouro/rotulagem_joao.csv` e incorporada a
+`rotulagem_joao.xlsx`. O CSV contem 420 decisoes: 60 tipos de projeto, 60 entregas reais
+e 300 releases, com sugestao original, evidencia e proveniencia `humano_assistido_ia`.
+Joao aprovou as sugestoes validas e decidiu `sim` para as 163 sugestoes `incerto` de
+corretividade. Esta rotulagem nao e independente das sugestoes de IA; veja
+`docs/lab03/validacao_amostra_ouro.md` antes de interpretar o kappa.
+
+Para reaplicar o CSV auditavel na planilha, sem editar celulas manualmente:
+
+```bash
+python -m labs.lab03_dora.aplicar_rotulagem_joao
+```
 
 Quando as tres planilhas estiverem completas, calcular concordancia e consenso com:
 

@@ -2,15 +2,17 @@
 
 ## Proveniência da rotulagem
 
-A amostra sorteada contém 60 repositórios e 300 releases. Pedro entregou sua planilha
-independente; as planilhas de João e Salomão ainda não têm rótulos finais. Nenhum kappa,
-consenso ou F1 foi reportado antes das três entregas.
+A amostra sorteada contém 60 repositórios e 300 releases. Pedro entregou sua planilha;
+João completou 420 rótulos com assistência de IA; a planilha de Salomão ainda está
+incompleta. Nenhum kappa, consenso ou F1 foi reportado antes das três entregas.
 
-João declarou ter registrado a rotulagem independentemente em papel. A transcrição para
-`labs/lab03_dora/amostra_ouro/rotulagem_joao.csv` e `rotulagem_joao.xlsx` está
-pendente do recebimento dessas anotações. O CSV deve conter 420 decisões identificadas
-por repositório, tag e dimensão. Nenhum valor será inferido de outras planilhas ou da
-heurística da #72.
+`labs/lab03_dora/amostra_ouro/rotulagem_joao.csv` registra cada rótulo final, a sugestão
+original, a evidência automática e a proveniência `humano_assistido_ia`. João confirmou as
+257 sugestões que já tinham rótulo válido e decidiu `sim` para as 163 sugestões de
+corretividade que a IA havia marcado `incerto`. As mesmas decisões foram incorporadas à
+planilha `rotulagem_joao.xlsx`. Portanto, os rótulos de João **não são independentes das
+sugestões de IA**; qualquer análise de concordância deve explicitar essa limitação. Não
+foram usados os rótulos de Pedro ou Salomão para preencher a planilha de João.
 
 ## Protocolo de concordância
 
