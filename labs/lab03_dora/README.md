@@ -244,6 +244,33 @@ client.rate_limit()                                                      # nao c
 - A coleta usa a API REST e GraphQL, implementadas com a biblioteca padrao (sem PyGithub ou equivalentes,
   proibidos pelo enunciado).
 
+## Analises da Sprint 3 (#75, #76 e #77)
+
+```bash
+python -m labs.lab03_dora.analises_s03
+```
+
+O comando le `data/dataset.csv`, `amostra_ouro/consenso_repositorios.csv` e
+`data/cfr_b_releases.csv`; nao usa token, nao chama a API e nao modifica esses arquivos.
+Os 13 CSVs de resultado ficam em `data/analise_s03/` e os dois graficos de dispersao
+em `docs/lab03/assets/`. `--dataset`, `--consenso`, `--releases`, `--saida` e
+`--figuras` permitem escolher outros caminhos. Consulte
+[`docs/lab03/resultados_s03.md`](../../docs/lab03/resultados_s03.md) para os resultados,
+as definicoes estatisticas e as limitacoes.
+
+As descritivas usam mediana, Q1, Q3 e IQR (quantis com interpolacao linear). Para
+RQ 03(b), a proporcao censurada usa as releases unicas do CSV auditavel; para RQ 04,
+usa os episodios de recuperacao. C1, C2 e C3 aplicam os mesmos cortes DORA de
+`metricas/dora.py`, mantendo a recuperacao constante. O comando verifica que C1
+coincide com as cinco notas e a categoria ja gravadas no dataset antes de gerar saidas.
+
+Na RQ 06, linguagem usa as cinco mais frequentes e `Outras`; estrelas e contribuidores
+usam quartis. O tipo de projeto vem do consenso dos 60 repositorios da amostra-ouro.
+Holm corrige os 16 testes globais em conjunto e, separadamente, as comparacoes de
+pares dentro de cada combinacao de fator e metrica. O bonus RQ 08 usa releases
+corretivas / releases principais unicas por repositorio, inclusive as censuradas
+para CFR (b): a censura se refere a observacao da falha posterior, nao ao tipo da release.
+
 ## Testes e CI
 
 ```bash

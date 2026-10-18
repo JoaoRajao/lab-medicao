@@ -1,0 +1,17 @@
+fator,metrica,n,grupos,h,p_valor,p_holm,epsilon2
+linguagem,deployment_frequency_per_week,300,6,15.931936,0.0070411117,0.098575564,0.053284065
+linguagem,lead_time_a_hours,299,6,27.91311,3.7850278e-05,0.00056775417,0.093668156
+linguagem,cfr_a,300,6,11.644645,0.039995093,0.5199362,0.038945303
+linguagem,recovery_median_hours,283,6,9.2890564,0.098075421,1,0.032939916
+estrelas,deployment_frequency_per_week,300,4,3.5206963,0.31808778,1,0.011774904
+estrelas,lead_time_a_hours,299,4,4.8997727,0.17928512,1,0.01644219
+estrelas,cfr_a,300,4,1.3181312,0.72483222,1,0.0044084655
+estrelas,recovery_median_hours,283,4,5.1712655,0.15967731,1,0.018337821
+contribuidores,deployment_frequency_per_week,300,4,4.0515048,0.25595598,1,0.013550183
+contribuidores,lead_time_a_hours,299,4,56.192803,3.821206e-12,6.1139295e-11,0.18856645
+contribuidores,cfr_a,300,4,2.7565417,0.43070399,1,0.0092192029
+contribuidores,recovery_median_hours,283,4,1.8940562,0.59468414,1,0.0067165112
+tipo_projeto,deployment_frequency_per_week,60,4,1.0786499,0.78223041,1,0.018282202
+tipo_projeto,lead_time_a_hours,60,4,0.31472774,0.95723521,1,0.0053343685
+tipo_projeto,cfr_a,60,4,1.4460665,0.69477288,1,0.024509602
+tipo_projeto,recovery_median_hours,57,4,0.98515545,0.80484384,1,0.017592062
