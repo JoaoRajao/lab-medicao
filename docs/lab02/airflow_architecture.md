@@ -4,13 +4,16 @@
 
 O pipeline automatiza a preparacao dos dados do experimento que compara desenvolvimento manual e
 desenvolvimento assistido por IA. O Apache Airflow coordena a ingestao em Python, a persistencia no
-DuckDB e em Parquet e a execucao dos modelos e testes dbt.
+DuckDB e em Parquet, a execucao dos modelos e testes dbt e a publicacao dos resultados para o
+dashboard Streamlit.
 
 A arquitetura separa dois planos:
 
 - **Plano de controle:** Airflow agenda, dispara, limita a concorrencia e registra o estado das
   execucoes no PostgreSQL.
 - **Plano de dados:** Python, DuckDB, Parquet e dbt processam e materializam os dados analiticos.
+- **Publicacao e exploracao:** apos os testes, um snapshot Parquet das tabelas gold alimenta o
+  Streamlit sem abrir o arquivo DuckDB durante as consultas da interface.
 
 ## Diagrama da arquitetura
 
@@ -20,7 +23,11 @@ diretamente no Excalidraw por **Open** ou arraste-o para a area de desenho. Os l
 Python, DuckDB, PostgreSQL e Parquet ja estao incorporados ao arquivo, portanto ele nao depende de
 imagens externas.
 
-![Arquitetura ilustrada do pipeline do Lab 2](lab02_pipeline_architecture.svg)
+O arquivo `.excalidraw` inclui a nova area de publicacao e exploracao. Para visualizar sem abrir
+o editor, use a [versao SVG](lab02_pipeline_architecture.svg) ou a
+[imagem PNG](lab02_pipeline_architecture.png).
+
+![Arquitetura ilustrada do pipeline do Lab 2, incluindo o dashboard](lab02_pipeline_architecture.png)
 
 O bloco abaixo e uma alternativa simplificada para Mermaid. Ao usar **Import Mermaid** no
 Excalidraw ou no draw.io, copie somente o conteudo entre as cercas de codigo: a primeira linha
@@ -80,12 +87,17 @@ flowchart LR
         GOLD3 --> TESTS
     end
 
+    PUBLISH["Publica gold em Parquet apos dbt test"]
+    SNAPSHOTS["data/published/lab02/*.parquet"]
+    DASHBOARD["Streamlit - filtros, graficos e CSV"]
+
     USER -->|"registra resultados"| INPUT
     USER -->|"acompanha execucoes"| UI
     INPUT --> PYTHON
     EXECUTOR -->|"executa ingestao"| PYTHON
     PARQUET -->|"publica atualizacao"| ASSET
     EXECUTOR -->|"executa dbt run e dbt test"| STAGING
+    TESTS --> PUBLISH --> SNAPSHOTS --> DASHBOARD --> USER
 ```
 
 ## Fluxo de processamento
@@ -103,6 +115,8 @@ flowchart LR
    `gold.lab02`.
 7. A DAG executa `dbt test` somente depois da materializacao dos modelos. Uma falha de qualidade
    deixa a execucao visivelmente marcada como falha na interface do Airflow.
+8. Apos testes bem-sucedidos, `shared.publish_gold` publica as tres tabelas gold em
+   `data/published/lab02/`. O Streamlit le esses Parquets sem acessar o arquivo DuckDB.
 
 ## Camadas de dados
 
@@ -115,6 +129,7 @@ flowchart LR
 | Gold | `gold_lab02_rq01_time` | Medianas e contagens para a analise de tempo. |
 | Gold | `gold_lab02_rq02_defects` | Taxas de sucesso e indicadores de defeitos. |
 | Gold | `gold_lab02_rq03_static_metrics` | Complexidade, manutenibilidade, LOC e duplicacao. |
+| Publicacao | `data/published/lab02/*.parquet` | Snapshots gold para leitura pelo dashboard. |
 
 ## Decisoes arquiteturais
 
@@ -145,9 +160,9 @@ tentam escrever simultaneamente no mesmo arquivo DuckDB.
 
 ## Implantacao local
 
-Todos os componentes rodam em containers Docker. O Compose inicia PostgreSQL, API server,
-scheduler, processador de DAGs e triggerer. O repositorio e montado em `/opt/airflow/project`, de
-forma que a ingestao, o profile dbt, o warehouse e os modelos sejam compartilhados pelos servicos.
+O Compose inicia PostgreSQL, Airflow e o Streamlit. O repositorio e montado nos containers, de
+forma que a ingestao, o profile dbt, o warehouse, os modelos e os snapshots sejam compartilhados.
+O Streamlit tambem pode rodar localmente com `streamlit run dashboard/app.py`.
 
 ```bash
 docker compose build

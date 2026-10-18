@@ -163,6 +163,29 @@ dbt run --select staging.lab01 gold.lab01
 dbt test --select staging.lab01 gold.lab01
 ```
 
+## Dashboard Streamlit
+
+O dashboard abre por padrao no Lab03, lendo `labs/lab03_dora/data/dataset.csv` diretamente.
+Os Labs 01 e 02 continuam consultando snapshots Parquet das tabelas gold; a DAG do Lab02 publica
+seus arquivos automaticamente depois de `dbt test`. Com o Compose, a interface sobe em
+<http://localhost:8501>. Para rodar sem Docker ou atualizar manualmente:
+
+```bash
+python -m shared.publish_gold --lab lab02
+streamlit run dashboard/app.py
+```
+
+Para incluir o Lab01, materialize e teste seus modelos e publique os resultados:
+
+```bash
+dbt run --select staging.lab01 gold.lab01
+dbt test --select staging.lab01 gold.lab01
+python -m shared.publish_gold --lab lab01
+```
+
+Os snapshots em `data/published/` sao locais e regeneraveis. O diagrama editavel do fluxo esta em
+[`docs/lab02/lab02_pipeline_architecture.excalidraw`](docs/lab02/lab02_pipeline_architecture.excalidraw).
+
 ## GitHub Token (`.env` na raiz)
 
 Tanto a ingestao de cada lab quanto o snapshot do Kanban usam o mesmo `GITHUB_TOKEN`, lido de um

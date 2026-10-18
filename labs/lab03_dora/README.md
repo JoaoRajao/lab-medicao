@@ -3,6 +3,38 @@
 Calcula as metricas DORA (deployment frequency, lead time for changes, change failure rate e tempo de
 recuperacao) a partir dos dados publicos de repositorios open-source que usam GitHub Actions.
 
+## Diagrama do Lab03
+
+![Fluxo de coleta, consolidacao DORA e dashboard do Lab03](../../docs/lab03/lab03_pipeline_architecture.png)
+
+[Abrir a imagem em tamanho completo](../../docs/lab03/lab03_pipeline_architecture.png) ·
+[Abrir o SVG](../../docs/lab03/lab03_pipeline_architecture.svg)
+
+O desenho mostra o fluxo real do Lab03: coleta da API do GitHub, calculo das metricas, geracao
+de `data/dataset.csv` e exploracao no Streamlit. O app le o CSV consolidado sem chamar a API.
+
+```mermaid
+flowchart LR
+    API[GitHub REST API] --> PIPE[Pipeline Python do Lab03]
+    PIPE --> REPOS[repositories.csv]
+    PIPE --> RELEASES[releases.csv]
+    PIPE --> RUNS[workflow_runs.csv]
+    RELEASES --> LEAD[lead_time_metrics.csv]
+    RELEASES --> CFRB[cfr_b_metrics.csv]
+    RUNS --> WORKFLOW[workflow_metrics.csv]
+    REPOS --> DATASET[dataset.csv]
+    LEAD --> DATASET
+    CFRB --> DATASET
+    WORKFLOW --> DATASET
+    DATASET --> APP[Streamlit: filtros, DORA C1 e CSV]
+```
+
+### Captura da interface Streamlit
+
+![Tela do Streamlit mostrando as metricas DORA do Lab03](../../docs/lab03/streamlit_dashboard_lab03.jpg)
+
+[Abrir a captura em tamanho completo](../../docs/lab03/streamlit_dashboard_lab03.jpg).
+
 Todos os comandos rodam a partir da raiz do repositorio, com o ambiente da raiz instalado
 (`pip install -r requirements.txt`, ver README raiz).
 

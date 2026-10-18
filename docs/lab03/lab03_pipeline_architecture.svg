@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1060" viewBox="0 0 1800 1060" role="img" aria-labelledby="title desc">
+<title id="title">Lab 03: pipeline DORA e dashboard Streamlit</title>
+<desc id="desc">Dados do GitHub são coletados e consolidados em dataset.csv, que alimenta a tela DORA.</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10Z" fill="#475569"/></marker></defs>
+<rect width="1800" height="1060" fill="#ffffff"/>
+<text x="60" y="62" font-family="Arial, sans-serif" font-size="36" font-weight="700" fill="#17324d">Lab 03 · Métricas DORA — da coleta à exploração</text>
+
+<rect x="35" y="100" width="1730" height="240" rx="16" fill="#e7f5ff" stroke="#1971c2" stroke-width="2"/>
+<text x="60" y="133" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#1864ab">1  COLETA</text>
+<rect x="80" y="170" width="310" height="125" rx="12" fill="#fff" stroke="#1971c2" stroke-width="2"/>
+<rect x="470" y="170" width="340" height="125" rx="12" fill="#fff" stroke="#1971c2" stroke-width="2"/>
+<rect x="900" y="170" width="260" height="125" rx="12" fill="#fff" stroke="#1971c2" stroke-width="2"/>
+<rect x="1190" y="170" width="260" height="125" rx="12" fill="#fff" stroke="#1971c2" stroke-width="2"/>
+<rect x="1480" y="170" width="240" height="125" rx="12" fill="#fff" stroke="#1971c2" stroke-width="2"/>
+<text x="105" y="207" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#1864ab">GitHub REST API</text>
+<text x="105" y="241" font-family="Arial, sans-serif" font-size="18" font-weight="400" fill="#526779">Repositórios, releases</text>
+<text x="105" y="267" font-family="Arial, sans-serif" font-size="18" font-weight="400" fill="#526779">e GitHub Actions</text>
+<text x="495" y="207" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#1864ab">Pipeline Python</text>
+<text x="495" y="241" font-family="Arial, sans-serif" font-size="18" font-weight="400" fill="#526779">Cache, retry e retomada</text>
+<text x="495" y="267" font-family="Arial, sans-serif" font-size="18" font-weight="400" fill="#526779">labs/lab03_dora</text>
+<text x="925" y="207" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#1864ab">Seleção</text>
+<text x="925" y="241" font-family="Arial, sans-serif" font-size="18" font-weight="400" fill="#526779">repositories.csv</text>
+<text x="1215" y="207" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#1864ab">Releases</text>
+<text x="1215" y="241" font-family="Arial, sans-serif" font-size="18" font-weight="400" fill="#526779">releases.csv</text>
+<text x="1505" y="207" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#1864ab">Workflows</text>
+<text x="1505" y="241" font-family="Arial, sans-serif" font-size="18" font-weight="400" fill="#526779">workflow_runs.csv</text>
+<path d="M390 232 H470" fill="none" stroke="#1971c2" stroke-width="3" marker-end="url(#arrow)"/>
+<path d="M810 232 H900" fill="none" stroke="#1971c2" stroke-width="3" marker-end="url(#arrow)"/>
+<path d="M810 285 V315 H1320 V295" fill="none" stroke="#1971c2" stroke-width="3" marker-end="url(#arrow)"/>
+<path d="M1320 315 H1600 V295" fill="none" stroke="#1971c2" stroke-width="3" marker-end="url(#arrow)"/>
+<rect x="35" y="375" width="1730" height="290" rx="16" fill="#f4fce3" stroke="#2b8a3e" stroke-width="2"/>
+<text x="60" y="408" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#2b8a3e">2  CÁLCULO E CONSOLIDAÇÃO</text>
+<rect x="80" y="450" width="340" height="145" rx="12" fill="#fff" stroke="#2b8a3e" stroke-width="2"/>
+<rect x="475" y="450" width="340" height="145" rx="12" fill="#fff" stroke="#2b8a3e" stroke-width="2"/>
+<rect x="870" y="450" width="340" height="145" rx="12" fill="#fff" stroke="#2b8a3e" stroke-width="2"/>
+<rect x="1290" y="450" width="430" height="145" rx="12" fill="#fff" stroke="#2b8a3e" stroke-width="2"/>
+<text x="105" y="488" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#2b8a3e">Lead time</text>
+<text x="105" y="525" font-family="Arial, sans-serif" font-size="18" font-weight="400" fill="#526779">lead_time_metrics.csv</text>
+<text x="105" y="552" font-family="Arial, sans-serif" font-size="18" font-weight="400" fill="#526779">por release e commit</text>
+<text x="500" y="488" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#2b8a3e">Falhas e recuperação</text>
+<text x="500" y="525" font-family="Arial, sans-serif" font-size="18" font-weight="400" fill="#526779">workflow_metrics.csv</text>
+<text x="500" y="552" font-family="Arial, sans-serif" font-size="18" font-weight="400" fill="#526779">CFR (a) e episódios</text>
+<text x="895" y="488" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#2b8a3e">CFR (b)</text>
+<text x="895" y="525" font-family="Arial, sans-serif" font-size="18" font-weight="400" fill="#526779">cfr_b_metrics.csv</text>
+<text x="895" y="552" font-family="Arial, sans-serif" font-size="18" font-weight="400" fill="#526779">proxy de release corretiva</text>
+<text x="1315" y="488" font-family="Arial, sans-serif" font-size="26" font-weight="700" fill="#2b8a3e">dataset.csv</text>
+<text x="1315" y="525" font-family="Arial, sans-serif" font-size="18" font-weight="400" fill="#526779">300 repositórios</text>
+<text x="1315" y="552" font-family="Arial, sans-serif" font-size="18" font-weight="400" fill="#526779">métricas e classificação C1</text>
+<path d="M1320 295 V420 H250 V450" fill="none" stroke="#2b8a3e" stroke-width="3" marker-end="url(#arrow)"/>
+<path d="M1600 295 V420 H645 V450" fill="none" stroke="#2b8a3e" stroke-width="3" marker-end="url(#arrow)"/>
+<path d="M1320 295 V435 H1040 V450" fill="none" stroke="#2b8a3e" stroke-width="3" marker-end="url(#arrow)"/>
+<path d="M250 595 V625 H1500" fill="none" stroke="#2b8a3e" stroke-width="3"/>
+<path d="M645 595 V625" fill="none" stroke="#2b8a3e" stroke-width="3"/>
+<path d="M1040 595 V625" fill="none" stroke="#2b8a3e" stroke-width="3"/>
+<path d="M1500 625 V595" fill="none" stroke="#2b8a3e" stroke-width="3" marker-end="url(#arrow)"/>
+<rect x="35" y="700" width="1730" height="315" rx="16" fill="#fff4e6" stroke="#e8590c" stroke-width="2"/>
+<text x="60" y="735" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#d9480f">3  EXPLORAÇÃO</text>
+<rect x="110" y="790" width="470" height="155" rx="12" fill="#fff" stroke="#e8590c" stroke-width="2"/>
+<rect x="680" y="790" width="450" height="155" rx="12" fill="#fff" stroke="#e8590c" stroke-width="2"/>
+<rect x="1230" y="790" width="460" height="155" rx="12" fill="#fff" stroke="#e8590c" stroke-width="2"/>
+<text x="135" y="829" font-family="Arial, sans-serif" font-size="26" font-weight="700" fill="#d9480f">Streamlit · Lab 03</text>
+<text x="135" y="866" font-family="Arial, sans-serif" font-size="19" font-weight="400" fill="#526779">Lê dataset.csv diretamente</text>
+<text x="135" y="896" font-family="Arial, sans-serif" font-size="19" font-weight="400" fill="#526779">sem nova coleta da API</text>
+<text x="705" y="829" font-family="Arial, sans-serif" font-size="26" font-weight="700" fill="#d9480f">Filtros e análise</text>
+<text x="705" y="866" font-family="Arial, sans-serif" font-size="19" font-weight="400" fill="#526779">Linguagem · categoria · estrelas</text>
+<text x="705" y="896" font-family="Arial, sans-serif" font-size="19" font-weight="400" fill="#526779">DORA C1 · deploys × CFR</text>
+<text x="1255" y="829" font-family="Arial, sans-serif" font-size="26" font-weight="700" fill="#d9480f">Equipe e avaliação</text>
+<text x="1255" y="866" font-family="Arial, sans-serif" font-size="19" font-weight="400" fill="#526779">Gráficos, tabela e CSV</text>
+<text x="1255" y="896" font-family="Arial, sans-serif" font-size="19" font-weight="400" fill="#526779">reproduzíveis localmente</text>
+<path d="M1500 595 V680 H345 V790" fill="none" stroke="#e8590c" stroke-width="3" marker-end="url(#arrow)"/>
+<path d="M580 868 H680" fill="none" stroke="#e8590c" stroke-width="3" marker-end="url(#arrow)"/>
+<path d="M1130 868 H1230" fill="none" stroke="#e8590c" stroke-width="3" marker-end="url(#arrow)"/>
+</svg>

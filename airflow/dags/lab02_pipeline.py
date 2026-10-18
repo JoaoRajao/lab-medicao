@@ -90,7 +90,11 @@ def build_lab02_dbt_dag():
     def dbt_test() -> None:
         run_project_command(["dbt", "test", "--select", *LAB02_DBT_SELECTION])
 
-    dbt_run() >> dbt_test()
+    @task(execution_timeout=timedelta(minutes=10), pool="lab02_duckdb")
+    def publish_dashboard() -> None:
+        run_project_command([sys.executable, "-m", "shared.publish_gold", "--lab", "lab02"])
+
+    dbt_run() >> dbt_test() >> publish_dashboard()
 
 
 build_lab02_ingestion_dag()
