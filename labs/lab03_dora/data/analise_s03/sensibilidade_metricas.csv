@@ -1,0 +1,13 @@
+cenario_a,cenario_b,metrica,n,mudaram,percentual_mudou
+C1,C2,frequencia_pontos,300,32,10.666667
+C1,C2,lead_time_pontos,299,123,41.137124
+C1,C2,cfr_pontos,298,180,60.402685
+C1,C2,recuperacao_pontos,283,0,0
+C1,C3,frequencia_pontos,300,75,25
+C1,C3,lead_time_pontos,299,123,41.137124
+C1,C3,cfr_pontos,300,0,0
+C1,C3,recuperacao_pontos,283,0,0
+C2,C3,frequencia_pontos,300,45,15
+C2,C3,lead_time_pontos,299,0,0
+C2,C3,cfr_pontos,298,180,60.402685
+C2,C3,recuperacao_pontos,283,0,0

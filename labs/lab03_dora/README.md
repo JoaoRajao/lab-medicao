@@ -3,6 +3,38 @@
 Calcula as metricas DORA (deployment frequency, lead time for changes, change failure rate e tempo de
 recuperacao) a partir dos dados publicos de repositorios open-source que usam GitHub Actions.
 
+## Diagrama do Lab03
+
+![Fluxo de coleta, consolidacao DORA e dashboard do Lab03](../../docs/lab03/lab03_pipeline_architecture.png)
+
+[Abrir a imagem em tamanho completo](../../docs/lab03/lab03_pipeline_architecture.png) ·
+[Abrir o SVG](../../docs/lab03/lab03_pipeline_architecture.svg)
+
+O desenho mostra o fluxo real do Lab03: coleta da API do GitHub, calculo das metricas, geracao
+de `data/dataset.csv` e exploracao no Streamlit. O app le o CSV consolidado sem chamar a API.
+
+```mermaid
+flowchart LR
+    API[GitHub REST API] --> PIPE[Pipeline Python do Lab03]
+    PIPE --> REPOS[repositories.csv]
+    PIPE --> RELEASES[releases.csv]
+    PIPE --> RUNS[workflow_runs.csv]
+    RELEASES --> LEAD[lead_time_metrics.csv]
+    RELEASES --> CFRB[cfr_b_metrics.csv]
+    RUNS --> WORKFLOW[workflow_metrics.csv]
+    REPOS --> DATASET[dataset.csv]
+    LEAD --> DATASET
+    CFRB --> DATASET
+    WORKFLOW --> DATASET
+    DATASET --> APP[Streamlit: filtros, DORA C1 e CSV]
+```
+
+### Captura da interface Streamlit
+
+![Tela do Streamlit mostrando as metricas DORA do Lab03](../../docs/lab03/streamlit_dashboard_lab03.jpg)
+
+[Abrir a captura em tamanho completo](../../docs/lab03/streamlit_dashboard_lab03.jpg).
+
 Todos os comandos rodam a partir da raiz do repositorio, com o ambiente da raiz instalado
 (`pip install -r requirements.txt`, ver README raiz).
 
@@ -243,6 +275,33 @@ client.rate_limit()                                                      # nao c
   erros, e consome a cota do GraphQL, separada da cota REST. E usado nas tags.
 - A coleta usa a API REST e GraphQL, implementadas com a biblioteca padrao (sem PyGithub ou equivalentes,
   proibidos pelo enunciado).
+
+## Analises da Sprint 3 (#75, #76 e #77)
+
+```bash
+python -m labs.lab03_dora.analises_s03
+```
+
+O comando le `data/dataset.csv`, `amostra_ouro/consenso_repositorios.csv` e
+`data/cfr_b_releases.csv`; nao usa token, nao chama a API e nao modifica esses arquivos.
+Os 13 CSVs de resultado ficam em `data/analise_s03/` e os dois graficos de dispersao
+em `docs/lab03/assets/`. `--dataset`, `--consenso`, `--releases`, `--saida` e
+`--figuras` permitem escolher outros caminhos. Consulte
+[`docs/lab03/resultados_s03.md`](../../docs/lab03/resultados_s03.md) para os resultados,
+as definicoes estatisticas e as limitacoes.
+
+As descritivas usam mediana, Q1, Q3 e IQR (quantis com interpolacao linear). Para
+RQ 03(b), a proporcao censurada usa as releases unicas do CSV auditavel; para RQ 04,
+usa os episodios de recuperacao. C1, C2 e C3 aplicam os mesmos cortes DORA de
+`metricas/dora.py`, mantendo a recuperacao constante. O comando verifica que C1
+coincide com as cinco notas e a categoria ja gravadas no dataset antes de gerar saidas.
+
+Na RQ 06, linguagem usa as cinco mais frequentes e `Outras`; estrelas e contribuidores
+usam quartis. O tipo de projeto vem do consenso dos 60 repositorios da amostra-ouro.
+Holm corrige os 16 testes globais em conjunto e, separadamente, as comparacoes de
+pares dentro de cada combinacao de fator e metrica. O bonus RQ 08 usa releases
+corretivas / releases principais unicas por repositorio, inclusive as censuradas
+para CFR (b): a censura se refere a observacao da falha posterior, nao ao tipo da release.
 
 ## Testes e CI
 

@@ -30,6 +30,16 @@ x-airflow-common: &airflow-common
       condition: service_healthy
 
 services:
+  dashboard:
+    build:
+      context: ./dashboard
+      dockerfile: Dockerfile
+    volumes:
+      - ./:/opt/lab-medicao:ro
+    ports:
+      - "8501:8501"
+    restart: unless-stopped
+
   postgres:
     image: postgres:16
     environment:

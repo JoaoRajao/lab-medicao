@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="990" viewBox="0 0 1800 990">
-  <rect width="1800" height="990" fill="#ffffff"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1320" viewBox="0 0 1800 1320">
+  <rect width="1800" height="1320" fill="#ffffff"/>
   <text x="60" y="58" font-family="Arial, sans-serif" font-size="34" font-weight="700" fill="#111827">Lab 2 - Arquitetura do pipeline de dados</text>
   <rect x="35" y="85" width="1730" height="315" rx="16" fill="#e7f5ff" stroke="#1971c2" stroke-width="2"/>
   <rect x="35" y="430" width="1730" height="505" rx="16" fill="#f4fce3" stroke="#2b8a3e" stroke-width="2"/>
@@ -44,5 +44,32 @@
     <text x="1095" y="602" font-size="24" font-weight="700" fill="#1971c2">Parquet</text><text x="1095" y="642" font-size="17" fill="#495057"><tspan x="1095">Snapshot</tspan><tspan x="1095" dy="25">escrita atomica</tspan></text>
     <text x="1400" y="572" font-size="24" font-weight="700" fill="#e8590c">Medallion com dbt</text><text x="1400" y="615" font-size="18" font-weight="700" fill="#1864ab">STAGING</text><text x="1400" y="655" font-size="17" fill="#495057">GOLD RQ01 - tempo</text><text x="1400" y="690" font-size="17" fill="#495057">GOLD RQ02 - defeitos</text><text x="1400" y="725" font-size="17" fill="#495057">GOLD RQ03 - qualidade</text>
     <text x="700" y="860" font-size="20" font-weight="700" fill="#2b8a3e">Pool DuckDB: 1 slot</text><text x="930" y="860" font-size="20" fill="#343a40">dbt test: 25 validacoes | execucoes e falhas visiveis na UI</text>
+  </g>
+  <g font-family="Arial, sans-serif">
+    <rect x="35" y="970" width="1730" height="315" rx="16" fill="#fff4e6" stroke="#e8590c" stroke-width="2"/>
+    <text x="60" y="1008" font-size="20" font-weight="700" fill="#d9480f">PUBLICAÇÃO E EXPLORAÇÃO</text>
+    <path d="M1490 890 V945 H430 V1050" fill="none" stroke="#e8590c" stroke-width="3" marker-end="url(#arrow)"/>
+    <text x="1080" y="930" font-size="17" fill="#d9480f">Somente após dbt test</text>
+    <rect x="105" y="1050" width="350" height="165" rx="12" fill="#fff" stroke="#f08c00" stroke-width="2"/>
+    <rect x="565" y="1050" width="350" height="165" rx="12" fill="#fff" stroke="#f08c00" stroke-width="2"/>
+    <rect x="1025" y="1050" width="350" height="165" rx="12" fill="#fff" stroke="#e8590c" stroke-width="2"/>
+    <rect x="1485" y="1050" width="225" height="165" rx="12" fill="#fff" stroke="#e8590c" stroke-width="2"/>
+    <line x1="455" y1="1132" x2="565" y2="1132" stroke="#e8590c" stroke-width="3" marker-end="url(#arrow)"/>
+    <line x1="915" y1="1132" x2="1025" y2="1132" stroke="#e8590c" stroke-width="3" marker-end="url(#arrow)"/>
+    <line x1="1375" y1="1132" x2="1485" y2="1132" stroke="#e8590c" stroke-width="3" marker-end="url(#arrow)"/>
+    <text x="130" y="1100" font-size="24" font-weight="700" fill="#17324d">Publicação gold</text>
+    <text x="130" y="1146" font-size="18" fill="#526779">shared.publish_gold</text>
+    <text x="130" y="1172" font-size="18" fill="#526779">após dbt test</text>
+    <text x="590" y="1100" font-size="24" font-weight="700" fill="#17324d">Snapshots Parquet</text>
+    <text x="590" y="1146" font-size="18" fill="#526779">data/published/lab02/</text>
+    <text x="590" y="1172" font-size="18" fill="#526779">3 tabelas gold</text>
+    <text x="1050" y="1100" font-size="24" font-weight="700" fill="#17324d">Streamlit</text>
+    <text x="1050" y="1146" font-size="18" fill="#526779">dashboard/app.py</text>
+    <text x="1050" y="1172" font-size="18" fill="#526779">filtros, gráficos e CSV</text>
+    <rect x="1280" y="1134" width="15" height="20" fill="#ff922b"/>
+    <rect x="1304" y="1120" width="15" height="34" fill="#ff922b"/>
+    <rect x="1328" y="1127" width="15" height="27" fill="#ff922b"/>
+    <text x="1510" y="1108" font-size="24" font-weight="700" fill="#17324d">Equipe</text>
+    <text x="1510" y="1154" font-size="18" fill="#526779">consulta resultados</text>
   </g>
 </svg>

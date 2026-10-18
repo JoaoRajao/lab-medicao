@@ -1,0 +1,133 @@
+fator,metrica,grupo_a,grupo_b,n_a,n_b,p_valor,p_holm,cliffs_delta,magnitude_romano,omnibus_significativo
+linguagem,deployment_frequency_per_week,Go,JavaScript,32,29,0.94815341,1,0.010775862,desprezivel,False
+linguagem,deployment_frequency_per_week,Go,Outras,32,57,0.72578588,1,0.045504386,desprezivel,False
+linguagem,deployment_frequency_per_week,Go,Python,32,71,0.14685922,1,-0.17957746,pequeno,False
+linguagem,deployment_frequency_per_week,Go,Rust,32,31,0.54508298,1,-0.089717742,desprezivel,False
+linguagem,deployment_frequency_per_week,Go,TypeScript,32,80,0.013134565,0.17074935,-0.30117187,pequeno,False
+linguagem,deployment_frequency_per_week,JavaScript,Outras,29,57,0.79802451,1,0.034482759,desprezivel,False
+linguagem,deployment_frequency_per_week,JavaScript,Python,29,71,0.088739302,0.97613233,-0.21806702,pequeno,False
+linguagem,deployment_frequency_per_week,JavaScript,Rust,29,31,0.48208474,1,-0.10678532,desprezivel,False
+linguagem,deployment_frequency_per_week,JavaScript,TypeScript,29,80,0.0077092881,0.10793003,-0.33534483,medio,False
+linguagem,deployment_frequency_per_week,Outras,Python,57,71,0.029633116,0.35559739,-0.22436373,pequeno,False
+linguagem,deployment_frequency_per_week,Outras,Rust,57,31,0.43928761,1,-0.10073571,desprezivel,False
+linguagem,deployment_frequency_per_week,Outras,TypeScript,57,80,0.00070580718,0.010587108,-0.34035088,medio,False
+linguagem,deployment_frequency_per_week,Python,Rust,71,31,0.54826522,1,0.075420264,desprezivel,False
+linguagem,deployment_frequency_per_week,Python,TypeScript,71,80,0.22772097,1,-0.11408451,desprezivel,False
+linguagem,deployment_frequency_per_week,Rust,TypeScript,31,80,0.14715319,1,-0.17822581,pequeno,False
+linguagem,lead_time_a_hours,Go,JavaScript,32,29,0.91374712,1,0.017241379,desprezivel,True
+linguagem,lead_time_a_hours,Go,Outras,32,57,0.6229918,1,-0.063596491,desprezivel,True
+linguagem,lead_time_a_hours,Go,Python,32,71,0.00098087054,0.012751317,0.40757042,medio,True
+linguagem,lead_time_a_hours,Go,Rust,32,31,0.11544928,0.92359424,0.23185484,pequeno,True
+linguagem,lead_time_a_hours,Go,TypeScript,32,79,0.0037282264,0.044738717,0.3528481,medio,True
+linguagem,lead_time_a_hours,JavaScript,Outras,29,57,0.51662015,1,-0.086509377,desprezivel,True
+linguagem,lead_time_a_hours,JavaScript,Python,29,71,0.012992014,0.12992014,0.31811559,pequeno,True
+linguagem,lead_time_a_hours,JavaScript,Rust,29,31,0.16437446,1,0.21023359,pequeno,True
+linguagem,lead_time_a_hours,JavaScript,TypeScript,29,79,0.048194596,0.43375137,0.24923614,pequeno,True
+linguagem,lead_time_a_hours,Outras,Python,57,71,2.2055715e-05,0.00033083573,0.4376081,medio,True
+linguagem,lead_time_a_hours,Outras,Rust,57,31,0.011586336,0.1274497,0.32767402,pequeno,True
+linguagem,lead_time_a_hours,Outras,TypeScript,57,79,0.00037198029,0.005207724,0.35864979,medio,True
+linguagem,lead_time_a_hours,Python,Rust,71,31,0.23854607,1,-0.14766015,pequeno,True
+linguagem,lead_time_a_hours,Python,TypeScript,71,79,0.39494534,1,-0.080763059,desprezivel,True
+linguagem,lead_time_a_hours,Rust,TypeScript,31,79,0.50218746,1,0.082890976,desprezivel,True
+linguagem,cfr_a,Go,JavaScript,32,29,0.38220357,1,0.13146552,desprezivel,False
+linguagem,cfr_a,Go,Outras,32,57,0.55236833,1,0.076754386,desprezivel,False
+linguagem,cfr_a,Go,Python,32,71,0.80578964,1,0.030809859,desprezivel,False
+linguagem,cfr_a,Go,Rust,32,31,0.11230595,1,-0.23387097,pequeno,False
+linguagem,cfr_a,Go,TypeScript,32,80,0.12609757,1,-0.1859375,pequeno,False
+linguagem,cfr_a,JavaScript,Outras,29,57,0.72160665,1,-0.047791894,desprezivel,False
+linguagem,cfr_a,JavaScript,Python,29,71,0.58961535,1,-0.06945119,desprezivel,False
+linguagem,cfr_a,JavaScript,Rust,29,31,0.047393625,0.50842064,-0.29922136,pequeno,False
+linguagem,cfr_a,JavaScript,TypeScript,29,80,0.042705206,0.50842064,-0.25517241,pequeno,False
+linguagem,cfr_a,Outras,Python,57,71,0.72634463,1,-0.036323202,desprezivel,False
+linguagem,cfr_a,Outras,Rust,57,31,0.03451719,0.44872346,-0.27447651,pequeno,False
+linguagem,cfr_a,Outras,TypeScript,57,80,0.024933479,0.37400219,-0.2254386,pequeno,False
+linguagem,cfr_a,Python,Rust,71,31,0.042368387,0.50842064,-0.25397547,pequeno,False
+linguagem,cfr_a,Python,TypeScript,71,80,0.031314709,0.43840593,-0.20352113,pequeno,False
+linguagem,cfr_a,Rust,TypeScript,31,80,0.65489981,1,0.055241935,desprezivel,False
+linguagem,recovery_median_hours,Go,JavaScript,32,24,0.94060861,1,-0.013020833,desprezivel,False
+linguagem,recovery_median_hours,Go,Outras,32,54,0.25465329,1,-0.14814815,pequeno,False
+linguagem,recovery_median_hours,Go,Python,32,66,0.98791126,1,-0.0023674242,desprezivel,False
+linguagem,recovery_median_hours,Go,Rust,32,30,0.095081781,1,-0.24791667,pequeno,False
+linguagem,recovery_median_hours,Go,TypeScript,32,77,0.55595051,1,0.07224026,desprezivel,False
+linguagem,recovery_median_hours,JavaScript,Outras,24,54,0.5265178,1,-0.091049383,desprezivel,False
+linguagem,recovery_median_hours,JavaScript,Python,24,66,0.58094083,1,0.077020202,desprezivel,False
+linguagem,recovery_median_hours,JavaScript,Rust,24,30,0.37935131,1,-0.14166667,desprezivel,False
+linguagem,recovery_median_hours,JavaScript,TypeScript,24,77,0.27610487,1,0.1482684,pequeno,False
+linguagem,recovery_median_hours,Outras,Python,54,66,0.12804398,1,0.16217733,pequeno,False
+linguagem,recovery_median_hours,Outras,Rust,54,30,0.52252292,1,-0.085185185,desprezivel,False
+linguagem,recovery_median_hours,Outras,TypeScript,54,77,0.015530878,0.2174323,0.24915825,pequeno,False
+linguagem,recovery_median_hours,Python,Rust,66,30,0.081345276,1,-0.22323232,pequeno,False
+linguagem,recovery_median_hours,Python,TypeScript,66,77,0.53155485,1,0.060999606,desprezivel,False
+linguagem,recovery_median_hours,Rust,TypeScript,30,77,0.013947747,0.2092162,0.30735931,pequeno,False
+estrelas,deployment_frequency_per_week,Q1,Q2,75,75,0.5778728,1,-0.0528,desprezivel,False
+estrelas,deployment_frequency_per_week,Q1,Q3,75,75,0.15093149,0.75465744,-0.136,desprezivel,False
+estrelas,deployment_frequency_per_week,Q1,Q4,75,75,0.10635743,0.6381446,-0.15288889,pequeno,False
+estrelas,deployment_frequency_per_week,Q2,Q3,75,75,0.35210315,1,-0.088177778,desprezivel,False
+estrelas,deployment_frequency_per_week,Q2,Q4,75,75,0.28394408,1,-0.10151111,desprezivel,False
+estrelas,deployment_frequency_per_week,Q3,Q4,75,75,0.93258661,1,-0.0081777778,desprezivel,False
+estrelas,lead_time_a_hours,Q1,Q2,75,74,0.077810206,0.38905103,-0.16756757,pequeno,False
+estrelas,lead_time_a_hours,Q1,Q3,75,75,0.71822065,1,0.034311111,desprezivel,False
+estrelas,lead_time_a_hours,Q1,Q4,75,75,0.65466668,1,-0.042488889,desprezivel,False
+estrelas,lead_time_a_hours,Q2,Q3,74,75,0.042427764,0.25456659,0.19279279,pequeno,False
+estrelas,lead_time_a_hours,Q2,Q4,74,75,0.19609643,0.78438574,0.12288288,desprezivel,False
+estrelas,lead_time_a_hours,Q3,Q4,75,75,0.46129832,1,-0.069866667,desprezivel,False
+estrelas,cfr_a,Q1,Q2,75,75,0.82155881,1,0.021511111,desprezivel,False
+estrelas,cfr_a,Q1,Q3,75,75,0.94605458,1,0.0065777778,desprezivel,False
+estrelas,cfr_a,Q1,Q4,75,75,0.40612002,1,-0.078755556,desprezivel,False
+estrelas,cfr_a,Q2,Q3,75,75,0.86568317,1,-0.016177778,desprezivel,False
+estrelas,cfr_a,Q2,Q4,75,75,0.31196532,1,-0.095822222,desprezivel,False
+estrelas,cfr_a,Q3,Q4,75,75,0.36500918,1,-0.085866667,desprezivel,False
+estrelas,recovery_median_hours,Q1,Q2,69,71,0.069179381,0.3458969,-0.17819963,pequeno,False
+estrelas,recovery_median_hours,Q1,Q3,69,72,0.041813919,0.25088351,-0.19887279,pequeno,False
+estrelas,recovery_median_hours,Q1,Q4,69,71,0.13295141,0.53180565,-0.14737702,pequeno,False
+estrelas,recovery_median_hours,Q2,Q3,71,72,0.70879869,1,-0.036384977,desprezivel,False
+estrelas,recovery_median_hours,Q2,Q4,71,71,0.75960245,1,0.029954374,desprezivel,False
+estrelas,recovery_median_hours,Q3,Q4,72,71,0.51697145,1,0.062989045,desprezivel,False
+contribuidores,deployment_frequency_per_week,Q1,Q2,75,76,0.051318268,0.30790961,-0.18385965,pequeno,False
+contribuidores,deployment_frequency_per_week,Q1,Q3,75,74,0.20395458,0.95689806,-0.12072072,desprezivel,False
+contribuidores,deployment_frequency_per_week,Q1,Q4,75,75,0.19137961,0.95689806,-0.12373333,desprezivel,False
+contribuidores,deployment_frequency_per_week,Q2,Q3,76,74,0.45653912,1,0.070590327,desprezivel,False
+contribuidores,deployment_frequency_per_week,Q2,Q4,76,75,0.54278353,1,0.05754386,desprezivel,False
+contribuidores,deployment_frequency_per_week,Q3,Q4,74,75,0.98636496,1,-0.0018018018,desprezivel,False
+contribuidores,lead_time_a_hours,Q1,Q2,75,76,0.13032123,0.13032123,-0.14280702,desprezivel,True
+contribuidores,lead_time_a_hours,Q1,Q3,75,74,0.00036117999,0.00108354,-0.33873874,medio,True
+contribuidores,lead_time_a_hours,Q1,Q4,75,74,6.5930489e-12,3.9558293e-11,-0.65189189,grande,True
+contribuidores,lead_time_a_hours,Q2,Q3,76,74,0.035778471,0.071556942,-0.1987909,pequeno,True
+contribuidores,lead_time_a_hours,Q2,Q4,76,74,3.7681445e-08,1.8840723e-07,-0.52062589,grande,True
+contribuidores,lead_time_a_hours,Q3,Q4,74,74,8.2633474e-05,0.0003305339,-0.37509131,medio,True
+contribuidores,cfr_a,Q1,Q2,75,76,0.79587489,1,-0.024561404,desprezivel,False
+contribuidores,cfr_a,Q1,Q3,75,74,0.12646982,0.75881889,-0.14522523,desprezivel,False
+contribuidores,cfr_a,Q1,Q4,75,75,0.42771625,1,-0.0752,desprezivel,False
+contribuidores,cfr_a,Q2,Q3,76,74,0.20858391,1,-0.11913229,desprezivel,False
+contribuidores,cfr_a,Q2,Q4,76,75,0.59586515,1,-0.050175439,desprezivel,False
+contribuidores,cfr_a,Q3,Q4,74,75,0.43862711,1,0.073693694,desprezivel,False
+contribuidores,recovery_median_hours,Q1,Q2,69,69,0.68269025,1,-0.040537702,desprezivel,False
+contribuidores,recovery_median_hours,Q1,Q3,69,71,0.24657726,1,-0.11369667,desprezivel,False
+contribuidores,recovery_median_hours,Q1,Q4,69,74,0.57030402,1,-0.055229142,desprezivel,False
+contribuidores,recovery_median_hours,Q2,Q3,69,71,0.34195821,1,-0.093284344,desprezivel,False
+contribuidores,recovery_median_hours,Q2,Q4,69,74,0.93560278,1,-0.0080297689,desprezivel,False
+contribuidores,recovery_median_hours,Q3,Q4,71,74,0.29915754,1,0.1001142,desprezivel,False
+tipo_projeto,deployment_frequency_per_week,aplicacao/servico,biblioteca/framework,12,25,0.42648847,1,-0.16666667,pequeno,False
+tipo_projeto,deployment_frequency_per_week,aplicacao/servico,ferramenta CLI,12,17,0.84192221,1,0.049019608,desprezivel,False
+tipo_projeto,deployment_frequency_per_week,aplicacao/servico,outro,12,6,0.92534195,1,-0.041666667,desprezivel,False
+tipo_projeto,deployment_frequency_per_week,biblioteca/framework,ferramenta CLI,25,17,0.36953552,1,0.16705882,pequeno,False
+tipo_projeto,deployment_frequency_per_week,biblioteca/framework,outro,25,6,1,1,-0.0066666667,desprezivel,False
+tipo_projeto,deployment_frequency_per_week,ferramenta CLI,outro,17,6,0.64880087,1,-0.1372549,desprezivel,False
+tipo_projeto,lead_time_a_hours,aplicacao/servico,biblioteca/framework,12,25,0.7579144,1,-0.066666667,desprezivel,False
+tipo_projeto,lead_time_a_hours,aplicacao/servico,ferramenta CLI,12,17,0.84205675,1,0.049019608,desprezivel,False
+tipo_projeto,lead_time_a_hours,aplicacao/servico,outro,12,6,0.75026934,1,-0.11111111,desprezivel,False
+tipo_projeto,lead_time_a_hours,biblioteca/framework,ferramenta CLI,25,17,0.7007018,1,0.072941176,desprezivel,False
+tipo_projeto,lead_time_a_hours,biblioteca/framework,outro,25,6,0.98058757,1,0.013333333,desprezivel,False
+tipo_projeto,lead_time_a_hours,ferramenta CLI,outro,17,6,0.6575926,1,-0.1372549,desprezivel,False
+tipo_projeto,cfr_a,aplicacao/servico,biblioteca/framework,12,25,0.50598153,1,0.14,desprezivel,False
+tipo_projeto,cfr_a,aplicacao/servico,ferramenta CLI,12,17,0.27797559,1,0.24509804,pequeno,False
+tipo_projeto,cfr_a,aplicacao/servico,outro,12,6,0.89161819,1,-0.055555556,desprezivel,False
+tipo_projeto,cfr_a,biblioteca/framework,ferramenta CLI,25,17,0.54703489,1,0.11294118,desprezivel,False
+tipo_projeto,cfr_a,biblioteca/framework,outro,25,6,0.67862677,1,-0.12,desprezivel,False
+tipo_projeto,cfr_a,ferramenta CLI,outro,17,6,0.51621148,1,-0.19607843,pequeno,False
+tipo_projeto,recovery_median_hours,aplicacao/servico,biblioteca/framework,12,23,0.49797978,1,-0.14492754,desprezivel,False
+tipo_projeto,recovery_median_hours,aplicacao/servico,ferramenta CLI,12,16,0.90760532,1,-0.03125,desprezivel,False
+tipo_projeto,recovery_median_hours,aplicacao/servico,outro,12,6,0.96358543,1,-0.027777778,desprezivel,False
+tipo_projeto,recovery_median_hours,biblioteca/framework,ferramenta CLI,23,16,0.53930239,1,0.11956522,desprezivel,False
+tipo_projeto,recovery_median_hours,biblioteca/framework,outro,23,6,0.38412698,1,0.24637681,pequeno,False
+tipo_projeto,recovery_median_hours,ferramenta CLI,outro,16,6,0.9144251,1,0.041666667,desprezivel,False
