@@ -222,9 +222,9 @@ A proporção de releases corretivas, pela mesma heurística do CFR (b), tem med
 
 \textbf{Preparação.} O README descreve a execução com um comando e uma opção para replicar sobre uma lista de repositórios, sem refazer a busca, com saída e cache numa pasta própria (\texttt{--repositorios} e \texttt{--saida}). Um script compara dois datasets pela diferença relativa por métrica e pela proporção de repositórios na mesma categoria DORA (\texttt{comparar\_datasets}).
 
-\textbf{Autorreplicação.} Antes de entregar o pipeline, executamos nós mesmos o caminho do grupo replicador, seguindo só o README, sobre uma subamostra fixa de 30 repositórios do dataset e com o cache vazio. %AUTORREPLICACAO
+\textbf{Autorreplicação.} Antes de entregar o pipeline, executamos nós mesmos o caminho do grupo replicador, seguindo só o README, sobre uma subamostra fixa de 30 repositórios do dataset e com o cache vazio. A execução terminou sem intervenção, em cerca de 1h20 e 8.593 requisições. As seis métricas (frequência, lead time (a) e (b), CFR (a) e (b) e recuperação) ficaram idênticas às do dataset original nos 30 repositórios, e todos mantiveram a mesma categoria DORA. Só mudaram as estrelas (nos 30) e os contribuidores (em 24), as únicas variáveis medidas na data da coleta e não dentro da janela, que já está fechada. Isso indica que, com a janela fixa, diferenças encontradas por um grupo replicador nas métricas DORA apontariam para diferenças de execução, e não para a passagem do tempo.
 
-\textbf{Replicação do pipeline de outro grupo.} %REPLICACAO-EXTERNA
+\textbf{Replicação do pipeline de outro grupo.} Até a data de entrega, o pipeline do grupo que deveríamos replicar não foi disponibilizado, e nenhum grupo abriu issues no nosso repositório. Por isso, a replicação externa não foi realizada. O roteiro, a subamostra de 30 repositórios e o script de comparação descritos acima estão prontos para essa execução e para responder às issues que vierem a ser abertas.
 
 \section{Repositório e quadro do projeto}
 
