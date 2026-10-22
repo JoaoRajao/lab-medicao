@@ -22,15 +22,15 @@
   "pending_ties": 0,
   "heuristic": {
     "n": 300,
-    "precision": 0.9130434782608695,
-    "recall": 0.5294117647058824,
-    "f1": 0.6702127659574468,
+    "precision": 0.9086294416243654,
+    "recall": 0.7521008403361344,
+    "f1": 0.8229885057471265,
     "positive_support": 238,
     "extra_predictions_ignored": 21830,
-    "heuristic_version": "semver-patch-v1",
-    "tn": 50,
-    "fp": 12,
-    "fn": 112,
-    "tp": 126
+    "heuristic_version": "semver-patch-commits-fix-v2",
+    "tn": 44,
+    "fp": 18,
+    "fn": 59,
+    "tp": 179
   }
 }

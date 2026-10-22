@@ -5,22 +5,34 @@ from __future__ import annotations
 import re
 from datetime import date, datetime, timedelta, timezone
 
-VERSION = "semver-patch-v1"
+VERSION = "semver-patch-commits-fix-v2"
 SEMVER = re.compile(r"^[vV]?(\d+)\.(\d+)\.(\d+)(?:[-+].*)?$")
 FIX_WORDS = re.compile(r"\b(fix(?:es|ed)?|bugfix|hotfix|revert|regression|corrig(?:e|ido|ir))\b", re.I)
+# Fracao minima de commits corretivos (primeira linha com FIX_WORDS) entre a release anterior e R.
+# Escolhida entre as versoes avaliadas contra a amostra-ouro (ver avaliar_heuristicas.py e o artigo).
+FIX_SHARE = 1 / 3
 
 
-def corrective_signal(tag: str, previous_tag: str, text: str = "") -> tuple[bool, str]:
-    """Classifica sem usar rótulos da amostra-ouro nem predições de outra versão."""
+def is_fix_commit(message: str | None) -> bool:
+    first_line = (message or "").splitlines()[0] if message else ""
+    return bool(FIX_WORDS.search(first_line))
+
+
+def corrective_signal(tag: str, previous_tag: str, fix_commits: int = 0, total_commits: int = 0) -> tuple[bool, str]:
+    """Classifica sem usar rotulos da amostra-ouro.
+
+    v2: R e corretiva se so muda o patch do SemVer em relacao a anterior, ou se pelo menos 1/3 dos commits
+    entre as duas releases sao correcoes (`fix`, `bugfix`, `hotfix`, `revert`, `regression`).
+    v1 (`semver-patch-v1`, F1 0,670) usava so o patch: o sinal de texto nunca recebia as mensagens.
+    """
     current, previous = SEMVER.fullmatch(tag or ""), SEMVER.fullmatch(previous_tag or "")
     if current and previous:
         current_parts = tuple(map(int, current.groups()))
         previous_parts = tuple(map(int, previous.groups()))
         if current_parts[:2] == previous_parts[:2] and current_parts[2] > previous_parts[2]:
             return True, "incremento_patch_semver"
-    match = FIX_WORDS.search(text or "")
-    if match:
-        return True, f"texto:{match.group(0).lower()}"
+    if total_commits > 0 and fix_commits / total_commits >= FIX_SHARE:
+        return True, f"commits_fix:{fix_commits}/{total_commits}"
     return False, "sem_sinal"
 
 
@@ -31,7 +43,8 @@ def cfr_b_for_repository(releases: list[dict], window_end: date) -> tuple[list[d
     classified = []
     for row in ordered:
         corrective, evidence = corrective_signal(
-            row["tag_name"], row.get("previous_tag", ""), row.get("text", ""),
+            row["tag_name"], row.get("previous_tag", ""),
+            int(row.get("fix_commits") or 0), int(row.get("commits_compared") or 0),
         )
         classified.append((row, datetime.fromisoformat(row["published_at"].replace("Z", "+00:00")), corrective, evidence))
     detail = []

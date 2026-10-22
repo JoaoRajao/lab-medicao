@@ -5,7 +5,7 @@ import csv
 
 from labs.lab03_dora.cfr_b import build
 
-from labs.lab03_dora.metricas.cfr_b import cfr_b_for_repository, corrective_signal
+from labs.lab03_dora.metricas.cfr_b import cfr_b_for_repository, corrective_signal, is_fix_commit
 
 
 def release(tag, at, previous=""):
@@ -38,10 +38,18 @@ def test_censors_last_seven_days_and_does_not_count_later_release():
     assert metric == {"repository": "o/r", "cfr_b": 1.0, "releases_evaluated": 1, "releases_censored": 2}
 
 
-def test_non_semver_and_text_signal():
+def test_non_semver_and_share_of_fix_commits():
     assert corrective_signal("release-q3", "release-q2") == (False, "sem_sinal")
-    assert corrective_signal("release-q3", "release-q2", "Hotfix for startup") == (True, "texto:hotfix")
+    assert corrective_signal("release-q3", "release-q2", fix_commits=1, total_commits=3) == (True, "commits_fix:1/3")
+    assert corrective_signal("v2.5.0", "v2.4.0", fix_commits=1, total_commits=4) == (False, "sem_sinal")
     assert corrective_signal("v2.5.0", "v2.4.0") == (False, "sem_sinal")
+
+
+def test_fix_commit_uses_only_the_first_line():
+    assert is_fix_commit("fix: crash ao abrir arquivo")
+    assert is_fix_commit("Revert \"feat: x\"")
+    assert not is_fix_commit("feat: novo comando\n\nfixes #12")
+    assert not is_fix_commit("prefix change") and not is_fix_commit(None)
 
 
 def test_build_writes_contract_consumed_by_dataset(tmp_path):

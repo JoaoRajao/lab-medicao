@@ -8,11 +8,11 @@ linguagem,deployment_frequency_per_week,JavaScript,Outras,29,57,0.79802451,1,0.0
 linguagem,deployment_frequency_per_week,JavaScript,Python,29,71,0.088739302,0.97613233,-0.21806702,pequeno,False
 linguagem,deployment_frequency_per_week,JavaScript,Rust,29,31,0.48208474,1,-0.10678532,desprezivel,False
 linguagem,deployment_frequency_per_week,JavaScript,TypeScript,29,80,0.0077092881,0.10793003,-0.33534483,medio,False
-linguagem,deployment_frequency_per_week,Outras,Python,57,71,0.029633116,0.35559739,-0.22436373,pequeno,False
+linguagem,deployment_frequency_per_week,Outras,Python,57,71,0.029813533,0.35776239,-0.22411663,pequeno,False
 linguagem,deployment_frequency_per_week,Outras,Rust,57,31,0.43928761,1,-0.10073571,desprezivel,False
 linguagem,deployment_frequency_per_week,Outras,TypeScript,57,80,0.00070580718,0.010587108,-0.34035088,medio,False
 linguagem,deployment_frequency_per_week,Python,Rust,71,31,0.54826522,1,0.075420264,desprezivel,False
-linguagem,deployment_frequency_per_week,Python,TypeScript,71,80,0.22772097,1,-0.11408451,desprezivel,False
+linguagem,deployment_frequency_per_week,Python,TypeScript,71,80,0.22844083,1,-0.11390845,desprezivel,False
 linguagem,deployment_frequency_per_week,Rust,TypeScript,31,80,0.14715319,1,-0.17822581,pequeno,False
 linguagem,lead_time_a_hours,Go,JavaScript,32,29,0.91374712,1,0.017241379,desprezivel,True
 linguagem,lead_time_a_hours,Go,Outras,32,57,0.6229918,1,-0.063596491,desprezivel,True
@@ -59,12 +59,12 @@ linguagem,recovery_median_hours,Outras,TypeScript,54,77,0.015530878,0.2174323,0.
 linguagem,recovery_median_hours,Python,Rust,66,30,0.081345276,1,-0.22323232,pequeno,False
 linguagem,recovery_median_hours,Python,TypeScript,66,77,0.53155485,1,0.060999606,desprezivel,False
 linguagem,recovery_median_hours,Rust,TypeScript,30,77,0.013947747,0.2092162,0.30735931,pequeno,False
-estrelas,deployment_frequency_per_week,Q1,Q2,75,75,0.5778728,1,-0.0528,desprezivel,False
-estrelas,deployment_frequency_per_week,Q1,Q3,75,75,0.15093149,0.75465744,-0.136,desprezivel,False
-estrelas,deployment_frequency_per_week,Q1,Q4,75,75,0.10635743,0.6381446,-0.15288889,pequeno,False
-estrelas,deployment_frequency_per_week,Q2,Q3,75,75,0.35210315,1,-0.088177778,desprezivel,False
+estrelas,deployment_frequency_per_week,Q1,Q2,75,75,0.57787313,1,-0.0528,desprezivel,False
+estrelas,deployment_frequency_per_week,Q1,Q3,75,75,0.15093221,0.75466107,-0.136,desprezivel,False
+estrelas,deployment_frequency_per_week,Q1,Q4,75,75,0.10635774,0.63814647,-0.15288889,pequeno,False
+estrelas,deployment_frequency_per_week,Q2,Q3,75,75,0.35210358,1,-0.088177778,desprezivel,False
 estrelas,deployment_frequency_per_week,Q2,Q4,75,75,0.28394408,1,-0.10151111,desprezivel,False
-estrelas,deployment_frequency_per_week,Q3,Q4,75,75,0.93258661,1,-0.0081777778,desprezivel,False
+estrelas,deployment_frequency_per_week,Q3,Q4,75,75,0.93258667,1,-0.0081777778,desprezivel,False
 estrelas,lead_time_a_hours,Q1,Q2,75,74,0.077810206,0.38905103,-0.16756757,pequeno,False
 estrelas,lead_time_a_hours,Q1,Q3,75,75,0.71822065,1,0.034311111,desprezivel,False
 estrelas,lead_time_a_hours,Q1,Q4,75,75,0.65466668,1,-0.042488889,desprezivel,False
@@ -83,10 +83,10 @@ estrelas,recovery_median_hours,Q1,Q4,69,71,0.13295141,0.53180565,-0.14737702,peq
 estrelas,recovery_median_hours,Q2,Q3,71,72,0.70879869,1,-0.036384977,desprezivel,False
 estrelas,recovery_median_hours,Q2,Q4,71,71,0.75960245,1,0.029954374,desprezivel,False
 estrelas,recovery_median_hours,Q3,Q4,72,71,0.51697145,1,0.062989045,desprezivel,False
-contribuidores,deployment_frequency_per_week,Q1,Q2,75,76,0.051318268,0.30790961,-0.18385965,pequeno,False
+contribuidores,deployment_frequency_per_week,Q1,Q2,75,76,0.051096508,0.30657905,-0.18403509,pequeno,False
 contribuidores,deployment_frequency_per_week,Q1,Q3,75,74,0.20395458,0.95689806,-0.12072072,desprezivel,False
 contribuidores,deployment_frequency_per_week,Q1,Q4,75,75,0.19137961,0.95689806,-0.12373333,desprezivel,False
-contribuidores,deployment_frequency_per_week,Q2,Q3,76,74,0.45653912,1,0.070590327,desprezivel,False
+contribuidores,deployment_frequency_per_week,Q2,Q3,76,74,0.45767732,1,0.070412518,desprezivel,False
 contribuidores,deployment_frequency_per_week,Q2,Q4,76,75,0.54278353,1,0.05754386,desprezivel,False
 contribuidores,deployment_frequency_per_week,Q3,Q4,74,75,0.98636496,1,-0.0018018018,desprezivel,False
 contribuidores,lead_time_a_hours,Q1,Q2,75,76,0.13032123,0.13032123,-0.14280702,desprezivel,True
@@ -110,7 +110,7 @@ contribuidores,recovery_median_hours,Q3,Q4,71,74,0.29915754,1,0.1001142,desprezi
 tipo_projeto,deployment_frequency_per_week,aplicacao/servico,biblioteca/framework,12,25,0.42648847,1,-0.16666667,pequeno,False
 tipo_projeto,deployment_frequency_per_week,aplicacao/servico,ferramenta CLI,12,17,0.84192221,1,0.049019608,desprezivel,False
 tipo_projeto,deployment_frequency_per_week,aplicacao/servico,outro,12,6,0.92534195,1,-0.041666667,desprezivel,False
-tipo_projeto,deployment_frequency_per_week,biblioteca/framework,ferramenta CLI,25,17,0.36953552,1,0.16705882,pequeno,False
+tipo_projeto,deployment_frequency_per_week,biblioteca/framework,ferramenta CLI,25,17,0.36275605,1,0.16941176,pequeno,False
 tipo_projeto,deployment_frequency_per_week,biblioteca/framework,outro,25,6,1,1,-0.0066666667,desprezivel,False
 tipo_projeto,deployment_frequency_per_week,ferramenta CLI,outro,17,6,0.64880087,1,-0.1372549,desprezivel,False
 tipo_projeto,lead_time_a_hours,aplicacao/servico,biblioteca/framework,12,25,0.7579144,1,-0.066666667,desprezivel,False
