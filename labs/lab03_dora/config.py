@@ -45,6 +45,7 @@ class Config:
     max_retries: int
     timeout: int
     workers: int = 1
+    repository_list: Path | None = None  # CSV com coluna `repository`: pula a busca (replicacao)
 
 
 def _date(section: dict[str, Any], key: str) -> date:

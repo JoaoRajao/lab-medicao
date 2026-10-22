@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import importlib
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Callable, Sequence
 
@@ -79,6 +79,16 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         choices=[stage.name for stage in STAGES],
         help="Roda so esta etapa (pode repetir). Sem a opcao, roda todas em ordem.",
     )
+    parser.add_argument(
+        "--repositorios",
+        type=Path,
+        help="CSV com a coluna `repository`: coleta so esses repositorios, sem a busca (ex.: replicacao com 30).",
+    )
+    parser.add_argument(
+        "--saida",
+        type=Path,
+        help="Pasta para os CSVs e o cache desta execucao (padrao: saida.dados e saida.cache do config).",
+    )
     return parser.parse_args(argv)
 
 
@@ -93,6 +103,14 @@ def main(
     except ConfigError as error:
         log(f"Configuracao invalida: {error}")
         return 1
+    output, repositories = getattr(args, "saida", None), getattr(args, "repositorios", None)
+    if output is not None:
+        config = replace(config, output_dir=output, cache_dir=output / "cache")
+    if repositories is not None:
+        if not repositories.is_file():
+            log(f"Lista de repositorios nao encontrada: {repositories}")
+            return 1
+        config = replace(config, repository_list=repositories)
 
     load_env_file(REPO_ROOT / ".env")
     token = os.environ.get("GITHUB_TOKEN")

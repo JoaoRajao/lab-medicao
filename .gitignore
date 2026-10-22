@@ -26,3 +26,7 @@ labs/*/data/cache/
 # CSVs brutos do Lab03 grandes demais para o Git (centenas de MB); o pipeline os regenera a partir do cache
 labs/lab03_dora/data/release_commits.csv
 labs/lab03_dora/data/workflow_runs.csv
+# Execucoes de replicacao: cache e CSVs brutos ficam fora do Git (os resumos e o dataset entram)
+labs/lab03_dora/replicacao/*/cache/
+labs/lab03_dora/replicacao/*/release_commits.csv
+labs/lab03_dora/replicacao/*/workflow_runs.csv

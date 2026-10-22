@@ -146,20 +146,38 @@ python -m labs.lab03_dora.consolidacao --config labs/lab03_dora/config.yaml
 A etapa de CFR (b) (#72) grava `cfr_b_metrics.csv` com as colunas `repository`, `cfr_b`,
 `releases_evaluated` e `releases_censored`.
 
-### CFR (b) — heuristica inicial (#72)
+### CFR (b) — heuristica de release corretiva (#72)
 
 ```bash
 python -m labs.lab03_dora.cfr_b --config labs/lab03_dora/config.yaml
 python -m labs.lab03_dora.consolidacao --config labs/lab03_dora/config.yaml
 ```
 
-A versao `semver-patch-v1` marca uma release como corretiva se o numero patch do SemVer aumenta sem
-mudar major/minor. A funcao tambem reconhece palavras como `fix`, `hotfix` e `revert` quando ha texto
-disponivel; o `releases.csv` versionado nao contem notas nem mensagens dos commits, portanto a execucao
-sobre a amostra inteira usa apenas as tags. Este e um **proxy inicial**, ainda sem validacao contra o
-consenso da amostra-ouro. `cfr_b_releases.csv` registra a classificacao, sinal, versao, falha atribuida
-e censura para cada release; `cfr_b_metrics.csv` agrega por repositorio. Releases publicadas nos ultimos
-sete dias da janela sao censuradas. O dataset pode ser reconstruido sem token.
+A versao final, `semver-patch-commits-fix-v2`, marca R como corretiva se:
+
+1. a tag so muda o patch do SemVer em relacao a release anterior (`2.3.0 -> 2.3.1`); ou
+2. pelo menos 1/3 dos commits entre a anterior e R tem `fix`, `bugfix`, `hotfix`, `revert` ou `regression`
+   na primeira linha da mensagem (`fix_commits / commits_compared` em `releases.csv`).
+
+R falha se uma release corretiva sai ate 7 dias depois; releases dos ultimos 7 dias da janela sao
+censuradas. `cfr_b_releases.csv` registra classificacao, sinal, versao, falha e censura de cada release;
+`cfr_b_metrics.csv` agrega por repositorio. O dataset pode ser reconstruido sem token.
+
+Versoes avaliadas contra a amostra-ouro (`python -m labs.lab03_dora.avaliar_heuristicas`, resultado em
+`amostra_ouro/heuristicas_f1.csv`):
+
+| Versao | F1 (consenso) | F1 (so Pedro) | Releases marcadas |
+| --- | ---: | ---: | ---: |
+| `semver-patch-v1` (so patch) | 0,670 | 0,566 | 138 de 300 |
+| patch ou qualquer commit fix | 0,885 | 0,697 | 268 |
+| patch ou >= 50% dos commits fix | 0,737 | 0,660 | 161 |
+| **`semver-patch-commits-fix-v2`** (patch ou >= 1/3) | **0,823** | **0,719** | 197 |
+| referencia: tudo corretiva | 0,885 | 0,661 | 300 |
+
+A v1 tinha um sinal de texto que nunca era aplicado (o `releases.csv` nao tinha as mensagens). Como o
+consenso marca 79% das releases como corretivas, "marcar tudo" ja chega a F1 0,885: um F1 alto contra esse
+consenso nao basta. A v2 foi escolhida por passar de 0,70 contra o consenso e contra o unico avaliador sem
+assistencia de IA, mantendo precisao de 0,91 e marcando 66% das releases, e nao quase todas.
 
 ### Amostra-ouro (#67)
 
@@ -206,6 +224,34 @@ O comando exige as tres planilhas completas, registra kappa de Fleiss por dimens
 (colunas `escopo,repositorio,tag,dimensao,rotulo,justificativa`) antes de gerar os CSVs de consenso
 e o F1. `validacao_relatorio.json` guarda os resultados calculados. O metodo e as decisoes devem ser
 descritos em `docs/lab03/validacao_amostra_ouro.md`.
+
+## Para o grupo replicador
+
+O pipeline roda com um unico comando e retoma de onde parou. Para replicar sobre uma subamostra de
+30 repositorios do nosso `dataset.csv`, sem refazer a busca:
+
+```bash
+pip install -r requirements.txt
+export GITHUB_TOKEN=ghp_...                         # token pessoal, so leitura publica
+python -m labs.lab03_dora --config labs/lab03_dora/config.yaml \
+  --repositorios labs/lab03_dora/replicacao/amostra_30.csv \
+  --saida labs/lab03_dora/replicacao/execucao
+python -m labs.lab03_dora.comparar_datasets \
+  --original labs/lab03_dora/data/dataset.csv \
+  --replicado labs/lab03_dora/replicacao/execucao/dataset.csv
+```
+
+- `replicacao/amostra_30.csv` e um sorteio fixo (`random_state=42`) de 30 repositorios do dataset; qualquer
+  CSV com a coluna `repository` serve.
+- `--saida` grava CSVs e cache numa pasta separada, sem sobrescrever os dados do grupo.
+- Os repositorios da lista passam pelos mesmos criterios de inclusao; os que nao passarem mais aparecem
+  em `selection_decisions.csv`.
+- Custo esperado: os 30 repositorios do sorteio fixo exigiram cerca de 8.700 requisicoes na nossa coleta.
+  Com a cota de 5.000 por hora, sao cerca de 2 horas; quando a cota acaba, o pipeline espera sozinho e
+  continua. Para testar antes, use um CSV com 2 ou 3 repositorios.
+- `comparar_datasets` mostra a diferenca relativa por metrica e a % de repositorios com a mesma classe
+  DORA. Diferencas pequenas sao esperadas: os repositorios continuam recebendo releases e runs, e
+  estrelas e contribuidores mudam com a data da coleta.
 
 ## Configuracao
 

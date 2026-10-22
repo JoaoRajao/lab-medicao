@@ -8,7 +8,7 @@ import pytest
 from labs.lab03_dora import selecao
 from labs.lab03_dora.config import Config, Inclusion, Window
 from labs.lab03_dora.pipeline import Context
-from shared.github_rest import GitHubAPIError, Response, build_url
+from shared.github_rest import GitHubAPIError, GitHubNotFoundError, Response, build_url
 
 
 class FakeClient:
@@ -161,3 +161,27 @@ def test_unexpected_api_errors_stop_the_selection(tmp_path):
     client = FakeClient({url: GitHubAPIError(500, url, "falhou")})
     with pytest.raises(GitHubAPIError):
         selecao.inspect(client, candidate("x/repo"), config(tmp_path))
+
+
+def test_repository_list_skips_search_and_applies_the_same_criteria(tmp_path, monkeypatch):
+    listing = tmp_path / "lista.csv"
+    listing.write_text("repository\nc/repo\ngone/repo\n", encoding="utf-8")
+    meta = {"full_name": "c/repo", "stargazers_count": 2000, "default_branch": "main", "language": "Python",
+            "created_at": "2020-01-01T00:00:00Z", "extra": "ignorado"}
+    client = FakeClient({
+        build_url("/repos/c/repo"): response(meta),
+        build_url("/repos/gone/repo"): GitHubNotFoundError(404, "/repos/gone/repo", ""),
+    })
+    candidates = list(selecao.candidates_from_list(client, listing))
+    assert candidates[0] == {k: meta[k] for k in ("full_name", "stargazers_count", "default_branch", "language", "created_at")}
+    assert candidates[1]["missing"] is True
+
+    from dataclasses import replace
+    cfg = replace(config(tmp_path, target=99), repository_list=listing)
+    included = {"repository": "c/repo", "decision": "included", "reason": "included", "stars": 2000,
+                "releases": 5, "valid_workflow_runs": 50}
+    monkeypatch.setattr(selecao, "inspect", lambda c, cand, conf: (included, {"repository": cand["full_name"]}))
+    selecao.run(Context(cfg, client))
+    decisions = (tmp_path / "selection_decisions.csv").read_text(encoding="utf-8")
+    assert "gone/repo,excluded,repository_unavailable" in decisions
+    assert (tmp_path / "repositories.csv").read_text(encoding="utf-8").count("c/repo") == 1
