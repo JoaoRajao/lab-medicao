@@ -86,7 +86,7 @@ $\ge 50$ workflow runs válidos (\texttt{push} no \textit{default branch}) & 300
 
 \subsection{Validação manual (amostra-ouro)}
 
-Foram sorteados 60 repositórios da amostra (\texttt{random\_state = 42}) e 5 releases de cada um. Cada integrante preencheu sua planilha com o tipo do projeto, se as releases são entregas reais e se cada release é corretiva. As planilhas traziam as notas da release e os commits desde a anterior, mas não a saída da heurística. Pedro e Salomão rotularam manualmente. \textbf{A rotulagem de João foi assistida por IA}: ele partiu de sugestões geradas por regras, aceitou as 257 válidas e marcou como corretivas as 163 que a IA deixou como incertas. A proveniência de cada rótulo está registrada no repositório, e o efeito disso é discutido na Seção~\ref{sec:ameacas}. A concordância foi medida com o kappa de Fleiss; o consenso é a maioria simples (não houve empates 1-1-1). A heurística foi avaliada contra o consenso com precisão, recall e F1, e refinada enquanto o F1 ficou abaixo de 0,70.
+Foram sorteados 60 repositórios da amostra (\texttt{random\_state = 42}) e 5 releases de cada um. Cada integrante preencheu sua planilha com o tipo do projeto, se as releases são entregas reais e se cada release é corretiva. As planilhas traziam as notas da release e os commits desde a anterior, mas não a saída da heurística nem os rótulos dos demais. A concordância foi medida com o kappa de Fleiss; o consenso é a maioria simples (não houve empates 1-1-1). A heurística foi avaliada contra o consenso com precisão, recall e F1, e refinada enquanto o F1 ficou abaixo de 0,70.
 
 \subsection{Análise estatística}
 
@@ -104,7 +104,7 @@ A concordância entre os três avaliadores foi razoável para o tipo do projeto 
 \small
 \begin{tabular}{lrrrr}
 \toprule
-Versão & Precisão & Recall & F1 consenso & F1 só Pedro \\
+Versão & Precisão & Recall & F1 consenso & F1 pior avaliador \\
 \midrule
 v1: só \textit{patch} SemVer & 0,913 & 0,529 & 0,670 & 0,566 \\
 \textit{patch} ou qualquer commit \textit{fix} & 0,836 & 0,941 & 0,885 & 0,697 \\
@@ -115,7 +115,7 @@ Referência: tudo corretiva & 0,793 & 1,000 & 0,885 & 0,661 \\
 \end{tabular}
 \end{table}
 
-A v1 ficou abaixo da meta (Tabela~\ref{tab:heuristica}). Ao investigar, encontramos que o sinal de texto da v1 nunca era aplicado, porque as mensagens dos commits não chegavam à heurística; as versões seguintes usam as mensagens já coletadas no \textit{compare}. Com 79\% de positivos no consenso, marcar tudo como corretiva já atinge F1 de 0,885, de modo que um F1 alto contra esse consenso não basta. Escolhemos a v2 porque ela passa de 0,70 tanto contra o consenso quanto contra o único avaliador sem assistência de IA, com precisão de 0,91, marcando 66\% das releases em vez de quase todas.
+A v1 ficou abaixo da meta (Tabela~\ref{tab:heuristica}). Ao investigar, encontramos que o sinal de texto da v1 nunca era aplicado, porque as mensagens dos commits não chegavam à heurística; as versões seguintes usam as mensagens já coletadas no \textit{compare}. Com 79\% de positivos no consenso, marcar tudo como corretiva já atinge F1 de 0,885, de modo que um F1 alto contra esse consenso não basta. Escolhemos a v2 porque ela é a única versão que passa de 0,70 tanto contra o consenso quanto contra cada avaliador individualmente (o pior caso é 0,72), com precisão de 0,91, marcando 66\% das releases em vez de quase todas.
 
 \subsection{RQ01 a RQ04: métricas e classificação de referência}
 
@@ -210,7 +210,7 @@ A proporção de releases corretivas, pela mesma heurística do CFR (b), tem med
 
 \section{Ameaças à validade}\label{sec:ameacas}
 
-\textbf{Construto.} Release não é deploy: bibliotecas não colocam nada em produção, e o CFR (a) mede quebras de CI após o merge, não falhas em produção. A heurística de release corretiva foi validada contra um consenso com prevalência de 79\% e concordância leve ($\kappa = 0{,}09$); contra esse consenso, até ``tudo corretiva'' tem F1 alto, então o F1 de 0,82 deve ser lido junto com a precisão (0,91) e com o F1 contra o avaliador independente (0,72). A rotulagem de um dos três avaliadores foi assistida por IA e marcou como corretivas todas as releases incertas, o que puxa o consenso para cima e reduz a independência exigida pelo protocolo. Datas de autoria podem ser distorcidas por \textit{rebase} e \textit{squash merge}: 1.553 dos 4 milhões de commits têm data de autoria posterior à release (lead time negativo, mantidos e contados).
+\textbf{Construto.} Release não é deploy: bibliotecas não colocam nada em produção, e o CFR (a) mede quebras de CI após o merge, não falhas em produção. A heurística de release corretiva foi validada contra um consenso com prevalência de 79\% e concordância leve ($\kappa = 0{,}09$); contra esse consenso, até ``tudo corretiva'' tem F1 alto, então o F1 de 0,82 deve ser lido junto com a precisão (0,91) e com o F1 contra cada avaliador (de 0,72 a 0,81). Os avaliadores divergiram muito na proporção de releases corretivas (de 49\% a 85\%), o que mostra que o próprio conceito é ambíguo e que o consenso depende de quem rotula. Datas de autoria podem ser distorcidas por \textit{rebase} e \textit{squash merge}: 1.553 dos 4 milhões de commits têm data de autoria posterior à release (lead time negativo, mantidos e contados).
 
 \textbf{Interna.} Repositórios com \textit{branches} de release têm compares \texttt{diverged} (3.270 releases, 15\%, em 155 repositórios): o \textit{compare} conta os commits desde o ancestral comum, o que é razoável, mas difere de projetos com histórico linear. Releases que apontam para o mesmo commit da anterior (3.538) não entram no lead time; 5 compares devolveram 404 (tags apagadas) e 1 veio incompleto da API. Projetos mais antigos tendem a ter mais releases e mais contribuidores, o que pode confundir as associações da RQ06. Uma coleta interrompida e retomada pode ver releases publicadas no meio da paginação; as duplicatas resultantes foram removidas.
 

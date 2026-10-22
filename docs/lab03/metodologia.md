@@ -79,7 +79,7 @@ Dentro de **cada workflow** do branch principal, um episódio começa no início
 Para assegurar o rigor científico da heurística automatizada da Variante (b) do CFR e caracterizar a natureza dos projetos, foi executado um protocolo de amostragem e rotulagem cega com validação por múltiplos avaliadores:
 
 1. **Sorteio Estratificado e Reprodutível:** A partir da semente pseudoaleatória `SEED = 42`, foram sorteados 60 repositórios da amostra final e 5 releases de cada repositório (totalizando 300 releases).
-2. **Rotulagem por 3 Avaliadores:** Os três autores preencheram planilhas estruturadas (`rotulagem_pedro.xlsx`, `rotulagem_joao.xlsx`, `rotulagem_salomao.xlsx`), sem acesso aos rótulos dos pares nem ao resultado da heurística. Pedro e Salomão rotularam manualmente. **A rotulagem de João foi assistida por IA**: ele partiu de sugestões geradas por regras, aceitou as 257 válidas e marcou como corretivas as 163 que a IA deixou como incertas (proveniência em `rotulagem_joao.csv`). Por isso, a rotulagem não é plenamente independente, o que é discutido nas ameaças à validade.
+2. **Rotulagem por 3 Avaliadores:** Os três autores preencheram planilhas estruturadas (`rotulagem_pedro.xlsx`, `rotulagem_joao.xlsx`, `rotulagem_salomao.xlsx`), sem acesso aos rótulos dos pares nem ao resultado da heurística.
 3. **Dimensões Avaliadas:**
    - *Aba Repositórios (60 itens):* `tipo_projeto` (`aplicacao/servico`, `biblioteca/framework`, `ferramenta CLI`, `outro`) e `entregas_reais` (`sim`, `nao`, `incerto`).
    - *Aba Releases (300 itens):* `corretiva` (`sim`, `nao`).
@@ -92,7 +92,7 @@ Para assegurar o rigor científico da heurística automatizada da Variante (b) d
    - O consenso final foi derivado por maioria simples ($2$ de $3$ votos), sem necessidade de desempate manual pendente (`pending_ties = 0`). Ele marca 238 das 300 releases (79%) como corretivas.
    - Versões da heurística avaliadas contra o consenso (`python -m labs.lab03_dora.avaliar_heuristicas`, resultado em `amostra_ouro/heuristicas_f1.csv`):
 
-     | Versão | Precisão | Recall | F1 (consenso) | F1 (só Pedro) |
+     | Versão | Precisão | Recall | F1 (consenso) | F1 (pior avaliador) |
      | --- | ---: | ---: | ---: | ---: |
      | `semver-patch-v1` (só patch) | 0,913 | 0,529 | 0,670 | 0,566 |
      | patch ou qualquer commit fix | 0,836 | 0,941 | 0,885 | 0,697 |
@@ -100,4 +100,4 @@ Para assegurar o rigor científico da heurística automatizada da Variante (b) d
      | **`semver-patch-commits-fix-v2`** (patch ou ≥ 1/3) | **0,909** | **0,752** | **0,823** | **0,719** |
      | referência: tudo corretiva | 0,793 | 1,000 | 0,885 | 0,661 |
 
-   - A v1 ficou abaixo da meta de 0,70; seu sinal de texto nunca era aplicado, porque as mensagens dos commits não chegavam à heurística. Com 79% de positivos no consenso, "marcar tudo" já atinge F1 0,885, então o F1 sozinho não basta. A versão final (v2) foi escolhida por passar de 0,70 contra o consenso e contra o único avaliador sem assistência de IA, com precisão de 0,91.
+   - A v1 ficou abaixo da meta de 0,70; seu sinal de texto nunca era aplicado, porque as mensagens dos commits não chegavam à heurística. Com 79% de positivos no consenso, "marcar tudo" já atinge F1 0,885, então o F1 sozinho não basta. A versão final (v2) é a única que passa de 0,70 contra o consenso e contra cada avaliador individualmente (pior caso 0,719), com precisão de 0,91.

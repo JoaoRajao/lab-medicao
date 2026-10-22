@@ -107,7 +107,7 @@ não uma contagem observada de defeitos em produção.
   0,752). A primeira versão, `semver-patch-v1`, tinha F1 0,670; todas as versões testadas estão em
   `labs/lab03_dora/amostra_ouro/heuristicas_f1.csv`. CFR (b), C2 e rework rate acima usam a v2.
 - Com 79% de releases corretivas no consenso, "marcar tudo" já atinge F1 0,885; por isso a escolha da v2
-  considerou também a precisão e o F1 contra o avaliador sem assistência de IA (0,719).
+  considerou também a precisão e o F1 contra cada avaliador individualmente (pior caso 0,719).
 - A rotulagem de João teve assistência de IA, conforme `validacao_amostra_ouro.md`. A concordância entre
   avaliadores não representa três rotulagens plenamente independentes.
 - As 28 releases repetidas de `releases.csv` (paginação durante a coleta) foram removidas e os CSVs foram

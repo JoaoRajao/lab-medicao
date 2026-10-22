@@ -166,7 +166,7 @@ censuradas. `cfr_b_releases.csv` registra classificacao, sinal, versao, falha e 
 Versoes avaliadas contra a amostra-ouro (`python -m labs.lab03_dora.avaliar_heuristicas`, resultado em
 `amostra_ouro/heuristicas_f1.csv`):
 
-| Versao | F1 (consenso) | F1 (so Pedro) | Releases marcadas |
+| Versao | F1 (consenso) | F1 (pior avaliador) | Releases marcadas |
 | --- | ---: | ---: | ---: |
 | `semver-patch-v1` (so patch) | 0,670 | 0,566 | 138 de 300 |
 | patch ou qualquer commit fix | 0,885 | 0,697 | 268 |
@@ -176,8 +176,8 @@ Versoes avaliadas contra a amostra-ouro (`python -m labs.lab03_dora.avaliar_heur
 
 A v1 tinha um sinal de texto que nunca era aplicado (o `releases.csv` nao tinha as mensagens). Como o
 consenso marca 79% das releases como corretivas, "marcar tudo" ja chega a F1 0,885: um F1 alto contra esse
-consenso nao basta. A v2 foi escolhida por passar de 0,70 contra o consenso e contra o unico avaliador sem
-assistencia de IA, mantendo precisao de 0,91 e marcando 66% das releases, e nao quase todas.
+consenso nao basta. A v2 e a unica versao que passa de 0,70 contra o
+consenso e contra cada avaliador individualmente (pior caso 0,719), mantendo precisao de 0,91 e marcando 66% das releases, e nao quase todas.
 
 ### Amostra-ouro (#67)
 

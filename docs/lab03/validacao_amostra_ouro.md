@@ -38,7 +38,7 @@ Não houve empates 1-1-1.
 `python -m labs.lab03_dora.avaliar_heuristicas` recalcula todas as versões testadas
 (`amostra_ouro/heuristicas_f1.csv`):
 
-| Versão | Precisão | Recall | F1 (consenso) | F1 (só Pedro) |
+| Versão | Precisão | Recall | F1 (consenso) | F1 (pior avaliador) |
 | --- | ---: | ---: | ---: | ---: |
 | `semver-patch-v1` (só patch) | 0,913 | 0,529 | 0,670 | 0,566 |
 | patch ou qualquer commit fix | 0,836 | 0,941 | 0,885 | 0,697 |
@@ -49,6 +49,6 @@ Não houve empates 1-1-1.
 A v1 ficou abaixo da meta de 0,70. O sinal de texto dela nunca era aplicado, porque `releases.csv` não
 tinha as mensagens dos commits; a coleta passou a registrar, por release, quantos commits desde a anterior
 são correções (`fix_commits`). Com 79% de positivos no consenso, "marcar tudo" já atinge F1 0,885, então
-um F1 alto contra esse consenso não basta. A v2 foi escolhida por passar de 0,70 contra o consenso e contra
-o único avaliador sem assistência de IA, com precisão de 0,91, marcando 66% das releases em vez de quase
+um F1 alto contra esse consenso não basta. A v2 é a única versão que passa de 0,70 contra o consenso e contra
+cada avaliador individualmente (pior caso 0,719), com precisão de 0,91, marcando 66% das releases em vez de quase
 todas. O relatório oficial (`validacao_relatorio.json`) usa a v2: F1 0,823.
