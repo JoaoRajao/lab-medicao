@@ -65,13 +65,12 @@ Calcula a latência temporal entre a concepção do código e sua disponibiliza�
 Avalia a proporção de entregas defeituosas através de duas abordagens complementares:
 - **Variante (a) — CI Workflows:** Razão entre execuções de CI finalizadas com erro (`failure`, `timed_out`, `startup_failure`) e o total de execuções válidas concluídas na branch default (`success` + falhas):
   $$\text{CFR}_{\text{CI}} = \frac{N_{\text{falhas}}}{N_{\text{sucesso}} + N_{\text{falhas}}}$$
-- **Variante (b) — Releases Corretivas (Heurística SemVer + Temporal):** Classifica uma release como corretiva (`corrective = sim`) caso ela atenda cumulativamente:
-  1. Incremento de versão *Patch* sob especificação SemVer (`vX.Y.Z` onde $Z > 0$).
-  2. Publicação em até 7 dias corridos após a release precedente.
-  3. Presença de termos chave corretivos (*fix*, *bug*, *patch*, *hotfix*, *resolve*) nas notas de release ou mensagens de commit.
+- **Variante (b) — Releases Corretivas:** uma release R **falha** se for seguida, em até 7 dias, por uma release corretiva; releases dos últimos 7 dias da janela são censuradas. A heurística final (`semver-patch-commits-fix-v2`) marca uma release como corretiva quando **qualquer** um dos sinais aparece:
+  1. a tag só muda o *patch* do SemVer em relação à release anterior (`2.3.0 → 2.3.1`); ou
+  2. pelo menos 1/3 dos commits entre a release anterior e R têm `fix`, `bugfix`, `hotfix`, `revert` ou `regression` na primeira linha da mensagem.
 
 ### 3.4 Failed Deployment Recovery Time (MTTR / Recovery Time)
-Mensura o tempo decorrido desde o término de uma execução de workflow que falhou até a conclusão da primeira execução subsequente bem-sucedida no mesmo repositório e branch principal.
+Dentro de **cada workflow** do branch principal, um episódio começa no início (`run_started_at`) da primeira falha após um sucesso e termina no fim (`updated_at`) da próxima execução bem-sucedida do mesmo workflow. O valor do repositório é a mediana dos episódios; episódios sem sucesso posterior na janela são censurados.
 
 ---
 
@@ -80,7 +79,7 @@ Mensura o tempo decorrido desde o término de uma execução de workflow que fal
 Para assegurar o rigor científico da heurística automatizada da Variante (b) do CFR e caracterizar a natureza dos projetos, foi executado um protocolo de amostragem e rotulagem cega com validação por múltiplos avaliadores:
 
 1. **Sorteio Estratificado e Reprodutível:** A partir da semente pseudoaleatória `SEED = 42`, foram sorteados 60 repositórios da amostra final e 5 releases de cada repositório (totalizando 300 releases).
-2. **Avaliação Independente por 3 Avaliadores:** Os três autores (Pedro, João e Salomão) preencheram de forma isolada e independente planilhas estruturadas (`rotulagem_pedro.xlsx`, `rotulagem_joao.xlsx`, `rotulagem_salomao.xlsx`), sem acesso aos rótulos dos pares nem ao resultado da heurística automatizada.
+2. **Rotulagem por 3 Avaliadores:** Os três autores preencheram planilhas estruturadas (`rotulagem_pedro.xlsx`, `rotulagem_joao.xlsx`, `rotulagem_salomao.xlsx`), sem acesso aos rótulos dos pares nem ao resultado da heurística. Pedro e Salomão rotularam manualmente. **A rotulagem de João foi assistida por IA**: ele partiu de sugestões geradas por regras, aceitou as 257 válidas e marcou como corretivas as 163 que a IA deixou como incertas (proveniência em `rotulagem_joao.csv`). Por isso, a rotulagem não é plenamente independente, o que é discutido nas ameaças à validade.
 3. **Dimensões Avaliadas:**
    - *Aba Repositórios (60 itens):* `tipo_projeto` (`aplicacao/servico`, `biblioteca/framework`, `ferramenta CLI`, `outro`) e `entregas_reais` (`sim`, `nao`, `incerto`).
    - *Aba Releases (300 itens):* `corretiva` (`sim`, `nao`).
@@ -88,10 +87,17 @@ Para assegurar o rigor científico da heurística automatizada da Variante (b) d
    A concordância foi mensurada através do coeficiente $\kappa$ de Fleiss com interpretação pelas faixas de Landis & Koch:
    - `tipo_projeto`: $\kappa \approx 0{,}396$ (*concordância razoável*).
    - `entregas_reais`: $\kappa \approx -0{,}011$ (*abaixo do acaso*, decorrente da extrema homogeneidade da amostra, onde praticamente $100\%$ dos repositórios realizam entregas reais, provocando o clássico paradoxo de prevalência de Kappa).
-   - `corretiva`: $\kappa \approx 0{,}088$ a $0{,}179$ (*concordância leve*), refletindo a discrepância intrínseca entre critérios estritos de hotfix versus inclusão mista de pequenos ajustes e features.
+   - `corretiva`: $\kappa \approx 0{,}088$ (*concordância leve*). Pedro marcou 49% das releases como corretivas, Salomão 82% e João 85%.
 5. **Formação de Consenso e Avaliação da Heurística:**
-   - O consenso final foi derivado por maioria simples ($2$ de $3$ votos), sem necessidade de desempate manual pendente (`pending_ties = 0`).
-   - Confrontando o consenso da amostra-ouro com a heurística `semver-patch-v1` de `cfr_b_releases.csv`, obteve-se:
-     - **Precisão:** $91{,}30\%$ (quando a heurística sinaliza corretiva, o acerto é de mais de $9$ em cada $10$).
-     - **Recall:** $52{,}94\%$ (comportamento conservador da heurística, não capturando releases corretivas que não seguiram rigorosamente a janela de 7 dias ou SemVer patch estrito).
-     - **F1-Score:** $0{,}6702$ ($67{,}02\%$), situando-se próximo à meta teórica de $0{,}70$.
+   - O consenso final foi derivado por maioria simples ($2$ de $3$ votos), sem necessidade de desempate manual pendente (`pending_ties = 0`). Ele marca 238 das 300 releases (79%) como corretivas.
+   - Versões da heurística avaliadas contra o consenso (`python -m labs.lab03_dora.avaliar_heuristicas`, resultado em `amostra_ouro/heuristicas_f1.csv`):
+
+     | Versão | Precisão | Recall | F1 (consenso) | F1 (só Pedro) |
+     | --- | ---: | ---: | ---: | ---: |
+     | `semver-patch-v1` (só patch) | 0,913 | 0,529 | 0,670 | 0,566 |
+     | patch ou qualquer commit fix | 0,836 | 0,941 | 0,885 | 0,697 |
+     | patch ou ≥ 50% dos commits fix | 0,913 | 0,618 | 0,737 | 0,660 |
+     | **`semver-patch-commits-fix-v2`** (patch ou ≥ 1/3) | **0,909** | **0,752** | **0,823** | **0,719** |
+     | referência: tudo corretiva | 0,793 | 1,000 | 0,885 | 0,661 |
+
+   - A v1 ficou abaixo da meta de 0,70; seu sinal de texto nunca era aplicado, porque as mensagens dos commits não chegavam à heurística. Com 79% de positivos no consenso, "marcar tudo" já atinge F1 0,885, então o F1 sozinho não basta. A versão final (v2) foi escolhida por passar de 0,70 contra o consenso e contra o único avaliador sem assistência de IA, com precisão de 0,91.
