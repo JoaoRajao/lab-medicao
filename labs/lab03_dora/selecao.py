@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import csv
 from datetime import date, timedelta
 from typing import Iterator
 
@@ -54,7 +55,12 @@ def candidates(client) -> Iterator[dict]:
 
 def _published_releases(client, repo: str, start: date, end: date, minimum: int) -> int:
     count = 0
+    seen: set[str] = set()
     for release in client.paginate(f"/repos/{repo}/releases", slim=slim_releases):
+        tag = release.get("tag_name")
+        if tag and tag in seen:  # item repetido pela paginacao
+            continue
+        seen.add(tag)
         if not release.get("draft", False) and not release.get("prerelease", False) and _in_window(
             release.get("published_at"), start, end
         ):
@@ -149,15 +155,40 @@ def inspect(client, candidate: dict, config) -> tuple[dict, dict | None]:
         return decision, None
 
 
+def candidates_from_list(client, path) -> Iterator[dict]:
+    """Candidatos de um CSV com a coluna `repository` (ex.: subamostra do dataset para replicacao).
+
+    Os metadados vem de `GET /repos/{owner}/{repo}`, no mesmo formato da busca, e cada repositorio passa
+    pelos mesmos criterios de inclusao. Repositorios removidos viram `repository_unavailable` no funil.
+    """
+    with open(path, newline="", encoding="utf-8") as file:
+        names = [row["repository"].strip() for row in csv.DictReader(file) if row.get("repository", "").strip()]
+    if not names:
+        raise ValueError(f"{path}: nenhuma linha com a coluna `repository`.")
+    for name in names:
+        try:
+            data = client.get(f"/repos/{name}").data
+        except GitHubNotFoundError:
+            yield {"full_name": name, "stargazers_count": "", "missing": True}
+            continue
+        yield {key: data.get(key) for key in ("full_name", "stargazers_count", "default_branch", "language", "created_at")}
+
+
 def run(ctx: Context) -> None:
     decisions: list[dict] = []
     selected: list[dict] = []
-    for candidate in candidates(ctx.client):
+    from_list = ctx.config.repository_list is not None
+    source = candidates_from_list(ctx.client, ctx.config.repository_list) if from_list else candidates(ctx.client)
+    for candidate in source:
+        if candidate.pop("missing", False):
+            decisions.append(dict(repository=candidate["full_name"], decision="excluded", reason="repository_unavailable",
+                                  stars="", releases="", valid_workflow_runs=""))
+            continue
         decision, metadata = inspect(ctx.client, candidate, ctx.config)
         decisions.append(decision)
         if metadata is not None:
             selected.append(metadata)
-        if len(selected) >= ctx.config.target_repositories:
+        if not from_list and len(selected) >= ctx.config.target_repositories:
             break
     output = ctx.config.output_dir
     _write_csv(output / "repositories.csv", REPOSITORY_FIELDS, selected)
@@ -170,5 +201,5 @@ def run(ctx: Context) -> None:
         remaining -= counts[reason]
         funnel.append(dict(stage=reason, remaining=remaining, excluded=counts[reason]))
     _write_csv(output / "selection_funnel.csv", ("stage", "remaining", "excluded"), funnel)
-    if len(selected) < ctx.config.target_repositories:
+    if not from_list and len(selected) < ctx.config.target_repositories:
         raise RuntimeError(f"A busca terminou com {len(selected)} repositorios; meta: {ctx.config.target_repositories}.")

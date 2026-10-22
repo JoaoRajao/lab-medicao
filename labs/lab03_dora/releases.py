@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from urllib.parse import quote
 
+from labs.lab03_dora.metricas.cfr_b import is_fix_commit
 from labs.lab03_dora.metricas.lead_time import release_lead_times_hours, repository_lead_times_hours
 from labs.lab03_dora.pipeline import Context
 from labs.lab03_dora.records import (
@@ -12,8 +13,8 @@ from labs.lab03_dora.records import (
 from shared.github_rest import GitHubNotFoundError
 
 RELEASE_FIELDS = (
-    "repository", "tag_name", "published_at", "previous_tag", "compare_status", "compare_api_status",
-    "commits_compared", "commits_missing_from_compare", "commits_missing_author_date", "negative_lead_time_commits",
+    "repository", "tag_name", "release_name", "published_at", "previous_tag", "compare_status", "compare_api_status",
+    "commits_compared", "fix_commits", "commits_missing_from_compare", "commits_missing_author_date", "negative_lead_time_commits",
     "lead_time_release_hours",
 )
 COMMIT_FIELDS = ("repository", "release_tag", "commit_sha", "commit_author_at", "lead_time_hours")
@@ -30,7 +31,13 @@ METRIC_FIELDS = (
 def collect_releases(client, repo: str, start, end) -> tuple[list[dict], list[dict]]:
     regular: list[dict] = []
     prereleases: list[dict] = []
+    seen: set[str] = set()
     for release in client.paginate(f"/repos/{repo}/releases", slim=slim_releases):
+        # Uma release publicada durante a paginacao empurra as demais e repete um item na pagina seguinte.
+        tag = release.get("tag_name")
+        if tag and tag in seen:
+            continue
+        seen.add(tag)
         if release.get("draft") or not release.get("published_at"):
             continue
         if release.get("prerelease"):
@@ -137,9 +144,10 @@ def process_repository(client, repo: str, start, end) -> tuple[list[dict], list[
             continue
         in_window_releases += 1
         previous = regular[index - 1] if index else None
-        row = dict(repository=repo, tag_name=release["tag_name"], published_at=release["published_at"],
+        row = dict(repository=repo, tag_name=release["tag_name"], release_name=release.get("name") or "",
+                   published_at=release["published_at"],
                    previous_tag=previous["tag_name"] if previous else "", compare_status="", compare_api_status="",
-                   commits_compared=0, commits_missing_from_compare=0, commits_missing_author_date=0,
+                   commits_compared=0, fix_commits=0, commits_missing_from_compare=0, commits_missing_author_date=0,
                    negative_lead_time_commits=0,
                    lead_time_release_hours="")
         if previous is None:
@@ -181,6 +189,7 @@ def process_repository(client, repo: str, start, end) -> tuple[list[dict], list[
             commit_rows.append(dict(repository=repo, release_tag=release["tag_name"], commit_sha=commit["sha"],
                                     commit_author_at=author_at, lead_time_hours=hours))
         row["commits_compared"] = len(commits)
+        row["fix_commits"] = sum(is_fix_commit((commit.get("commit") or {}).get("message")) for commit in commits)
         compared += len(commits)
         lead_a, leads_b = release_lead_times_hours(release["published_at"], author_dates)
         if lead_a is None:
