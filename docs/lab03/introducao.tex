@@ -132,17 +132,17 @@ Diante da ausência de registros nativos de deploy em produção na plataforma G
 \begin{itemize}
     \item \textbf{Deployment Frequency (DF):} Número total de releases oficiais publicadas dividido pelo número de semanas da janela temporal.
     \item \textbf{Lead Time for Changes (LTC):} Medido sob duas variantes: a variante por release (a), calculada entre a data da release e a data do commit mais antigo incorporado nela; e a variante por commit (b), calculada como a mediana do intervalo individual entre cada commit e a sua respectiva release.
-    \item \textbf{Change Failure Rate (CFR):} Medido sob duas variantes: a variante por CI (a), calculada como a razão entre execuções de CI falhas (\texttt{failure}, \texttt{timed\_out}, \texttt{startup\_failure}) e o total de execuções válidas; e a variante por release corretiva (b), fundamentada em heurística que identifica versões \textit{patch} (SemVer) lançadas em até 7 dias da anterior com termos corretivos nas notas ou commits.
-    \item \textbf{Failed Deployment Recovery Time (MTTR):} Tempo decorrido entre o encerramento de um workflow de CI que falhou e o término da primeira execução subsequente bem-sucedida na branch principal.
+    \item \textbf{Change Failure Rate (CFR):} Medido sob duas variantes: a variante por CI (a), calculada como a razão entre execuções de CI falhas (\texttt{failure}, \texttt{timed\_out}, \texttt{startup\_failure}) e o total de execuções válidas; e a variante por release corretiva (b), em que uma release falha se for seguida, em até 7 dias, por uma release corretiva; a heurística final marca como corretiva a release que só muda o \textit{patch} do SemVer ou em que pelo menos 1/3 dos commits desde a anterior são correções (\textit{fix}, \textit{hotfix}, \textit{revert}).
+    \item \textbf{Failed Deployment Recovery Time (MTTR):} Dentro de cada workflow da branch principal, tempo entre o início da primeira execução com falha após um sucesso e o término da próxima execução bem-sucedida.
 \end{itemize}
 
 \subsection{Protocolo de Validação Manual (Amostra-Ouro)}
 Para calibrar e validar empiricamente a heurística de releases corretivas (CFR b) e caracterizar os repositórios, delineou-se um protocolo de validação manual cega:
 \begin{enumerate}
     \item \textbf{Amostragem Reprodutível:} Com semente pseudoaleatória fixa (\texttt{SEED = 42}), foram sorteados 60 repositórios da amostra final e 5 releases de cada um, totalizando 300 releases.
-    \item \textbf{Avaliação Cega por Três Avaliadores:} Três pesquisadores avaliaram independentemente cada item sem visualização mútua das respostas e sem conhecimento da classificação prévia da heurística.
+    \item \textbf{Rotulagem por Três Avaliadores:} Três pesquisadores avaliaram cada item sem visualização mútua das respostas e sem conhecimento da classificação da heurística.
     \item \textbf{Concordância Inter-Avaliadores:} O cálculo do coeficiente $\kappa$ de Fleiss revelou concordância razoável para a caracterização do tipo de projeto ($\kappa \approx 0{,}396$) e concordância leve para a classificação de releases corretivas ($\kappa \approx 0{,}088$ a $0{,}179$). Para a dimensão de entregas reais, a homogeneidade absoluta da amostra ($>98\%$ dos projetos realizam entregas reais) gerou o fenômeno estatístico conhecido como paradoxo da prevalência de Kappa ($\kappa \approx -0{,}011$).
-    \item \textbf{Consenso e Performance da Heurística:} O consenso derivado por maioria simples ($2/3$ dos votos) permitiu confrontar o padrão-ouro com a heurística automatizada \texttt{semver-patch-v1}. Os resultados demonstraram alta precisão de $91{,}30\%$, recall conservador de $52{,}94\%$ e F1-Score de $67{,}02\%$ ($0{,}6702$).
+    \item \textbf{Consenso e Performance da Heurística:} O consenso derivado por maioria simples ($2/3$ dos votos) permitiu confrontar o padrão-ouro com a heurística automatizada. A primeira versão (\texttt{semver-patch-v1}) obteve F1 de $0{,}670$, abaixo da meta de $0{,}70$; a versão final (\texttt{semver-patch-commits-fix-v2}) obteve precisão de $90{,}9\%$, recall de $75{,}2\%$ e F1 de $0{,}823$. O artigo completo está em \texttt{docs/lab03/artigo.tex}.
 \end{enumerate}
 
 \section{Metadados e Links do Repositório}

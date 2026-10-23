@@ -1,0 +1,7 @@
+metrica,pares,so_no_original,so_no_replicado,mediana_dif_relativa,dentro_de_10pct
+deployment_frequency_per_week,30,0,0,0.0,1.0
+lead_time_a_hours,30,0,0,0.0,1.0
+lead_time_b_hours,30,0,0,0.0,1.0
+cfr_a,30,0,0,0.0,1.0
+cfr_b,30,0,0,0.0,1.0
+recovery_median_hours,29,0,0,0.0,1.0

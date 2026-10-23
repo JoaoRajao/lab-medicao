@@ -30,3 +30,10 @@ labs/lab03_dora/data/workflow_runs.csv
 labs/lab03_dora/replicacao/*/cache/
 labs/lab03_dora/replicacao/*/release_commits.csv
 labs/lab03_dora/replicacao/*/workflow_runs.csv
+# Arquivos auxiliares de LaTeX gerados ao compilar localmente
+docs/**/*.aux
+docs/**/*.fdb_latexmk
+docs/**/*.fls
+docs/**/*.log
+docs/**/*.synctex.gz
+docs/**/*.out
