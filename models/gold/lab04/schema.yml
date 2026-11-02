@@ -1,0 +1,14 @@
+version: 2
+
+models:
+  - name: gold_lab04_ci_failure_rate
+    description: "Resumo da amostra real para a comparação P4 de testes de proporção."
+    columns:
+      - name: repository
+        data_tests: [not_null, unique]
+      - name: runs_count
+        data_tests: [not_null]
+      - name: failures_count
+        data_tests: [not_null]
+      - name: failure_rate
+        data_tests: [not_null]

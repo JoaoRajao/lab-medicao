@@ -51,6 +51,7 @@ Cada lab novo segue o mesmo padrao: uma pasta em `labs/`, um subdiretorio homoni
 | Lab01 | Mineracao de repositorios populares do GitHub (RQ01-RQ07) | [`labs/lab01_repos_populares/README.md`](labs/lab01_repos_populares/README.md), relatorios em [`docs/lab01/`](docs/lab01/) |
 | Lab02 | Assistentes de IA vs. codificacao manual, experimento controlado (RQ1-RQ3) | [`labs/lab02_ia_vs_manual/README.md`](labs/lab02_ia_vs_manual/README.md), relatorios em [`docs/lab02/`](docs/lab02/) |
 | Lab03 | Mineracao de metricas DORA em repositorios open-source (RQ01-RQ08) | [`labs/lab03_dora/README.md`](labs/lab03_dora/README.md) |
+| Lab04 | Testes de hipotese para taxa de falha de CI (P4) | [`labs/lab04_ci/README.md`](labs/lab04_ci/README.md) |
 
 ## Como criar um lab novo
 
