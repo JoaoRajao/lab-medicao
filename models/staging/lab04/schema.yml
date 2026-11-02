@@ -1,0 +1,24 @@
+version: 2
+
+models:
+  - name: stg_lab04_ci_runs
+    description: "Amostra fixa de 30 execuções push do workflow CI do Ruff, uma por commit."
+    columns:
+      - name: run_id
+        data_tests: [not_null, unique]
+      - name: head_sha
+        data_tests: [not_null, unique]
+      - name: created_at
+        data_tests: [not_null]
+      - name: conclusion
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['success', 'failure']
+      - name: failed
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [0, 1]
