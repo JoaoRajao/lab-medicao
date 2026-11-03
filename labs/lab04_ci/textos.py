@@ -6,24 +6,35 @@ from labs.lab04_ci import estatistica as est
 from labs.lab04_ci.graficos import br
 
 
-def _pct(valor: float, casas: int = 1) -> str:
+def pct(valor: float, casas: int = 1) -> str:
     return br(100 * valor, casas) + "%"
 
 
-def cenario(a: est.Amostra) -> str:
-    return (
-        f"**Pergunta:** a taxa de falha do workflow de CI do `{a.repositorio}` passa da meta de 5%?\n\n"
-        f"- **H₀:** a probabilidade de uma execução falhar é no máximo 5% (p ≤ 0,05).\n"
-        f"- **H₁:** a probabilidade de falha é maior que 5% (p > 0,05). Os dois testes são **unicaudais à direita**, "
-        f"com α = 0,05, porque só interessa saber se a meta foi **ultrapassada**.\n"
-        f"- **Testes comparados (par P4):** Z para uma proporção × binomial exato.\n"
-        f"- **Dados reais:** {a.n} execuções do workflow `CI` disparadas por `push` em `main`, uma por commit, "
-        f"entre {a.inicio[:10]} e {a.fim[:10]}, coletadas da API do GitHub "
-        f"(`labs/lab04_ci/data/raw/ci_runs.csv`, com o link de cada execução). Houve **{a.falhas} falhas** "
-        f"({_pct(a.proporcao)}).\n"
-        f"- **Expectativa antes de simular:** o binomial exato deve controlar melhor o erro tipo I, porque sob H₀ "
-        f"esperamos só {br(a.n * est.P0, 1)} falhas em {a.n} execuções, pouco para a aproximação normal do Z."
-    )
+def pergunta(a: est.Amostra) -> str:
+    return f"A taxa de falha do workflow de CI do `{a.repositorio}` passa da meta de **5%**?"
+
+
+def hipoteses() -> list[tuple[str, str]]:
+    return [
+        ("H₀", "A probabilidade de uma execução falhar é no máximo 5% (p ≤ 0,05)."),
+        ("H₁", "A probabilidade de falha é maior que 5% (p > 0,05)."),
+    ]
+
+
+def desenho() -> str:
+    return ("Os dois testes são **unicaudais à direita**, com α = 0,05: só interessa saber se a meta foi "
+            "**ultrapassada**. Par P4: **teste Z para uma proporção** × **binomial exato**.")
+
+
+def fonte(a: est.Amostra) -> str:
+    return (f"**{a.n} execuções** do workflow `CI` disparadas por `push` em `main`, uma por commit, de "
+            f"{a.inicio[:10]} a {a.fim[:10]}, coletadas da API do GitHub. Cada linha de "
+            f"`labs/lab04_ci/data/raw/ci_runs.csv` traz o link da execução, para auditoria.")
+
+
+def expectativa(a: est.Amostra) -> str:
+    return (f"Registrada antes de simular: o **binomial exato** deve controlar melhor o erro tipo I, porque sob H₀ "
+            f"esperamos só {br(a.n * est.P0, 1)} falhas em {a.n} execuções, pouco para a aproximação normal do Z.")
 
 
 def g1(a: est.Amostra) -> str:
@@ -43,8 +54,21 @@ def g2(a: est.Amostra) -> str:
     return (
         f"O **Z** padroniza a proporção observada e a compara com a normal; o **binomial** usa a distribuição exata "
         f"do número de falhas sob H₀. A região de rejeição fica só à direita porque H₁ é p > 0,05. Como X é discreto, "
-        f"o Z rejeita a partir de {k_z} falhas, o que sob H₀ acontece com probabilidade {_pct(alfa_z)} (acima de 5%: "
-        f"tende a ser **liberal**), e o binomial a partir de {k_b}, com probabilidade {_pct(alfa_b)} (**conservador**). "
+        f"o Z rejeita a partir de {k_z} falhas, o que sob H₀ acontece com probabilidade {pct(alfa_z)} (acima de 5%: "
+        f"tende a ser **liberal**), e o binomial a partir de {k_b}, com probabilidade {pct(alfa_b)} (**conservador**). "
         f"O p-valor do exemplo é a chance de ver {a.falhas} ou mais falhas em {a.n} execuções **se a taxa fosse 5%**: "
         f"{br(p_b, 4)} pelo binomial e {br(p_z, 4)} pelo Z; não é a probabilidade de H₀ ser verdadeira."
     )
+
+
+def comparacao(a: est.Amostra) -> list[dict[str, str]]:
+    """Linhas da tabela que acompanha o G2, uma por teste."""
+    k_z, k_b = est.falhas_criticas_z(a.n), est.falhas_criticas_binomial(a.n)
+    return [
+        {"Teste": "Z para uma proporção", "O que compara": "proporção padronizada × N(0, 1)",
+         "Rejeita H₀ a partir de": f"{k_z} falhas", "Erro tipo I real": pct(est.erro_tipo_i_exato(k_z, a.n)),
+         f"p-valor ({a.falhas} falhas)": br(est.p_valor_z(a.falhas, a.n), 4)},
+        {"Teste": "Binomial exato", "O que compara": "contagem de falhas × Binomial(n, p₀)",
+         "Rejeita H₀ a partir de": f"{k_b} falhas", "Erro tipo I real": pct(est.erro_tipo_i_exato(k_b, a.n)),
+         f"p-valor ({a.falhas} falhas)": br(est.p_valor_binomial(a.falhas, a.n), 4)},
+    ]

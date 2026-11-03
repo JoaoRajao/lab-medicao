@@ -4,7 +4,6 @@ import math
 from pathlib import Path
 
 import pytest
-from matplotlib.figure import Figure
 from scipy import stats
 from streamlit.testing.v1 import AppTest
 
@@ -42,15 +41,26 @@ def test_simulated_sample_is_reproducible_and_binary():
 
 def test_figures_have_titles_axis_labels_legends_and_fixed_test_colors():
     g1 = graficos.g1_dados(AMOSTRA)
+    assert g1.layout.title.text.startswith("G1")
+    assert g1.layout.xaxis.title.text and g1.layout.yaxis.title.text
+    assert [trace.marker.color for trace in g1.data] == [graficos.COR_REAL, graficos.COR_SIMULADO_H0,
+                                                          graficos.COR_SIMULADO_EFEITO]
+    assert all(trace.text is not None for trace in g1.data)  # rotulos de valor: alivio de contraste
+
     g2 = graficos.g2_testes(AMOSTRA)
-    assert isinstance(g1, Figure) and isinstance(g2, Figure)
-    ax_g1 = g1.axes[0]
-    assert ax_g1.get_title().startswith("G1") and ax_g1.get_xlabel() and ax_g1.get_ylabel() and ax_g1.get_legend()
-    ax_z, ax_b = [ax for ax in g2.axes if ax.get_xlabel()][:2]
-    assert "Z" in ax_z.get_title() and "Binomial" in ax_b.get_title()
-    assert ax_z.get_legend() and ax_b.get_legend()
-    assert ax_z.lines[0].get_color() == graficos.COR_Z
-    assert any(patch.get_facecolor()[:3] == pytest.approx((0.918, 0.345, 0.047), abs=0.01) for patch in ax_b.patches)
+    assert g2.layout.title.text.startswith("G2")
+    assert g2.layout.xaxis.title.text.startswith("Estatística z") and g2.layout.xaxis2.title.text.startswith("Número")
+    nomes = [trace.name for trace in g2.data]
+    assert any(nome.startswith("Z: p-valor") for nome in nomes) and any(nome.startswith("Binomial: p-valor") for nome in nomes)
+    assert g2.data[0].line.color == graficos.COR_Z
+    assert graficos.COR_BINOMIAL in g2.data[4].marker.color  # barras da regiao de rejeicao
+    assert all(trace.showlegend is not False for trace in g2.data)
+
+
+def test_log_scale_switches_both_vertical_axes():
+    g2 = graficos.g2_testes(AMOSTRA, escala_log=True)
+    assert g2.layout.yaxis.type == "log" and g2.layout.yaxis2.type == "log"
+    assert graficos.g2_testes(AMOSTRA).layout.yaxis.type != "log"
 
 
 def test_texts_come_from_the_data_and_keep_two_to_four_sentences():
@@ -58,7 +68,11 @@ def test_texts_come_from_the_data_and_keep_two_to_four_sentences():
         frases = [f for f in texto.replace("**", "").split(". ") if f.strip()]
         assert 2 <= len(frases) <= 4
     assert "0,0156" in textos.g2(AMOSTRA) and "6,1%" in textos.g2(AMOSTRA)
-    assert "5 falhas" in textos.cenario(AMOSTRA) and "unicaudais à direita" in textos.cenario(AMOSTRA)
+    assert "30 execuções" in textos.fonte(AMOSTRA) and "unicaudais à direita" in textos.desenho()
+    assert "5%" in textos.pergunta(AMOSTRA) and [h for h, _ in textos.hipoteses()] == ["H₀", "H₁"]
+    linhas = textos.comparacao(AMOSTRA)
+    assert [l["Rejeita H₀ a partir de"] for l in linhas] == ["4 falhas", "5 falhas"]
+    assert [l["Erro tipo I real"] for l in linhas] == ["6,1%", "1,6%"]
 
 
 def test_dashboard_runs_and_shows_the_s01_sections_in_order():
@@ -66,4 +80,7 @@ def test_dashboard_runs_and_shows_the_s01_sections_in_order():
     assert not app.exception
     headers = [h.value for h in app.header]
     assert headers == ["1. Cenário", "2. Os dados", "3. Como os testes funcionam"]
-    assert "github.com/JoaoRajao/lab-medicao" in app.markdown[0].value
+    assert any("github.com/JoaoRajao/lab-medicao" in m.value for m in app.markdown)
+    assert any("projects/4" in m.value for m in app.markdown)
+    assert [m.label for m in app.metric][:2] == ["Execuções observadas", "Falhas"]
+    assert len(app.toggle) == 1
