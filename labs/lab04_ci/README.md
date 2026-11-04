@@ -47,6 +47,26 @@ Esse único comando valida o CSV versionado, substitui a tabela `lab04_ci_runs` 
 
 Para recoletar **a mesma janela fixa** pela API e atualizar o CSV antes da reconstrução, configure `GITHUB_TOKEN` e rode `python3 -m labs.lab04_ci --refresh`. O token nunca é salvo no CSV, no Parquet ou no cache. Se não houver 30 commits elegíveis dentro do alcance paginado da API, a coleta falha sem substituir o CSV. A API pode mostrar um resultado diferente após uma nova tentativa de workflow; por isso, o CSV versionado é a referência reprodutível do estudo.
 
+## Dashboard
+
+Da raiz do repositório, com o `requirements.txt` instalado:
+
+```bash
+streamlit run labs/lab04_ci/app.py
+```
+
+O dashboard abre no navegador (padrão `http://localhost:8501`) e lê só o CSV versionado: não precisa de token nem de rede. Na S01 ele traz as três primeiras seções exigidas pelo enunciado (#98):
+
+| Seção | Conteúdo |
+| --- | --- |
+| 1. Cenário | Pergunta, H₀ e H₁ (unicaudais à direita, α = 0,05), origem e tamanho da amostra real, expectativa registrada antes de simular. |
+| 2. Os dados (G1) | Sucessos e falhas reais ao lado de duas amostras simuladas de 30 execuções (Bernoulli, semente 42): sob H₀ (p = 0,05) e com a taxa observada (p ≈ 0,167). |
+| 3. Como os testes funcionam (G2) | Distribuição de cada estatística sob H₀, região de rejeição sombreada e p-valor da amostra real marcado como área. Um botão muda o eixo vertical para escala logarítmica e mostra a cauda. No painel do Z, os valores possíveis de z sob H₀ (X é discreto) aparecem sobre a normal assumida: na cauda, eles ficam acima da curva, por isso o Z é liberal. Abaixo, uma tabela compara os dois testes. |
+
+Cada gráfico vem com um texto de 2 a 4 frases, montado a partir dos dados (`textos.py`), e cada teste tem sempre a mesma cor: **Z em azul** e **binomial em laranja**. Os gráficos são interativos (Plotly, com valores ao passar o mouse) e usam uma paleta validada para daltonismo (`graficos.py`). O topo traz os links, os indicadores da amostra e os p-valores; a barra lateral tem o índice das sete seções. As contas do G2 estão em `estatistica.py`. Com n = 30, o Z rejeita H₀ a partir de 4 falhas, o que acontece com probabilidade real de 6,1% sob H₀, e o binomial a partir de 5, com 1,6%.
+
+A amostra simulada do G1 usa uma função provisória (`estatistica.amostra_simulada`). O gerador reprodutível da #97 substitui essa função quando for integrado.
+
 ## Continuação do laboratório
 
 Esta entrega cobre a US #96: cenário, hipóteses, dados reais, Parquet e visão dbt. A US #97 implementa o gerador, os dois testes em um conjunto simulado e G1/G2 em conjunto com a #98. As 10.000 repetições de Q1/Q2 pertencem à #99; a aplicação final dos testes à amostra real e a recomendação pertencem à #102.
