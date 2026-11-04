@@ -77,9 +77,9 @@ def cabecalho(a: est.Amostra) -> None:
     st.title("A taxa de falha do CI passa da meta de 5%?")
     st.markdown(f'<p class="subtitulo">Lab04 — testes de hipótese por dentro, com o CI do <code>{a.repositorio}</code></p>',
                 unsafe_allow_html=True)
-    st.markdown(f'<div class="links"><a href="{REPOSITORIO}">Repositório no GitHub ↗</a>'
-                f'<a href="{PROJETO}">GitHub Projects ↗</a>'
-                f'<a href="{DASHBOARD}">Dashboard publicado ↗</a></div>',
+    st.markdown(f'<div class="links"><a href="{REPOSITORIO}" target="_blank" rel="noopener">Repositório no GitHub ↗</a>'
+                f'<a href="{PROJETO}" target="_blank" rel="noopener">GitHub Projects ↗</a>'
+                f'<a href="{DASHBOARD}" target="_blank" rel="noopener">Dashboard publicado ↗</a></div>',
                 unsafe_allow_html=True)
     colunas = st.columns(5)
     indicadores = [
