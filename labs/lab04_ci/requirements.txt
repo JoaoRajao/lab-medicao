@@ -1,0 +1,6 @@
+# Dependencias so do dashboard, usadas pelo Streamlit Community Cloud (o requirements.txt da raiz e do projeto todo).
+streamlit==1.66.0
+plotly==7.1.0
+pandas==3.0.6
+numpy==2.5.2
+scipy==1.18.1

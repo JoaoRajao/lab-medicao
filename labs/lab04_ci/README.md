@@ -49,7 +49,9 @@ Para recoletar **a mesma janela fixa** pela API e atualizar o CSV antes da recon
 
 ## Dashboard
 
-Da raiz do repositório, com o `requirements.txt` instalado:
+**Publicado em:** <https://joaorajao-lab-medicao-labslab04-ciapp-jw2ure.streamlit.app/> (Streamlit Community Cloud, atualizado a cada push na `master`). O deploy instala só [`requirements.txt`](requirements.txt) desta pasta, com as dependências do dashboard.
+
+Para rodar localmente, da raiz do repositório, com o `requirements.txt` instalado:
 
 ```bash
 streamlit run labs/lab04_ci/app.py

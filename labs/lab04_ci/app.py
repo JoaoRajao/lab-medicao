@@ -23,6 +23,7 @@ from labs.lab04_ci import graficos, textos  # noqa: E402
 
 REPOSITORIO = "https://github.com/JoaoRajao/lab-medicao"
 PROJETO = "https://github.com/users/JoaoRajao/projects/4"
+DASHBOARD = "https://joaorajao-lab-medicao-labslab04-ciapp-jw2ure.streamlit.app/"
 SECOES = [
     ("cenario", "1. Cenário", True), ("dados", "2. Os dados", True), ("testes", "3. Como os testes funcionam", True),
     ("erro", "4. Erro tipo I", False), ("poder", "5. Poder", False), ("reais", "6. Dados reais", False),
@@ -78,7 +79,7 @@ def cabecalho(a: est.Amostra) -> None:
                 unsafe_allow_html=True)
     st.markdown(f'<div class="links"><a href="{REPOSITORIO}">Repositório no GitHub ↗</a>'
                 f'<a href="{PROJETO}">GitHub Projects ↗</a>'
-                f'<span class="pendente">Dashboard: <code>streamlit run labs/lab04_ci/app.py</code></span></div>',
+                f'<a href="{DASHBOARD}">Dashboard publicado ↗</a></div>',
                 unsafe_allow_html=True)
     colunas = st.columns(5)
     indicadores = [
@@ -117,7 +118,7 @@ def secao_dados(a: est.Amostra) -> None:
     st.header("2. Os dados", anchor="dados")
     with st.container(border=True):
         grafico, texto = st.columns([2.2, 1], gap="large")
-        grafico.plotly_chart(graficos.g1_dados(a), use_container_width=True, config={"displayModeBar": False})
+        grafico.plotly_chart(graficos.g1_dados(a), width="stretch", config={"displayModeBar": False})
         with texto:
             leitura(textos.g1(a))
 
@@ -126,9 +127,9 @@ def secao_testes(a: est.Amostra) -> None:
     st.header("3. Como os testes funcionam", anchor="testes")
     with st.container(border=True):
         log = st.toggle("Escala logarítmica no eixo vertical (mostra a cauda e a área do p-valor)", value=False)
-        st.plotly_chart(graficos.g2_testes(a, escala_log=log), use_container_width=True,
+        st.plotly_chart(graficos.g2_testes(a, escala_log=log), width="stretch",
                         config={"displayModeBar": False})
-        st.dataframe(pd.DataFrame(textos.comparacao(a)), hide_index=True, use_container_width=True)
+        st.dataframe(pd.DataFrame(textos.comparacao(a)), hide_index=True, width="stretch")
         leitura(textos.g2(a))
 
 

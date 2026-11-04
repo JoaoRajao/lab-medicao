@@ -20,11 +20,11 @@ from pathlib import Path
 import numpy as np
 from scipy import stats
 
-from labs.lab04_ci.ingest import CSV_PATH
-
 P0 = 0.05
 ALPHA = 0.05
 SEED = 42
+# Mesmo caminho de ingest.CSV_PATH; sem importar ingest, o dashboard nao depende de duckdb/yaml no deploy.
+CSV_PATH = Path(__file__).resolve().parent / "data" / "raw" / "ci_runs.csv"
 
 
 @dataclass(frozen=True)
