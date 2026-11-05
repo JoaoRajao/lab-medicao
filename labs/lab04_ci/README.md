@@ -27,9 +27,22 @@ Há **30 execuções, 5 falhas e 25 sucessos** (`5/30 = 16,67%`) entre `2026-10-
 | `conclusion` | `failure` ou `success`; origem da variável binária. |
 | `html_url` | Link direto para conferir a execução. |
 
-## Dados simulados planejados
+## Dados simulados e aplicação dos testes (US #97)
 
-O gerador da US #97 usará Bernoulli independente, com `numpy.random.default_rng(42)`: `n = 30`, `p₀ = 0,05` sob H₀. Para poder, a grade proposta é `p = 0,05; 0,075; 0,10; 0,15; 0,20; 0,30`, cobrindo a proporção real observada de aproximadamente 0,167. A situação adversa pode usar `n = 10`, tornando ainda pior a aproximação normal. A amostra real fundamenta o tamanho da amostra e a faixa de efeitos, mas **não** prova que as execuções sejam independentes nem fixa uma probabilidade verdadeira de falha.
+O módulo `labs.lab04_ci.simulacao` implementa o gerador reprodutível e a aplicação simultânea dos dois testes do par P4:
+
+- **Gerador Bernoulli independente:** utiliza `numpy.random.default_rng(42)` para gerar sequências de execuções (1 = falha, 0 = sucesso). Permite simular sob $H_0$ ($p_0 = 0{,}05$) e sob efeitos ($p = 0{,}075; 0{,}10; 0{,}15; 0{,}167; 0{,}20; 0{,}30$), além de situações com amostras pequenas ($n = 10$).
+- **Aplicação dos testes:**
+  - `aplicar_teste_z`: calcula a estatística $z$ com variância sob $H_0$, $p$-valor unicaudal e decisão ($\alpha = 0{,}05$).
+  - `aplicar_teste_binomial`: calcula o $p$-valor exato via distribuição binomial cumulativa à direita $P(X \ge k)$ e decisão.
+  - `comparar_testes`: executa ambos sobre o mesmo conjunto simulado ou contagem, avaliando concordância e gerando explicação textual interpretada.
+- **Suporte à S02 (10.000 repetições):** funções vetorizadas `simular_repeticoes_z` e `simular_repeticoes_binomial` calculam estatísticas e decisões para arrays inteiros de contagens sem overhead de laços em Python.
+
+Para executar a demonstração interpretada dos cenários via terminal:
+
+```bash
+python3 -m labs.lab04_ci.simulacao
+```
 
 ## Reconstrução de CSV → Parquet → dbt
 
@@ -67,8 +80,8 @@ O dashboard abre no navegador (padrão `http://localhost:8501`) e lê só o CSV 
 
 Cada gráfico vem com um texto de 2 a 4 frases, montado a partir dos dados (`textos.py`), e cada teste tem sempre a mesma cor: **Z em azul** e **binomial em laranja**. Os gráficos são interativos (Plotly, com valores ao passar o mouse) e usam uma paleta validada para daltonismo (`graficos.py`). O topo traz os links, os indicadores da amostra e os p-valores; a barra lateral tem o índice das sete seções. As contas do G2 estão em `estatistica.py`. Com n = 30, o Z rejeita H₀ a partir de 4 falhas, o que acontece com probabilidade real de 6,1% sob H₀, e o binomial a partir de 5, com 1,6%.
 
-A amostra simulada do G1 usa uma função provisória (`estatistica.amostra_simulada`). O gerador reprodutível da #97 substitui essa função quando for integrado.
+A amostra simulada do G1 consome o gerador reprodutivo definitivo (`estatistica.amostra_simulada` delegando para `simulacao.gerar_amostra`).
 
 ## Continuação do laboratório
 
-Esta entrega cobre a US #96: cenário, hipóteses, dados reais, Parquet e visão dbt. A US #97 implementa o gerador, os dois testes em um conjunto simulado e G1/G2 em conjunto com a #98. As 10.000 repetições de Q1/Q2 pertencem à #99; a aplicação final dos testes à amostra real e a recomendação pertencem à #102.
+Esta entrega cobre as US #96 (cenário, hipóteses, dados reais, Parquet e dbt), #98 (dashboard com G1 e G2) e #97 (gerador reprodutível, testes Z e Binomial e vetorização para repetidores). As 10.000 repetições de Q1/Q2 pertencem à #99; a aplicação final dos testes à amostra real e a recomendação pertencem à #102.

@@ -20,6 +20,8 @@ from pathlib import Path
 import numpy as np
 from scipy import stats
 
+from labs.lab04_ci import simulacao
+
 P0 = 0.05
 ALPHA = 0.05
 SEED = 42
@@ -88,6 +90,6 @@ def erro_tipo_i_exato(k_critico: int, n: int, p0: float = P0) -> float:
 def amostra_simulada(n: int, p: float, seed: int = SEED) -> np.ndarray:
     """Uma amostra de n execucoes (1 = falha) com probabilidade de falha p.
 
-    Provisorio para o G1 da S01: o gerador reprodutivel da #97 substitui esta funcao.
+    Utiliza o gerador reprodutivel do modulo simulacao (#97).
     """
-    return (np.random.default_rng(seed).random(n) < p).astype(int)
+    return simulacao.gerar_amostra(n, p, rng=seed)
