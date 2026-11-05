@@ -196,10 +196,17 @@ def parse_args() -> argparse.Namespace:
 
 def fetch_items_rest_fallback(login: str, sprint: str, exported_at: datetime) -> list[dict[str, Any]]:
     import urllib.request
-    url = f"https://api.github.com/repos/{login}/lab-medicao/issues?state=all&per_page=100"
-    request = urllib.request.Request(url, headers={"User-Agent": "lab-medicao-kanban-snapshot"})
-    with urllib.request.urlopen(request) as response:
-        raw_issues = json.loads(response.read().decode("utf-8"))
+    raw_issues: list[dict[str, Any]] = []
+    page = 1
+    while True:
+        url = f"https://api.github.com/repos/{login}/lab-medicao/issues?state=all&per_page=100&page={page}"
+        request = urllib.request.Request(url, headers={"User-Agent": "lab-medicao-kanban-snapshot"})
+        with urllib.request.urlopen(request) as response:
+            batch = json.loads(response.read().decode("utf-8"))
+            if not batch:
+                break
+            raw_issues.extend(batch)
+            page += 1
 
     rows = []
     for issue in raw_issues:
