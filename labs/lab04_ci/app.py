@@ -2,7 +2,8 @@
 
     streamlit run labs/lab04_ci/app.py
 
-S01 (#98): seções 1 a 3. A #102 acrescenta as seções 6 e 7; G3/G4 estão no PR #112.
+Seções 1 a 7: cenário, dados, funcionamento dos testes, erro tipo I, poder,
+aplicação aos dados reais e conclusão.
 """
 
 from __future__ import annotations
@@ -19,13 +20,14 @@ import streamlit as st  # noqa: E402
 
 from labs.lab04_ci import estatistica as est  # noqa: E402
 from labs.lab04_ci import analise_real, graficos, textos  # noqa: E402
+from labs.lab04_ci import resultados as res  # noqa: E402
 
 REPOSITORIO = "https://github.com/JoaoRajao/lab-medicao"
 PROJETO = "https://github.com/users/JoaoRajao/projects/4"
 DASHBOARD = "https://joaorajao-lab-medicao-labslab04-ciapp-jw2ure.streamlit.app/"
 SECOES = [
     ("cenario", "1. Cenário", True), ("dados", "2. Os dados", True), ("testes", "3. Como os testes funcionam", True),
-    ("erro", "4. Erro tipo I", False), ("poder", "5. Poder", False), ("reais", "6. Dados reais", True),
+    ("erro", "4. Erro tipo I", True), ("poder", "5. Poder", True), ("reais", "6. Dados reais", True),
     ("conclusao", "7. Conclusão", True),
 ]
 
@@ -145,6 +147,50 @@ def secao_conclusao(a: est.Amostra) -> None:
         st.markdown(analise_real.texto_conclusao(a))
 
 
+def numeros(simulados, exatos) -> None:
+    """Tabela com os valores dos graficos G3 e G4 (leitura sem depender da cor)."""
+    df = graficos._taxas(simulados, exatos)
+    tabela = pd.DataFrame({
+        "Situação": df["situacao"], "Teste": df["teste"].map(graficos.NOME_TESTE),
+        "p verdadeira": [textos.pct(v) for v in df["p_verdadeiro"]],
+        "Rejeições de H₀": [textos.pct(v) for v in df["taxa"]],
+        "Margem (95%)": ["—" if m != m else "± " + graficos.br(100 * m, 2) + " p.p." for m in df["margem"]],
+        "Valor exato": ["—" if v != v else textos.pct(v) for v in df.get("taxa_exata", df["taxa"])],
+    })
+    with st.expander("Ver os números"):
+        st.dataframe(tabela, hide_index=True, width="stretch")
+
+
+def aviso_simulacao(simulados) -> None:
+    if simulados is None:
+        st.info("Mostrando os valores exatos da binomial para o cenário base. Quando as simulações de Q1–Q3 "
+                f"(#99 e #100) gravarem `{res.RESULTADOS_PATH.relative_to(ROOT).as_posix()}`, os gráficos passam a "
+                "mostrar as taxas simuladas, com os valores exatos como referência.")
+
+
+def secao_erro(simulados, exatos) -> None:
+    st.header("4. Erro tipo I", anchor="erro")
+    with st.container(border=True):
+        aviso_simulacao(simulados)
+        grafico, texto = st.columns([2.2, 1], gap="large")
+        grafico.plotly_chart(graficos.g3_erro_tipo_i(simulados, exatos), width="stretch",
+                             config={"displayModeBar": False})
+        with texto:
+            leitura(textos.g3(simulados, exatos))
+
+
+def secao_poder(a: est.Amostra, simulados, exatos) -> None:
+    st.header("5. Poder", anchor="poder")
+    with st.container(border=True):
+        efeito = a.proporcao - est.P0
+        grafico, texto = st.columns([2.2, 1], gap="large")
+        grafico.plotly_chart(graficos.g4_poder(simulados, exatos, efeito), width="stretch",
+                             config={"displayModeBar": False})
+        with texto:
+            leitura(textos.g4(simulados, exatos, efeito))
+        numeros(simulados, exatos)
+
+
 def main() -> None:
     st.set_page_config(page_title="Lab04 — Taxa de falha do CI", page_icon="📊", layout="wide")
     st.markdown(CSS, unsafe_allow_html=True)
@@ -154,10 +200,13 @@ def main() -> None:
     secao_cenario(amostra)
     secao_dados(amostra)
     secao_testes(amostra)
+    simulados = res.carregar()
+    exatos = res.exatos(simulados)
+    secao_erro(simulados, exatos)
+    secao_poder(amostra, simulados, exatos)
     secao_reais(amostra)
     secao_conclusao(amostra)
     st.divider()
-    st.caption("As seções 4 e 5 (G3 e G4) serão integradas com o PR #112.")
 
 
 if __name__ == "__main__":
