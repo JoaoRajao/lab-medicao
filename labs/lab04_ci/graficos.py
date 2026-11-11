@@ -1,4 +1,4 @@
-"""Graficos interativos do dashboard do Lab04 (G1 e G2, issue #98).
+"""Graficos interativos do dashboard do Lab04 (G1 e G2, issue #98; G3 e G4, issue #101).
 
 Paleta validada (CVD e contraste) e fixa por papel, igual em todo o dashboard:
 teste Z em azul, binomial exato em laranja, dados reais em cinza, simulados em verde-agua e violeta.
@@ -7,11 +7,13 @@ teste Z em azul, binomial exato em laranja, dados reais em cinza, simulados em v
 from __future__ import annotations
 
 import numpy as np
+import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from scipy import stats
 
 from labs.lab04_ci import estatistica as est
+from labs.lab04_ci import resultados as res
 
 COR_Z = "#2a78d6"
 COR_BINOMIAL = "#eb6834"
@@ -24,6 +26,10 @@ TINTA_SECUNDARIA = "#52514e"
 GRADE = "#e1e0d9"
 EIXO = "#c3c2b7"
 SUPERFICIE = "#fcfcfb"
+COR_REFERENCIA = "#898781"
+COR_TESTE = {"Z": COR_Z, "Binomial": COR_BINOMIAL}
+NOME_TESTE = {"Z": "Teste Z", "Binomial": "Binomial exato"}
+TRACOS = ("solid", "dash", "dot", "dashdot")
 FONTE = 'system-ui, -apple-system, "Segoe UI", sans-serif'
 
 
@@ -139,3 +145,86 @@ def g2_testes(amostra: est.Amostra, escala_log: bool = False) -> go.Figure:
         titulo.update(font=dict(size=13, color=TINTA), yshift=8)
     legenda = dict(orientation="h", yanchor="top", y=-0.2, xanchor="left", x=0, font=dict(color=TINTA_SECUNDARIA))
     return _layout(fig, 600, legenda=legenda, margem_topo=90)
+
+
+def _taxas(simulados: pd.DataFrame | None, exatos: pd.DataFrame) -> pd.DataFrame:
+    """Uma tabela por linha do grafico: taxa mostrada (simulada, se houver), margem e valor exato (se houver)."""
+    if simulados is None:
+        df = exatos.assign(taxa=exatos["taxa_exata"], margem=np.nan, repeticoes=0)
+    else:
+        df = simulados.merge(exatos[["situacao", "teste", "p_verdadeiro", "taxa_exata"]],
+                             on=["situacao", "teste", "p_verdadeiro"], how="left")
+        df = df.assign(taxa=df["taxa_rejeicao"], margem=res.margem(df["taxa_rejeicao"], df["repeticoes"]))
+    return df
+
+
+def g3_erro_tipo_i(simulados: pd.DataFrame | None, exatos: pd.DataFrame) -> go.Figure:
+    """G3: erro tipo I (taxa de rejeicao com H0 verdadeira) de cada teste em cada situacao, com linha em 5%."""
+    df = res.erro_tipo_i(_taxas(simulados, exatos))
+    situacoes = list(dict.fromkeys(df["situacao"]))
+    fig = go.Figure()
+    linhas = {teste: df[df["teste"] == teste].set_index("situacao").loc[situacoes].reset_index() for teste in res.TESTES}
+    eixo = {teste: [situacoes, [NOME_TESTE[teste]] * len(situacoes)] for teste in res.TESTES}
+    for teste, t in linhas.items():
+        fig.add_bar(
+            x=eixo[teste], y=100 * t["taxa"], name=NOME_TESTE[teste] + (" (simulado)" if simulados is not None else ""),
+            marker=dict(color=COR_TESTE[teste], cornerradius=4),
+            error_y=dict(type="data", array=100 * t["margem"], color=TINTA, thickness=1.2, width=5,
+                         visible=simulados is not None),
+            text=[br(100 * v, 1) + "%" for v in t["taxa"]], textposition="inside", insidetextanchor="start",
+            textfont=dict(color="white" if teste == "Z" else TINTA, size=13), cliponaxis=False,
+            customdata=np.stack([100 * t["margem"].fillna(0), t["repeticoes"]], axis=1),
+            hovertemplate=(f"<b>{NOME_TESTE[teste]}</b> · %{{x[0]}}<br>erro tipo I = %{{y:.2f}}%"
+                           + ("<br>± %{customdata[0]:.2f} p.p. (95%, %{customdata[1]:,} repetições)" if simulados is not None else "")
+                           + "<extra></extra>"),
+        )
+    if simulados is not None:
+        for teste, t in linhas.items():
+            if t["taxa_exata"].notna().any():
+                fig.add_scatter(
+                    x=eixo[teste], y=100 * t["taxa_exata"], mode="markers", name="Valor exato (binomial)",
+                    legendgroup="exato", showlegend=teste == res.TESTES[0],
+                    marker=dict(symbol="diamond", size=11, color=COR_REFERENCIA, line=dict(color=SUPERFICIE, width=2)),
+                    hovertemplate=f"<b>{NOME_TESTE[teste]}</b> · %{{x[0]}}<br>valor exato = %{{y:.2f}}%<extra></extra>",
+                )
+    alpha = 100 * float(df["alpha"].iloc[0])
+    fig.add_hline(y=alpha, line=dict(color=TINTA, width=1.5, dash="dash"),
+                  annotation_text=f"α = {br(alpha, 0)}% (nível nominal)", annotation_position="top right",
+                  annotation_font=dict(color=TINTA, size=12))
+    topo = max(alpha, 100 * float((df["taxa"] + df["margem"].fillna(0)).max()))
+    fig.update_layout(barmode="group", bargap=0.35, title="G3 — Erro tipo I: rejeições com H0 verdadeira (p = 5%)")
+    fig.update_xaxes(title_text="Situação simulada e teste")
+    fig.update_yaxes(title_text="Rejeições de H0 verdadeira (% dos conjuntos)", range=[0, topo * 1.3], ticksuffix="%")
+    return _layout(fig, 460)
+
+
+def g4_poder(simulados: pd.DataFrame | None, exatos: pd.DataFrame, efeito_observado: float | None = None) -> go.Figure:
+    """G4: curvas de poder dos dois testes (proporcao de rejeicoes x tamanho do efeito), por situacao."""
+    df = res.poder(_taxas(simulados, exatos))
+    situacoes = list(dict.fromkeys(df["situacao"]))
+    fig = go.Figure()
+    for i, situacao in enumerate(situacoes):
+        for teste in res.TESTES:
+            t = df[(df["situacao"] == situacao) & (df["teste"] == teste)]
+            exato = 100 * t["taxa_exata"] if "taxa_exata" in t else pd.Series(np.nan, index=t.index)
+            fig.add_scatter(
+                x=100 * t["efeito"], y=100 * t["taxa"], mode="lines+markers",
+                name=f"{NOME_TESTE[teste]} · {situacao}", legendgroup=teste,
+                line=dict(color=COR_TESTE[teste], width=2, dash=TRACOS[i % len(TRACOS)]),
+                marker=dict(size=8, color=COR_TESTE[teste], line=dict(color=SUPERFICIE, width=2),
+                            symbol="circle" if i == 0 else "square"),
+                customdata=np.stack([100 * t["p_verdadeiro"], exato.fillna(-1)], axis=1),
+                hovertemplate=(f"<b>{NOME_TESTE[teste]}</b> · {situacao}<br>efeito = +%{{x:.1f}} p.p. "
+                               "(p = %{customdata[0]:.1f}%)<br>rejeita H0 em %{y:.1f}% dos conjuntos<extra></extra>"),
+            )
+    fig.add_hline(y=80, line=dict(color=COR_REFERENCIA, width=1, dash="dot"), annotation_text="80% de poder",
+                  annotation_position="top left", annotation_font=dict(color=TINTA_SECUNDARIA, size=12))
+    if efeito_observado is not None:
+        fig.add_vline(x=100 * efeito_observado, line=dict(color=COR_REAL, width=1, dash="dot"),
+                      annotation_text=f"efeito observado no Ruff (+{br(100 * efeito_observado, 1)} p.p.)",
+                      annotation_position="top left", annotation_font=dict(color=TINTA_SECUNDARIA, size=12))
+    fig.update_layout(title="G4 — Poder: proporção de rejeições × tamanho do efeito")
+    fig.update_xaxes(title_text="Tamanho do efeito: p verdadeira − p₀ (pontos percentuais)", ticksuffix=" p.p.",
+                     zeroline=False)
+    fig.update_yaxes(title_text="Rejeições de H0 (% dos conjuntos)", range=[0, 105], ticksuffix="%")
+    return _layout(fig, 500)
