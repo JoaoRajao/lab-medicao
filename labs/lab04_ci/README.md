@@ -60,6 +60,40 @@ Esse único comando valida o CSV versionado, substitui a tabela `lab04_ci_runs` 
 
 Para recoletar **a mesma janela fixa** pela API e atualizar o CSV antes da reconstrução, configure `GITHUB_TOKEN` e rode `python3 -m labs.lab04_ci --refresh`. O token nunca é salvo no CSV, no Parquet ou no cache. Se não houver 30 commits elegíveis dentro do alcance paginado da API, a coleta falha sem substituir o CSV. A API pode mostrar um resultado diferente após uma nova tentativa de workflow; por isso, o CSV versionado é a referência reprodutível do estudo.
 
+## Comando único
+
+Da raiz do repositório, com o `requirements.txt` instalado (semente fixa 42 em todas as etapas):
+
+```bash
+python -m labs.lab04_ci.executar
+```
+
+O comando roda o estudo do início ao fim e abre o dashboard:
+
+1. **Dados reais:** valida o CSV versionado e reconstrói DuckDB → Parquet → dbt (o mesmo que `python -m labs.lab04_ci`).
+2. **Simulações de Q1–Q3:** chama `labs.lab04_ci.experimentos.gerar_resultados(seed=42)` e grava `data/simulacao/resultados.csv` (contrato abaixo).
+3. **Roteiro da apresentação:** gera [`docs/lab04/roteiro_apresentacao.md`](../../docs/lab04/roteiro_apresentacao.md) com as respostas às 15 perguntas a partir dos resultados.
+4. **Validação:** confere a amostra real, os resultados (10.000 repetições, uma semente, simulação × valor exato), título/eixos/legenda dos quatro gráficos e as sete seções na ordem do enunciado; lista o que estiver pendente.
+5. **Dashboard:** `streamlit run labs/lab04_ci/app.py`.
+
+Use `--sem-dashboard` para só gerar e validar (ambiente limpo ou CI) e `--checar-links` para conferir também os links do topo. O código de saída é 1 quando há pendências.
+
+### Contrato dos resultados de Q1–Q3 (#99 e #100)
+
+As simulações entregam um `pandas.DataFrame` por `labs/lab04_ci/experimentos.py`, função `gerar_resultados(seed: int)`, com **uma linha por situação × teste × taxa de falha verdadeira**. O comando único valida e grava esse resultado; G3, G4, os textos e o roteiro leem dele.
+
+| Coluna | Conteúdo |
+| --- | --- |
+| `situacao` | Nome mostrado nos gráficos, ex.: `Base (n = 30)`. A primeira situação do arquivo é a base. |
+| `modelo` | `bernoulli` para execuções independentes com a mesma p; outro nome para dados que violam isso. |
+| `n`, `p0`, `alpha` | Execuções por conjunto, meta de H₀ (0,05) e nível (0,05). |
+| `p_verdadeiro`, `efeito` | Taxa usada para gerar os dados e `p_verdadeiro − p0` (0 = H₀ verdadeira, obrigatório em cada situação). |
+| `teste` | `Z` ou `Binomial`. |
+| `repeticoes`, `rejeicoes`, `taxa_rejeicao` | 10.000 conjuntos, quantos tiveram p-valor < α e a razão entre os dois. |
+| `seed` | Semente do `numpy.random.default_rng`. |
+
+Para situações `bernoulli`, a taxa de rejeição tem valor exato pela binomial (`resultados.taxa_exata`). O dashboard mostra esse valor como referência, e a validação acusa diferença acima de 3,29 erros padrão. Enquanto o arquivo não existe, G3 e G4 mostram os valores exatos do cenário base, com um aviso.
+
 ## Dashboard
 
 **Publicado em:** <https://joaorajao-lab-medicao-labslab04-ciapp-jw2ure.streamlit.app/> (Streamlit Community Cloud, atualizado a cada push na `master`). O deploy instala só [`requirements.txt`](requirements.txt) desta pasta, com as dependências do dashboard.
@@ -70,18 +104,24 @@ Para rodar localmente, da raiz do repositório, com o `requirements.txt` instala
 streamlit run labs/lab04_ci/app.py
 ```
 
-O dashboard abre no navegador (padrão `http://localhost:8501`) e lê só o CSV versionado: não precisa de token nem de rede. Na S01 ele traz as três primeiras seções exigidas pelo enunciado (#98):
+O dashboard abre no navegador (padrão `http://localhost:8501`) e lê só arquivos versionados: não precisa de token nem de rede. Seções já implementadas (#98 e #101):
 
 | Seção | Conteúdo |
 | --- | --- |
 | 1. Cenário | Pergunta, H₀ e H₁ (unicaudais à direita, α = 0,05), origem e tamanho da amostra real, expectativa registrada antes de simular. |
 | 2. Os dados (G1) | Sucessos e falhas reais ao lado de duas amostras simuladas de 30 execuções (Bernoulli, semente 42): sob H₀ (p = 0,05) e com a taxa observada (p ≈ 0,167). |
 | 3. Como os testes funcionam (G2) | Distribuição de cada estatística sob H₀, região de rejeição sombreada e p-valor da amostra real marcado como área. Um botão muda o eixo vertical para escala logarítmica e mostra a cauda. No painel do Z, os valores possíveis de z sob H₀ (X é discreto) aparecem sobre a normal assumida: na cauda, eles ficam acima da curva, por isso o Z é liberal. Abaixo, uma tabela compara os dois testes. |
+| 4. Erro tipo I (G3) | Taxa de rejeição com H₀ verdadeira de cada teste em cada situação, com linha em 5%, margem de Monte Carlo (95%) e o valor exato da binomial como referência. |
+| 5. Poder (G4) | Curvas de poder dos dois testes por tamanho do efeito (p verdadeira − 5%), uma linha por situação, com referência de 80% e o efeito observado no Ruff. Tabela com todos os números. |
 
 Cada gráfico vem com um texto de 2 a 4 frases, montado a partir dos dados (`textos.py`), e cada teste tem sempre a mesma cor: **Z em azul** e **binomial em laranja**. Os gráficos são interativos (Plotly, com valores ao passar o mouse) e usam uma paleta validada para daltonismo (`graficos.py`). O topo traz os links, os indicadores da amostra e os p-valores; a barra lateral tem o índice das sete seções. As contas do G2 estão em `estatistica.py`. Com n = 30, o Z rejeita H₀ a partir de 4 falhas, o que acontece com probabilidade real de 6,1% sob H₀, e o binomial a partir de 5, com 1,6%.
 
 A amostra simulada do G1 consome o gerador reprodutivo definitivo (`estatistica.amostra_simulada` delegando para `simulacao.gerar_amostra`).
 
+## Apresentação oral
+
+[`docs/lab04/roteiro_apresentacao.md`](../../docs/lab04/roteiro_apresentacao.md) traz respostas curtas às 15 perguntas da seção 5 do enunciado, a seção do dashboard a mostrar em cada uma e a divisão entre os integrantes (cinco perguntas por pessoa, cada um com a parte que implementou). As respostas são geradas por `python -m labs.lab04_ci.roteiro` (também chamado pelo comando único) com os números do dashboard; rode de novo sempre que os resultados mudarem, em vez de editar o arquivo.
+
 ## Continuação do laboratório
 
-Esta entrega cobre as US #96 (cenário, hipóteses, dados reais, Parquet e dbt), #98 (dashboard com G1 e G2) e #97 (gerador reprodutível, testes Z e Binomial e vetorização para repetidores). As 10.000 repetições de Q1/Q2 pertencem à #99; a aplicação final dos testes à amostra real e a recomendação pertencem à #102.
+Já entregues: #96 (cenário, hipóteses, dados reais, Parquet e dbt), #97 (gerador reprodutível e os dois testes), #98 (G1 e G2), #101 (G3 e G4, contrato dos resultados) e #104 (comando único, validação e roteiro). Faltam as simulações de Q1/Q2 (#99) e Q3 (#100), que gravam os resultados no contrato acima, e as seções 6 e 7 (#102 e #103).

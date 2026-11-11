@@ -179,10 +179,10 @@ def build_dbt() -> None:
         )
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description="Reconstrói CSV → DuckDB → Parquet → dbt do Lab04S01")
     parser.add_argument("--refresh", action="store_true", help="Recoleta a amostra fixa pela API do GitHub")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     if args.refresh:
         token = os.environ.get("GITHUB_TOKEN")
         if not token:
