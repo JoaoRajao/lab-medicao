@@ -2,8 +2,7 @@
 
     streamlit run labs/lab04_ci/app.py
 
-S01 (#98): secoes 1 a 3 (Cenario, Os dados com G1, Como os testes funcionam com G2). As secoes 4 a 7
-entram nas proximas sprints (#101, #102, #103).
+S01 (#98): seções 1 a 3. A #102 acrescenta as seções 6 e 7; G3/G4 estão no PR #112.
 """
 
 from __future__ import annotations
@@ -19,15 +18,15 @@ import pandas as pd  # noqa: E402
 import streamlit as st  # noqa: E402
 
 from labs.lab04_ci import estatistica as est  # noqa: E402
-from labs.lab04_ci import graficos, textos  # noqa: E402
+from labs.lab04_ci import analise_real, graficos, textos  # noqa: E402
 
 REPOSITORIO = "https://github.com/JoaoRajao/lab-medicao"
 PROJETO = "https://github.com/users/JoaoRajao/projects/4"
 DASHBOARD = "https://joaorajao-lab-medicao-labslab04-ciapp-jw2ure.streamlit.app/"
 SECOES = [
     ("cenario", "1. Cenário", True), ("dados", "2. Os dados", True), ("testes", "3. Como os testes funcionam", True),
-    ("erro", "4. Erro tipo I", False), ("poder", "5. Poder", False), ("reais", "6. Dados reais", False),
-    ("conclusao", "7. Conclusão", False),
+    ("erro", "4. Erro tipo I", False), ("poder", "5. Poder", False), ("reais", "6. Dados reais", True),
+    ("conclusao", "7. Conclusão", True),
 ]
 
 CSS = f"""
@@ -133,6 +132,19 @@ def secao_testes(a: est.Amostra) -> None:
         leitura(textos.g2(a))
 
 
+def secao_reais(a: est.Amostra) -> None:
+    st.header("6. Dados reais", anchor="reais")
+    with st.container(border=True):
+        st.dataframe(analise_real.tabela(a), hide_index=True, width="stretch")
+        st.markdown(analise_real.texto_dados_reais(a))
+
+
+def secao_conclusao(a: est.Amostra) -> None:
+    st.header("7. Conclusão", anchor="conclusao")
+    with st.container(border=True):
+        st.markdown(analise_real.texto_conclusao(a))
+
+
 def main() -> None:
     st.set_page_config(page_title="Lab04 — Taxa de falha do CI", page_icon="📊", layout="wide")
     st.markdown(CSS, unsafe_allow_html=True)
@@ -142,8 +154,10 @@ def main() -> None:
     secao_cenario(amostra)
     secao_dados(amostra)
     secao_testes(amostra)
+    secao_reais(amostra)
+    secao_conclusao(amostra)
     st.divider()
-    st.caption("Seções 4 a 7 (erro tipo I, poder, dados reais e conclusão) entram nas próximas sprints.")
+    st.caption("As seções 4 e 5 (G3 e G4) serão integradas com o PR #112.")
 
 
 if __name__ == "__main__":
