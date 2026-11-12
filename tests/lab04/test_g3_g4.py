@@ -25,6 +25,14 @@ def resultados_ficticios() -> pd.DataFrame:
     return pd.DataFrame(linhas)
 
 
+def leitura_curta(texto: str) -> bool:
+    """Formato dos textos de leitura: o que mostra, numeros em lista e conclusao de 2 a 4 frases."""
+    if "**O que mostra:**" not in texto or "\n- **" not in texto:
+        return False
+    conclusao = texto.split("**O que concluímos:**")[1].split("\n\n")[0]
+    return 2 <= frases(conclusao) <= 4
+
+
 def frases(texto: str) -> int:
     return len(re.split(r"(?<=[.!?])\s+(?=[A-ZÁÉÍÓÚÂÊÔ0-9])", texto.replace("**", "").strip()))
 
@@ -80,10 +88,10 @@ def test_g3_g4_texts_come_from_the_data_and_keep_two_to_four_sentences():
     simulados = resultados_ficticios()
     exatos = resultados.exatos(simulados)
     t3, t4 = textos.g3(simulados, exatos), textos.g4(simulados, exatos, AMOSTRA.proporcao - est.P0)
-    assert 2 <= frases(t3) <= 4 and 2 <= frases(t4) <= 4
+    assert leitura_curta(t3) and leitura_curta(t4)
     assert "**liberal**" in t3 and "**conservador**" in t3 and "6,1%" in t3
     assert "10.000 conjuntos" in t4 and "Amostra pequena" in t4
-    assert "valores exatos" in textos.g3(None, resultados.exatos())
+    assert "valores exatos" in textos.g3(None, resultados.exatos()).lower()
 
 
 def test_presentation_script_answers_all_questions_with_at_least_four_per_member():
@@ -117,4 +125,4 @@ def test_sample_size_discussion_uses_exact_power():
     assert fig.layout.title.text and fig.layout.xaxis.title.text and fig.layout.yaxis.title.text
     assert [t.line.color for t in fig.data[:2]] == [graficos.COR_Z, graficos.COR_BINOMIAL]
     texto = textos.tamanho_amostra(AMOSTRA, n_80)
-    assert 2 <= frases(texto) <= 4 and "76,0%" in texto and "57,6%" in texto and "39 execuções" in texto
+    assert leitura_curta(texto) and "76,0%" in texto and "57,6%" in texto and "39 execuções" in texto
