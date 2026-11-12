@@ -4,7 +4,7 @@ Gerado por `python -m labs.lab04_ci.roteiro` a partir dos mesmos dados do dashbo
 
 - Dashboard: <https://joaorajao-lab-medicao-labslab04-ciapp-jw2ure.streamlit.app/>
 - Duração: até 7 minutos, cerca de 25 segundos por resposta. Cada resposta indica a seção do dashboard para mostrar enquanto fala.
-- Resultados de Q1–Q3: **pendentes (#99/#100)**; números de erro tipo I e poder são os valores exatos.
+- Resultados: Q1/Q2 simulados em `labs/lab04_ci/data/simulacao/resultados.csv`; **Q3 pendente (#100)**.
 
 ## Divisão
 
@@ -68,13 +68,13 @@ Erro tipo I: concluir que o CI passou da meta quando na verdade não passou — 
 
 **Salomão** · mostrar: 4. Erro tipo I (G3)
 
-Sim. Pela valor exato da binomial (simulação pendente), o Z deu 6,1% e o binomial 1,6% em Base (n = 30). O Z ficou **liberal** e o binomial **conservador**. Como X é inteiro, os cortes saltam: o Z rejeita a partir de 4 falhas, o que sob H₀ tem probabilidade 6,1%, porque a normal subestima a cauda direita com n·p₀ = 1,5; o binomial só pode cortar em 5, que fica abaixo de 5% (1,6%).
+Sim. Pela simulação com 10.000 repetições, o Z deu 6,0% e o binomial 1,7% em Base (n = 30). O Z ficou **liberal** e o binomial **conservador**. Como X é inteiro, os cortes saltam: o Z rejeita a partir de 4 falhas, o que sob H₀ tem probabilidade 6,1%, porque a normal subestima a cauda direita com n·p₀ = 1,5; o binomial só pode cortar em 5, que fica abaixo de 5% (1,6%).
 
 ### 10. No G4, qual teste tem mais poder? A diferença entre eles muda conforme o tamanho do efeito?
 
 **Salomão** · mostrar: 5. Poder (G4)
 
-O Z tem mais poder em todos os efeitos: com +10,0 p.p., o ponto da grade mais perto do efeito do Ruff (+11,7 p.p.), rejeita em 67,8% contra 47,6% do binomial. A diferença chega a 20,3 pontos em +10,0 p.p. e cai para 2,1 em +25,0 p.p., quando os dois rejeitam quase sempre. O poder extra do Z vem do mesmo corte mais baixo que o faz errar mais sob H₀ — não é vantagem gratuita.
+O Z tem mais poder em todos os efeitos: com +10,0 p.p., o ponto da grade mais perto do efeito do Ruff (+11,7 p.p.), rejeita em 68,1% contra 48,0% do binomial. A diferença chega a 20,0 pontos em +10,0 p.p. e cai para 2,1 em +25,0 p.p., quando os dois rejeitam quase sempre. O poder extra do Z vem do mesmo corte mais baixo que o faz errar mais sob H₀ — não é vantagem gratuita.
 
 ### 11. Que violação de pressuposto vocês simularam, e por que ela afeta mais um teste do que o outro?
 
@@ -92,7 +92,7 @@ Os cortes sobem: com α = 0,01, o Z passa a rejeitar a partir de 5 falhas e o bi
 
 **Salomão** · mostrar: 1. Cenário → 4 e 5
 
-Em parte. Esperávamos que o binomial controlasse melhor o erro tipo I, e isso se confirmou: 1,6% contra 6,1% do Z, que passou de 5%. Também esperávamos que o Z parecesse mais poderoso, e ele foi, mas a simulação mostrou que essa vantagem é justamente o preço do erro tipo I acima do nominal.
+Em parte. Esperávamos que o binomial controlasse melhor o erro tipo I, e isso se confirmou: 1,7% contra 6,0% do Z, que passou de 5%. Também esperávamos que o Z parecesse mais poderoso, e ele foi, mas a simulação mostrou que essa vantagem é justamente o preço do erro tipo I acima do nominal.
 
 ### 14. Nos dados reais, os dois testes chegaram à mesma conclusão? O tamanho do efeito tem importância prática?
 

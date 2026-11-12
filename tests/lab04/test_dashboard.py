@@ -79,7 +79,8 @@ def test_dashboard_runs_and_shows_the_sections_in_order():
     app = AppTest.from_file(str(APP), default_timeout=60).run()
     assert not app.exception
     headers = [h.value for h in app.header]
-    assert headers == ["1. Cenário", "2. Os dados", "3. Como os testes funcionam", "4. Erro tipo I", "5. Poder"]
+    assert headers == ["1. Cenário", "2. Os dados", "3. Como os testes funcionam",
+                       "4. Erro tipo I", "5. Poder", "6. Dados reais", "7. Conclusão"]
     assert any("github.com/JoaoRajao/lab-medicao" in m.value for m in app.markdown)
     assert any("projects/4" in m.value for m in app.markdown)
     assert [m.label for m in app.metric][:2] == ["Execuções observadas", "Falhas"]

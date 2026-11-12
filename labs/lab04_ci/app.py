@@ -2,8 +2,8 @@
 
     streamlit run labs/lab04_ci/app.py
 
-S01 (#98): secoes 1 a 3 (Cenario, Os dados com G1, Como os testes funcionam com G2).
-S02 (#101): secoes 4 e 5 (Erro tipo I com G3, Poder com G4). As secoes 6 e 7 vem da #102 e da #103.
+Seções 1 a 7: cenário, dados, funcionamento dos testes, erro tipo I, poder,
+aplicação aos dados reais e conclusão.
 """
 
 from __future__ import annotations
@@ -19,7 +19,7 @@ import pandas as pd  # noqa: E402
 import streamlit as st  # noqa: E402
 
 from labs.lab04_ci import estatistica as est  # noqa: E402
-from labs.lab04_ci import graficos, textos  # noqa: E402
+from labs.lab04_ci import analise_real, graficos, textos  # noqa: E402
 from labs.lab04_ci import resultados as res  # noqa: E402
 
 REPOSITORIO = "https://github.com/JoaoRajao/lab-medicao"
@@ -27,8 +27,8 @@ PROJETO = "https://github.com/users/JoaoRajao/projects/4"
 DASHBOARD = "https://joaorajao-lab-medicao-labslab04-ciapp-jw2ure.streamlit.app/"
 SECOES = [
     ("cenario", "1. Cenário", True), ("dados", "2. Os dados", True), ("testes", "3. Como os testes funcionam", True),
-    ("erro", "4. Erro tipo I", True), ("poder", "5. Poder", True), ("reais", "6. Dados reais", False),
-    ("conclusao", "7. Conclusão", False),
+    ("erro", "4. Erro tipo I", True), ("poder", "5. Poder", True), ("reais", "6. Dados reais", True),
+    ("conclusao", "7. Conclusão", True),
 ]
 
 CSS = f"""
@@ -134,6 +134,19 @@ def secao_testes(a: est.Amostra) -> None:
         leitura(textos.g2(a))
 
 
+def secao_reais(a: est.Amostra) -> None:
+    st.header("6. Dados reais", anchor="reais")
+    with st.container(border=True):
+        st.dataframe(analise_real.tabela(a), hide_index=True, width="stretch")
+        st.markdown(analise_real.texto_dados_reais(a))
+
+
+def secao_conclusao(a: est.Amostra) -> None:
+    st.header("7. Conclusão", anchor="conclusao")
+    with st.container(border=True):
+        st.markdown(analise_real.texto_conclusao(a))
+
+
 def numeros(simulados, exatos) -> None:
     """Tabela com os valores dos graficos G3 e G4 (leitura sem depender da cor)."""
     df = graficos._taxas(simulados, exatos)
@@ -191,8 +204,9 @@ def main() -> None:
     exatos = res.exatos(simulados)
     secao_erro(simulados, exatos)
     secao_poder(amostra, simulados, exatos)
+    secao_reais(amostra)
+    secao_conclusao(amostra)
     st.divider()
-    st.caption("Seções 6 e 7 (dados reais e conclusão) entram com a #102 e a #103.")
 
 
 if __name__ == "__main__":

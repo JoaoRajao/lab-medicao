@@ -153,6 +153,12 @@ def respostas(a: est.Amostra, simulados: pd.DataFrame | None, exatos: pd.DataFra
 
 def markdown(a: est.Amostra, simulados: pd.DataFrame | None, exatos: pd.DataFrame) -> str:
     r = respostas(a, simulados, exatos)
+    if simulados is None:
+        estado = "**Q1–Q3 pendentes**; números de erro tipo I e poder são os valores exatos."
+    elif any(s != res.SITUACAO_BASE for s in simulados["situacao"].unique()):
+        estado = "Q1–Q3 simulados em `labs/lab04_ci/data/simulacao/resultados.csv`."
+    else:
+        estado = "Q1/Q2 simulados em `labs/lab04_ci/data/simulacao/resultados.csv`; **Q3 pendente (#100)**."
     por_pessoa: dict[str, list[int]] = {}
     for numero, pessoa in RESPONSAVEL.items():
         por_pessoa.setdefault(pessoa, []).append(numero)
@@ -165,9 +171,7 @@ def markdown(a: est.Amostra, simulados: pd.DataFrame | None, exatos: pd.DataFram
         f"- Dashboard: <{DASHBOARD}>",
         "- Duração: até 7 minutos, cerca de 25 segundos por resposta. Cada resposta indica a seção do dashboard para "
         "mostrar enquanto fala.",
-        "- Resultados de Q1–Q3: " + ("simulação versionada em `labs/lab04_ci/data/simulacao/resultados.csv`."
-                                      if simulados is not None else
-                                      "**pendentes (#99/#100)**; números de erro tipo I e poder são os valores exatos."),
+        "- Resultados: " + estado,
         "",
         "## Divisão",
         "",

@@ -76,6 +76,8 @@ def validar() -> list[str]:
             problemas.append("há pontos com menos de 10.000 repetições")
         if simulados["seed"].nunique() != 1:
             problemas.append("resultados com mais de uma semente")
+        if not any(s != res.SITUACAO_BASE for s in simulados["situacao"].unique()):
+            problemas.append("sem situação adversa Q3 (#100) nos resultados simulados")
         conferidos = simulados.merge(exatos, on=["situacao", "teste", "p_verdadeiro"], suffixes=("", "_ex"))
         # 3,29 erros padrao = 99,9%: com dezenas de pontos, uma diferenca maior indica erro de codigo, nao acaso.
         fora = conferidos[(conferidos["taxa_rejeicao"] - conferidos["taxa_exata"]).abs()
