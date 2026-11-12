@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+
 import pandas as pd
 
 from labs.lab04_ci import estatistica as est
@@ -140,3 +142,20 @@ def g4(simulados: pd.DataFrame | None, exatos: pd.DataFrame, efeito_observado: f
                   f"p.p. ({br(100 * gap.max(), 1)} pontos) e cai para {br(100 * gap.iloc[-1], 1)} pontos em "
                   f"+{br(100 * gap.index[-1], 1)} p.p., quando os dois quase sempre rejeitam")
     return ". ".join(frases[:4]) + "."
+
+
+def tamanho_amostra(a: est.Amostra, n_80: dict[str, int | None]) -> str:
+    poder_z, poder_b = (res.taxa_exata(teste, a.n, a.proporcao) for teste in res.TESTES)
+    alfa = {(teste, n): res.taxa_exata(teste, n, est.P0) for teste in res.TESTES for n in (100, 200)}
+    dias = (datetime.fromisoformat(a.fim.replace("Z", "+00:00"))
+            - datetime.fromisoformat(a.inicio.replace("Z", "+00:00"))).total_seconds() / 86400
+    dias_80 = max(n_80.values()) * dias / a.n  # no ritmo de execucoes da amostra real
+    return (
+        f"Com as {a.n} execuções coletadas e a taxa de {pct(a.proporcao)}, o poder exato é {pct(poder_z)} no Z e "
+        f"{pct(poder_b)} no binomial; 80% de poder fica garantido a partir de {n_80['Z']} execuções no Z e "
+        f"{n_80['Binomial']} no binomial, cerca de {round(dias_80)} dias de CI do Ruff no ritmo da amostra, então "
+        "seria viável coletar mais. "
+        f"Com amostras maiores, o erro tipo I do Z se aproxima de 5% ({pct(alfa['Z', 100])} com 100 execuções e "
+        f"{pct(alfa['Z', 200])} com 200, quando os cortes dos dois testes coincidem), então a escolha pesa menos. "
+        "Nessa escala até diferenças pequenas viram significativas, e o tamanho do efeito importa mais que o p-valor."
+    )

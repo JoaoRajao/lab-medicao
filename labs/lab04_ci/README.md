@@ -126,7 +126,7 @@ O dashboard abre no navegador (padrão `http://localhost:8501`) e lê os CSVs ve
 | 2. Os dados (G1) | Sucessos e falhas reais ao lado de duas amostras simuladas de 30 execuções (Bernoulli, semente 42): sob H₀ (p = 0,05) e com a taxa observada (p ≈ 0,167). |
 | 3. Como os testes funcionam (G2) | Distribuição de cada estatística sob H₀, região de rejeição sombreada e p-valor da amostra real marcado como área. Um botão muda o eixo vertical para escala logarítmica e mostra a cauda. No painel do Z, os valores possíveis de z sob H₀ (X é discreto) aparecem sobre a normal assumida: na cauda, eles ficam acima da curva, por isso o Z é liberal. Abaixo, uma tabela compara os dois testes. |
 | 4. Erro tipo I (G3) | Taxa de rejeição com H₀ verdadeira de cada teste em cada situação, com linha em 5%, margem de Monte Carlo (95%) e o valor exato da binomial como referência. |
-| 5. Poder (G4) | Curvas de poder dos dois testes por tamanho do efeito (p verdadeira − 5%), uma linha por situação, com referência de 80% e o efeito observado no Ruff. Tabela com todos os números. |
+| 5. Poder (G4) | Curvas de poder dos dois testes por tamanho do efeito (p verdadeira − 5%), uma linha por situação, com referência de 80% e o efeito observado no Ruff. Tabela com todos os números. | Abaixo, **E o tamanho da amostra?** (discussão opcional da seção 6 do enunciado): poder exato de cada teste com a taxa do Ruff conforme n, quanto poder a amostra real tem (Z 76,0%, binomial 57,6%) e a partir de quantas execuções o poder fica sempre acima de 80% (39 e 46).
 | 6. Dados reais | Estatística, p-valor, tamanho do efeito e decisão dos dois testes. |
 | 7. Conclusão | Expectativa prévia versus erro tipo I observado, recomendação e limitação; incorpora Q3 quando existir. |
 

@@ -143,8 +143,12 @@ def secao_reais(a: est.Amostra) -> None:
 
 def secao_conclusao(a: est.Amostra) -> None:
     st.header("7. Conclusão", anchor="conclusao")
-    with st.container(border=True):
-        st.markdown(analise_real.texto_conclusao(a))
+    blocos = analise_real.blocos_conclusao(a)
+    for linha in (blocos[:2], blocos[2:]):
+        for coluna, (titulo, texto) in zip(st.columns(2, gap="medium"), linha):
+            with coluna.container(border=True):
+                st.markdown(f"**{titulo}**")
+                st.markdown(texto)
 
 
 def numeros(simulados, exatos) -> None:
@@ -189,6 +193,19 @@ def secao_poder(a: est.Amostra, simulados, exatos) -> None:
         with texto:
             leitura(textos.g4(simulados, exatos, efeito))
         numeros(simulados, exatos)
+    tamanho_amostra(a)
+
+
+def tamanho_amostra(a: est.Amostra) -> None:
+    """Discussao opcional da secao 6 do enunciado: quanto poder a amostra real tem e quanto seria preciso coletar."""
+    st.subheader("E o tamanho da amostra?", anchor="amostra")
+    n_80 = {teste: res.n_para_poder(teste, a.proporcao) for teste in res.TESTES}
+    with st.container(border=True):
+        grafico, texto = st.columns([2.2, 1], gap="large")
+        grafico.plotly_chart(graficos.poder_por_n(res.poder_por_n(a.proporcao), a.proporcao, a.n, n_80),
+                             width="stretch", config={"displayModeBar": False})
+        with texto:
+            leitura(textos.tamanho_amostra(a, n_80))
 
 
 def main() -> None:

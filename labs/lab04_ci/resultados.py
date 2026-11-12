@@ -108,3 +108,18 @@ def erro_tipo_i(df: pd.DataFrame) -> pd.DataFrame:
 
 def poder(df: pd.DataFrame) -> pd.DataFrame:
     return df.sort_values("efeito", kind="stable", ignore_index=True)
+
+
+def poder_por_n(p: float, ns: range = range(5, 151), alpha: float = est.ALPHA) -> pd.DataFrame:
+    """Poder exato de cada teste para a taxa p, em funcao do numero de execucoes (discussao da secao 6 do enunciado)."""
+    return pd.DataFrame([{"n": n, "teste": teste, "poder": taxa_exata(teste, n, p, alpha=alpha)}
+                         for teste in TESTES for n in ns])
+
+
+def n_para_poder(teste: str, p: float, alvo: float = 0.8, n_max: int = 400) -> int | None:
+    """Menor n a partir do qual o poder nunca mais cai abaixo do alvo (com X discreto, o poder oscila com n)."""
+    poderes = [taxa_exata(teste, n, p) for n in range(1, n_max + 1)]
+    for n in range(1, n_max + 1):
+        if min(poderes[n - 1:]) >= alvo:
+            return n
+    return None

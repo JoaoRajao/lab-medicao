@@ -104,3 +104,17 @@ def test_single_command_validation_checks_charts_and_section_order():
 
     problemas = executar.validar()
     assert not any("sem título" in p or "exceção" in p or "fora da ordem" in p for p in problemas)
+
+
+def test_sample_size_discussion_uses_exact_power():
+    p = AMOSTRA.proporcao
+    n_80 = {teste: resultados.n_para_poder(teste, p) for teste in resultados.TESTES}
+    assert n_80 == {"Z": 39, "Binomial": 46}
+    assert all(resultados.taxa_exata(t, n, p) >= 0.8 for t, n0 in n_80.items() for n in range(n0, 120))
+    assert resultados.taxa_exata("Binomial", n_80["Binomial"] - 1, p) < 0.8 or resultados.taxa_exata(
+        "Binomial", n_80["Binomial"] - 2, p) < 0.8
+    fig = graficos.poder_por_n(resultados.poder_por_n(p), p, AMOSTRA.n, n_80)
+    assert fig.layout.title.text and fig.layout.xaxis.title.text and fig.layout.yaxis.title.text
+    assert [t.line.color for t in fig.data[:2]] == [graficos.COR_Z, graficos.COR_BINOMIAL]
+    texto = textos.tamanho_amostra(AMOSTRA, n_80)
+    assert 2 <= frases(texto) <= 4 and "76,0%" in texto and "57,6%" in texto and "39 execuções" in texto
