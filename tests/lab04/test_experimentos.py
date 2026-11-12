@@ -8,16 +8,16 @@ from scipy import stats
 from labs.lab04_ci import analise_real, estatistica, experimentos, simulacao
 
 
-def test_q1_q2_reprodutibilidade_e_contrato() -> None:
+def test_q1_q2_q3_reprodutibilidade_e_contrato() -> None:
     primeiro = experimentos.gerar_resultados(42)
     segundo = experimentos.gerar_resultados(42)
     assert primeiro.equals(segundo)
     assert list(primeiro.columns) == list(experimentos.COLUNAS)
-    assert len(primeiro) == 2 * len(experimentos.P_GRADE)
+    assert len(primeiro) == 2 * len(experimentos.SITUACOES) * len(experimentos.P_GRADE)
     assert set(primeiro["teste"]) == {"Z", "Binomial"}
     assert set(primeiro["repeticoes"]) == {10_000}
     assert set(primeiro["seed"]) == {42}
-    assert set(primeiro["situacao"]) == {"Base (n = 30)"}
+    assert set(primeiro["situacao"]) == {"Base (n = 30)", "Amostra pequena (n = 10)"}
     assert set(primeiro["p_verdadeiro"]) == set(experimentos.P_GRADE)
     assert np.allclose(primeiro["taxa_rejeicao"], primeiro["rejeicoes"] / 10_000)
 
@@ -38,7 +38,7 @@ def test_ambos_testes_recebem_as_mesmas_contagens(monkeypatch: pytest.MonkeyPatc
     monkeypatch.setattr(simulacao, "simular_repeticoes_z", z)
     monkeypatch.setattr(simulacao, "simular_repeticoes_binomial", binomial)
     experimentos.gerar_resultados(42)
-    assert len(capturas["Z"]) == len(experimentos.P_GRADE)
+    assert len(capturas["Z"]) == len(experimentos.SITUACOES) * len(experimentos.P_GRADE)
     assert all(np.array_equal(z, b) for z, b in zip(capturas["Z"], capturas["Binomial"]))
 
 
@@ -60,7 +60,8 @@ def test_aplicacao_real_e_textos_vem_da_amostra() -> None:
     texto = analise_real.texto_conclusao(amostra)
     assert "6,05%" in texto and "1,69%" in texto
     assert "87,66%" in texto and "74,75%" in texto
-    assert "Q3 (#100) ainda não está disponível" in texto
+    assert "Amostra pequena (n = 10)" in texto
+    assert "8,5% para Z" in texto and "1,2% para o binomial" in texto
 
 
 def test_conclusao_incorpora_q3_quando_resultados_chegarem(tmp_path) -> None:
