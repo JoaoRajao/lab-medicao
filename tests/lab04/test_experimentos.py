@@ -76,3 +76,12 @@ def test_conclusao_incorpora_q3_quando_resultados_chegarem(tmp_path) -> None:
     texto = analise_real.texto_conclusao(estatistica.carregar_amostra(), caminho)
     assert "Amostra pequena (n = 10)" in texto
     assert "11,0% para Z" in texto and "2,0% para o binomial" in texto
+
+
+def test_conclusao_em_quatro_blocos_e_z_com_virgula() -> None:
+    amostra = estatistica.carregar_amostra()
+    assert analise_real.tabela(amostra)["Estatística"].iloc[0] == "z = 2,932"
+    blocos = analise_real.blocos_conclusao(amostra)
+    assert [titulo for titulo, _ in blocos] == ["Esperávamos × encontramos", "Recomendação", "Quando a escolha muda",
+                                               "Situação adversa e limitação"]
+    assert "binomial exato" in blocos[1][1] and "200 execuções" in blocos[2][1]

@@ -228,3 +228,28 @@ def g4_poder(simulados: pd.DataFrame | None, exatos: pd.DataFrame, efeito_observ
                      zeroline=False)
     fig.update_yaxes(title_text="Rejeições de H0 (% dos conjuntos)", range=[0, 105], ticksuffix="%")
     return _layout(fig, 500)
+
+
+def poder_por_n(poderes: pd.DataFrame, p: float, n_real: int, n_80: dict[str, int | None]) -> go.Figure:
+    """Complemento do G4: poder exato de cada teste para a taxa observada, conforme o numero de execucoes."""
+    fig = go.Figure()
+    for teste in res.TESTES:
+        t = poderes[poderes["teste"] == teste]
+        fig.add_scatter(x=t["n"], y=100 * t["poder"], mode="lines", name=NOME_TESTE[teste],
+                        line=dict(color=COR_TESTE[teste], width=2, shape="hv"),
+                        hovertemplate=f"<b>{NOME_TESTE[teste]}</b><br>%{{x}} execuções: poder = %{{y:.1f}}%<extra></extra>")
+    for teste in res.TESTES:
+        if n_80.get(teste):
+            fig.add_scatter(x=[n_80[teste]], y=[80], mode="markers",
+                            name=f"{NOME_TESTE[teste]}: 80% garantido a partir de n = {n_80[teste]}",
+                            marker=dict(size=10, color=COR_TESTE[teste], line=dict(color=SUPERFICIE, width=2)),
+                            hovertemplate=f"{NOME_TESTE[teste]}: poder ≥ 80% a partir de %{{x}} execuções<extra></extra>")
+    fig.add_hline(y=80, line=dict(color=COR_REFERENCIA, width=1, dash="dot"), annotation_text="80% de poder",
+                  annotation_position="bottom right", annotation_font=dict(color=TINTA_SECUNDARIA, size=12))
+    fig.add_vline(x=n_real, line=dict(color=COR_REAL, width=1, dash="dot"), annotation_text=f"amostra real (n = {n_real})",
+                  annotation_position="top left", annotation_font=dict(color=TINTA_SECUNDARIA, size=12))
+    fig.update_layout(title=f"Poder × tamanho da amostra, com a taxa observada no Ruff (p = {br(100 * p, 1)}%)")
+    fig.update_xaxes(title_text="Execuções de CI na amostra (n)")
+    fig.update_yaxes(title_text="Poder (% de rejeições de H0)", range=[0, 105], ticksuffix="%")
+    legenda = dict(orientation="h", yanchor="top", y=-0.22, xanchor="left", x=0, font=dict(color=TINTA_SECUNDARIA))
+    return _layout(fig, 500, legenda=legenda, margem_topo=60)

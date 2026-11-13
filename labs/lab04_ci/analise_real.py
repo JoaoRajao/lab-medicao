@@ -8,8 +8,10 @@ from pathlib import Path
 import pandas as pd
 
 from labs.lab04_ci import estatistica as est
+from labs.lab04_ci import resultados as res
 from labs.lab04_ci import simulacao
 
+N_GRANDE = 200  # tamanho em que os cortes do Z e do binomial passam a coincidir
 RESULTADOS = Path(__file__).resolve().parent / "data" / "simulacao" / "resultados.csv"
 
 
@@ -34,7 +36,7 @@ def tabela(a: est.Amostra) -> pd.DataFrame:
     ):
         linhas.append({
             "Teste": nome,
-            "Estatística": f"{estatistica} = {teste.estatistica:.3f}" if estatistica == "z" else f"k = {a.falhas}",
+            "Estatística": f"z = {_decimal(teste.estatistica, 3)}" if estatistica == "z" else f"k = {a.falhas}",
             "p-valor": _decimal(teste.p_valor, 4),
             "Tamanho do efeito": f"Δp = {f'{delta:+.2f}'.replace('.', ',')} p.p.; h = {_decimal(h, 3)}",
             "Conclusão (α = 0,05)": teste.decisao,
@@ -76,7 +78,8 @@ def texto_dados_reais(a: est.Amostra) -> str:
     )
 
 
-def texto_conclusao(a: est.Amostra, resultados_path: Path = RESULTADOS) -> str:
+def blocos_conclusao(a: est.Amostra, resultados_path: Path = RESULTADOS) -> list[tuple[str, str]]:
+    """Conclusao em quatro partes: expectativa x resultado, recomendacao, quando muda e limitacao."""
     taxas, poder_taxas, q3_resultado = _resumo_base(resultados_path)
     if {"Z", "Binomial"} <= taxas.keys():
         simulacao_texto = (
@@ -97,12 +100,23 @@ def texto_conclusao(a: est.Amostra, resultados_path: Path = RESULTADOS) -> str:
               f"{_decimal(100 * q3_taxas['Binomial'], 1)}% para o binomial; a interpretação depende do pressuposto violado.")
     else:
         q3 = "A situação adversa Q3 (#100) ainda não está disponível; a recomendação se limita ao cenário base."
-    return (
-        "A expectativa registrada antes da simulação era que o binomial exato controlaria melhor o erro tipo I "
-        f"com {a.n} execuções. {simulacao_texto}{poder_texto}Na amostra real, ambos rejeitam H₀, com {a.falhas}/{a.n} "
-        f"falhas ({_decimal(100 * a.proporcao, 1)}%), mas recomendamos o binomial exato para amostras pequenas de execuções "
-        "independentes: o Z usa uma aproximação normal liberal neste tamanho. "
-        "Com amostras maiores, a escolha pelo Z exigiria verificar que seu erro tipo I se aproxima de 5%; "
-        "se falhas próximas compartilham a mesma causa, a independência de ambos os testes precisa ser revista. "
-        + q3
-    )
+    return [
+        ("Esperávamos × encontramos",
+         "A expectativa registrada antes da simulação era que o binomial exato controlaria melhor o erro tipo I "
+         f"com {a.n} execuções. {simulacao_texto}{poder_texto}".strip()),
+        ("Recomendação",
+         f"Na amostra real, ambos rejeitam H₀, com {a.falhas}/{a.n} falhas ({_decimal(100 * a.proporcao, 1)}%), mas "
+         "recomendamos o binomial exato para amostras pequenas de execuções independentes: o Z usa uma aproximação "
+         "normal liberal neste tamanho."),
+        ("Quando a escolha muda",
+         "Com amostras maiores, a escolha pelo Z exigiria verificar que seu erro tipo I se aproxima de 5%: com "
+         f"{N_GRANDE} execuções, os cortes dos dois testes coincidem e o erro tipo I fica em "
+         f"{_decimal(100 * res.taxa_exata('Z', N_GRANDE, est.P0), 1)}% para ambos (ver “E o tamanho da amostra?”)."),
+        ("Situação adversa e limitação",
+         f"{q3} A principal limitação é a amostra: {a.n} execuções de poucos dias de um único projeto; se falhas "
+         "próximas compartilham a mesma causa, a independência de ambos os testes precisa ser revista."),
+    ]
+
+
+def texto_conclusao(a: est.Amostra, resultados_path: Path = RESULTADOS) -> str:
+    return " ".join(texto for _, texto in blocos_conclusao(a, resultados_path))
