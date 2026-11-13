@@ -50,13 +50,21 @@ python3 -m labs.lab04_ci.simulacao
 
 Sob H₀ (Q1), o Z rejeitou em **6,05%** dos conjuntos e o binomial exato em **1,69%**. Logo, o Z ficou acima de 5% (liberal) e o binomial abaixo (conservador). Em Q2, o Z rejeita mais vezes para todos os efeitos positivos da grade, mas parte dessa vantagem aparente vem do erro tipo I mais alto. Por exemplo, em `p = 0,20`, o poder simulado foi 87,66% para Z e 74,75% para binomial. Essas taxas vêm do CSV versionado e podem ser reconstruídas pela semente fixa.
 
-O cenário adverso Q3 pertence à US #100. Quando seu código for integrado, `gerar_resultados(seed)` deverá acrescentar suas linhas ao mesmo contrato para G3/G4 e para o comando único.
+### Q3: situação adversa (US #100)
+
+**Violação escolhida: amostra pequena, `n = 10`.** O teste Z supõe que a contagem de falhas é aproximadamente normal, o que costuma exigir `n·p₀` de pelo menos 5 a 10. Com `p₀ = 0,05`, a base (`n = 30`) já fica em 1,5, e com `n = 10` cai para **0,5**: a distribuição de X sob H₀ é quase toda concentrada em 0 e 1 falha. É também uma situação realista no cenário, como uma janela curta de CI ou um workflow pouco executado. O binomial exato não depende dessa aproximação, só da independência entre execuções.
+
+`gerar_resultados(seed)` simula a situação adversa depois da base, com o mesmo gerador e a mesma grade de efeitos; por isso os números da base não mudam. Resultados (10.000 repetições por ponto):
+
+- **Q1 adversa:** o Z rejeitou H₀ verdadeira em **8,46%** dos conjuntos (mais liberal que os 6,05% da base) e o binomial em **1,21%** (ainda mais conservador).
+- **Q2 adversa:** o poder cai para os dois testes; com `p = 0,20`, 62,74% no Z e 32,48% no binomial, que não chega a 80% em nenhum ponto da grade. A distância entre os testes aumenta, mas a vantagem do Z vem do erro tipo I ainda mais acima de 5%.
+- A violação pesa no teste paramétrico, como esperado: a recomendação pelo binomial exato fica mais forte em amostras pequenas.
 
 ## Dados reais e recomendação (US #102)
 
 Em 30 execuções reais houve 5 falhas (`p̂ = 16,67%`), **11,67 pontos percentuais** acima da meta; o tamanho do efeito padronizado é `h de Cohen ≈ 0,390`. O Z resulta em `z ≈ 2,932`, p-valor `≈ 0,0017`; o binomial exato usa `k = 5`, p-valor `≈ 0,0156`. Ambos rejeitam H₀ a α = 0,05. Recomendamos o binomial exato para esta amostra pequena, porque mantém melhor o controle do erro tipo I sob o modelo Bernoulli independente. Com amostras maiores, o Z poderia ser considerado após verificar sua calibração; se falhas consecutivas tiverem uma causa comum, a independência exigida pelos dois testes deve ser reavaliada.
 
-As seções 6 e 7 do dashboard são calculadas a partir do CSV real e de `resultados.csv`. Enquanto Q3 não existir, a conclusão mostra essa pendência sem atribuir resultados à situação adversa.
+As seções 6 e 7 do dashboard são calculadas a partir do CSV real e de `resultados.csv`, incluindo a situação adversa de Q3.
 
 ## Reconstrução de CSV → Parquet → dbt
 
@@ -128,7 +136,7 @@ O dashboard abre no navegador (padrão `http://localhost:8501`) e lê os CSVs ve
 | 4. Erro tipo I (G3) | Taxa de rejeição com H₀ verdadeira de cada teste em cada situação, com linha em 5%, margem de Monte Carlo (95%) e o valor exato da binomial como referência. |
 | 5. Poder (G4) | Curvas de poder dos dois testes por tamanho do efeito (p verdadeira − 5%), uma linha por situação, com referência de 80% e o efeito observado no Ruff. Tabela com todos os números. | Abaixo, **E o tamanho da amostra?** (discussão opcional da seção 6 do enunciado): poder exato de cada teste com a taxa do Ruff conforme n, quanto poder a amostra real tem (Z 76,0%, binomial 57,6%) e a partir de quantas execuções o poder fica sempre acima de 80% (39 e 46).
 | 6. Dados reais | Estatística, p-valor, tamanho do efeito e decisão dos dois testes. |
-| 7. Conclusão | Expectativa prévia versus erro tipo I observado, recomendação e limitação; incorpora Q3 quando existir. |
+| 7. Conclusão | Expectativa prévia versus erro tipo I observado, recomendação, quando a escolha muda e limitação, com a situação adversa de Q3. |
 
 Cada gráfico vem com um texto de 2 a 4 frases, montado a partir dos dados (`textos.py`), e cada teste tem sempre a mesma cor: **Z em azul** e **binomial em laranja**. Os gráficos são interativos (Plotly, com valores ao passar o mouse) e usam uma paleta validada para daltonismo (`graficos.py`). O topo traz os links, os indicadores da amostra e os p-valores; a barra lateral tem o índice das sete seções. As contas do G2 estão em `estatistica.py`. Com n = 30, o Z rejeita H₀ a partir de 4 falhas, o que acontece com probabilidade real de 6,1% sob H₀, e o binomial a partir de 5, com 1,6%.
 
@@ -140,4 +148,4 @@ A amostra simulada do G1 consome o gerador reprodutivo definitivo (`estatistica.
 
 ## Continuação do laboratório
 
-Já implementados nesta integração: #96 (cenário e dados), #97 (gerador e testes), #98 (G1/G2), #99 (Q1/Q2), #101 (G3/G4), #102 (dados reais e conclusão) e #104 (comando único e roteiro). Q3 continua na #100, e a revisão integral das sete seções na #103.
+Implementados: #96 (cenário e dados), #97 (gerador e testes), #98 (G1/G2), #99 (Q1/Q2), #100 (Q3 com amostra pequena), #101 (G3/G4), #102 (dados reais e conclusão), #103 (revisão das sete seções) e #104 (comando único e roteiro). Os snapshots do board ficam em `data/kanban_snapshots/` (#106, #107 e #108).
