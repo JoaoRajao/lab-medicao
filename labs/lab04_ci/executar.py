@@ -134,6 +134,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--sem-dashboard", action="store_true", help="Não abre o Streamlit ao final")
     parser.add_argument("--checar-links", action="store_true", help="Confere os links do topo (precisa de rede)")
     args = parser.parse_args(argv)
+    for fluxo in (sys.stdout, sys.stderr):  # console do Windows (cp1252) nao imprime "→", "₀"
+        if hasattr(fluxo, "reconfigure"):
+            fluxo.reconfigure(encoding="utf-8", errors="replace")
 
     passo("1/5 Dados reais: CSV → DuckDB → Parquet → dbt")
     ingest.main([])

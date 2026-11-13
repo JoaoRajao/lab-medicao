@@ -71,7 +71,8 @@ def carregar(path: Path = RESULTADOS_PATH) -> pd.DataFrame | None:
 def salvar(df: pd.DataFrame, path: Path = RESULTADOS_PATH) -> Path:
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    validar(df)[list(COLUNAS)].to_csv(path, index=False)
+    validar(df)  # so confere; grava na ordem gerada, igual a `python -m labs.lab04_ci.experimentos`
+    df[list(COLUNAS)].to_csv(path, index=False, lineterminator="\n")
     return path
 
 
