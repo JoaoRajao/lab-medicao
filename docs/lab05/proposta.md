@@ -2,7 +2,10 @@
 
 **Software estudado: SQLite**, o motor de banco de dados SQL embutido em celulares, navegadores, sistemas operacionais e linguagens de programação.
 
-**Caminho:** rodar o software no ambiente do grupo (seção 2b do enunciado). Vamos fazer um experimento controlado com configurações de produção do SQLite: modo de journal `WAL` × `DELETE` e/ou `synchronous` `FULL` × `NORMAL`, sob a mesma carga.
+**Caminhos (combinados, seção 2b do enunciado):**
+
+1. **Rodar o software no ambiente do grupo:** experimento controlado com configurações de produção do SQLite, modo de journal `WAL` × `DELETE` e `synchronous` `FULL` × `NORMAL`, sob a mesma carga.
+2. **Pesquisa documental:** levantar, só em fontes oficiais, qual configuração as plataformas usam em produção (Android, Apple, Firefox, Python). Isso liga o resultado do laboratório a quem usa o SQLite de fato e sustenta a estimativa de impacto.
 
 | Seção | Issue | Situação |
 | --- | --- | --- |
@@ -62,7 +65,12 @@ Como essas configurações são escolhidas por quem desenvolve apps, navegadores
 
 > **Quanto as configurações de journal (`WAL` × `DELETE`) e de sincronização (`FULL` × `NORMAL`) do SQLite mudam a vazão e a latência de escrita e de leitura, e o que se perde em durabilidade em troca?**
 
-**Caminho:** rodar o software no ambiente do grupo (seção 2b). É um experimento controlado com o SQLite 3.50.4, a versão embutida no Python 3.14 e de uma linha que ainda recebe correções (seção 1.2). A documentação oficial (seção 1.3) serve para formular as hipóteses e para comparar os resultados com o que o fornecedor afirma.
+**Caminhos combinados:**
+
+1. **Experimento controlado** com o SQLite 3.50.4, a versão embutida no Python 3.14 e de uma linha que ainda recebe correções (seção 1.2).
+2. **Pesquisa documental** das configurações usadas em produção, só com fontes oficiais. Não analisamos código-fonte, então fica fora da restrição da seção 2a.
+
+A documentação oficial (seção 1.3) também serve para formular as hipóteses e para comparar os resultados com o que o fornecedor afirma.
 
 ### 2.2 GQM
 
@@ -84,6 +92,7 @@ Como essas configurações são escolhidas por quem desenvolve apps, navegadores
 | **Q2.** O WAL muda o desempenho de leitura? | M4 consultas/s · M5 latência mediana por consulta |
 | **Q3.** Quanto o `synchronous = NORMAL` acelera as gravações, e o que custa em durabilidade? | M1 e M3 nos dois níveis · M6 durabilidade após queda de energia |
 | **Q4.** Quão estável é cada configuração entre repetições? | M7 coeficiente de variação da vazão entre blocos |
+| **Q5.** Qual configuração o SQLite usa em produção? | M8 `journal_mode` e `synchronous` documentados por plataforma (nominal) |
 
 ### 2.3 Métricas: entidade, atributo e escala
 
@@ -143,7 +152,7 @@ As hipóteses são comparadas por bloco, com α = 0,05 e correção de Holm para
 | Natureza | **Aplicada** | Responde a uma decisão prática de configuração tomada por quem desenvolve apps, navegadores e sistemas, não a uma questão teórica. |
 | Objetivos | **Explicativa** (com parte descritiva) | Busca a relação de causa e efeito entre configuração e desempenho, manipulando a configuração. A magnitude dos efeitos é descrita com estatística descritiva. |
 | Abordagem | **Quantitativa** | Todas as métricas de desempenho são numéricas em escala de razão. A durabilidade é uma variável nominal tirada da documentação oficial. |
-| Procedimentos | **Experimental**, com apoio de **pesquisa documental** | Manipulamos as variáveis independentes em ambiente controlado. A documentação oficial do SQLite fundamenta as hipóteses e os números de impacto. |
+| Procedimentos | **Experimental + pesquisa documental** | Manipulamos as variáveis independentes em ambiente controlado e levantamos em documentação oficial as configurações usadas em produção (caminhos combinados). |
 | Tempo | **Transversal** | As medições são feitas em uma janela curta, com uma única versão. Não acompanhamos a evolução entre versões. |
 | Controle | **Experimento controlado em laboratório** | O grupo controla o ambiente e os fatores, sorteia a ordem dos tratamentos em blocos e repete 30 vezes. |
 | Nível de evidência | **Alto para validade interna, limitado para validade externa** | O experimento controlado e aleatorizado sustenta a causalidade nesta máquina e nesta carga. A generalização para outros discos, sistemas e cargas reais é limitada: uma máquina e carga sintética (ameaças na #123). |
@@ -215,7 +224,7 @@ Esses números são **só do piloto** (n = 5); não servem como conclusão.
 3. **As leituras contrariam a documentação.** O WAL foi cerca de 6,6 vezes mais rápido que o DELETE, enquanto a documentação fala em WAL "1–2% mais lento".
    - Hipótese: cada `SELECT` em *autocommit* abre a própria transação de leitura. No DELETE, isso exige travar e destravar o arquivo pelo sistema operacional (e procurar um journal pendente); no WAL, a leitura usa o índice em memória compartilhada (`-shm`).
    - Isso é uma questão de **validade de construto**: o resultado mede "consultas avulsas", não "leitura em geral".
-   - **Decisão para a S02:** manter a carga em *autocommit*, que é realista para apps, e avaliar uma variante com as consultas dentro de uma única transação para separar os dois efeitos.
+   - **Decisão para a S02:** manter a carga em *autocommit*, que é realista para apps, e avaliar uma variante com as consultas dentro de uma única transação para separar os dois efeitos. A variante já está instrumentada no script (carga `leitura_transacao`), e a coleta completa passa a ter 3 cargas, ou 12 combinações por bloco.
 4. **Valor atípico.** No bloco 5, `escrita/WAL/FULL` caiu para 204 transações por segundo, com p95 de 12 ms (os outros blocos ficaram entre 457 e 508).
    - Causa provável: atividade de disco em segundo plano, como antivírus ou indexação do Windows.
    - **Mitigação:**
