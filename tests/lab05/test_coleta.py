@@ -27,6 +27,7 @@ def test_cada_bloco_mede_todas_as_configuracoes_em_ordem_aleatoria_reprodutivel(
     ordem = lambda ls: [(l["bloco"], l["carga"], l["journal_mode"], l["synchronous"]) for l in ls]
     assert ordem(linhas) == ordem(coleta.coletar(PEQUENO, tmp_path, progresso=lambda _: None))
     assert all(l["operacoes"] == (5 if l["carga"] == "escrita" else 10) and l["ops_por_s"] > 0 for l in linhas)
+    assert {l["carga"] for l in linhas} == {"escrita", "leitura", "leitura_transacao"}
     assert {l["sqlite_version"] for l in linhas} == {sqlite3.sqlite_version}
     assert not list(tmp_path.iterdir())  # bancos temporarios removidos
 

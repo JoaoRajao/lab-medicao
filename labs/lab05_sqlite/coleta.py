@@ -2,9 +2,12 @@
 
 Experimento fatorial 2 x 2 rodado na maquina do grupo, sem sistema de terceiros:
     journal_mode in {DELETE, WAL}  x  synchronous in {FULL, NORMAL}
-em duas cargas:
+em tres cargas:
     escrita: N transacoes, cada uma com 1 INSERT e COMMIT (padrao de apps que gravam a cada acao do usuario);
-    leitura: K consultas por chave primaria em uma tabela ja populada.
+    leitura: K consultas por chave primaria, cada uma na propria transacao (autocommit, consultas avulsas);
+    leitura_transacao: as mesmas K consultas dentro de uma unica transacao. Separa o custo de abrir uma
+        transacao de leitura (travas de arquivo no DELETE) do custo da leitura em si; o piloto (S01) mostrou
+        o WAL muito mais rapido em leitura avulsa, ao contrario do "1-2% mais lento" da documentacao.
 
 Cada repeticao e um bloco com as 4 configuracoes em ordem aleatoria (semente fixa), cada uma em um arquivo de
 banco novo, para que deriva da maquina (temperatura, cache do SO, processos em segundo plano) afete todas igualmente.
@@ -23,6 +26,7 @@ import platform
 import random
 import sqlite3
 import statistics
+import subprocess
 import sys
 import tempfile
 import time
@@ -34,7 +38,7 @@ SEED = 42
 JOURNAL = ("DELETE", "WAL")
 SYNCHRONOUS = ("FULL", "NORMAL")
 CONFIGURACOES = tuple((j, s) for j in JOURNAL for s in SYNCHRONOUS)
-CARGAS = ("escrita", "leitura")
+CARGAS = ("escrita", "leitura", "leitura_transacao")
 DADOS = Path(__file__).resolve().parent / "data" / "raw"
 COLUNAS = ("bloco", "ordem", "carga", "journal_mode", "synchronous", "operacoes", "duracao_s",
            "ops_por_s", "latencia_mediana_ms", "latencia_p95_ms", "sqlite_version", "seed")
@@ -84,7 +88,8 @@ def medir_escrita(con: sqlite3.Connection, p: Parametros, rng: random.Random) ->
     return latencias
 
 
-def medir_leitura(con: sqlite3.Connection, p: Parametros, rng: random.Random) -> list[float]:
+def medir_leitura(con: sqlite3.Connection, p: Parametros, rng: random.Random,
+                  em_transacao: bool = False) -> list[float]:
     """Popula a tabela (fora da medicao) e mede SELECTs por chave primaria aleatoria."""
     con.execute("BEGIN")
     con.executemany("INSERT INTO evento (criado, payload) VALUES (?, ?)",
@@ -92,10 +97,14 @@ def medir_leitura(con: sqlite3.Connection, p: Parametros, rng: random.Random) ->
     con.execute("COMMIT")
     chaves = [rng.randint(1, p.linhas_leitura) for _ in range(p.leituras)]
     latencias = []
+    if em_transacao:
+        con.execute("BEGIN")
     for chave in chaves:
         inicio = time.perf_counter()
         con.execute("SELECT payload FROM evento WHERE id = ?", (chave,)).fetchone()
         latencias.append(time.perf_counter() - inicio)
+    if em_transacao:
+        con.execute("COMMIT")
     return latencias
 
 
@@ -103,7 +112,10 @@ def medir(carga: str, journal: str, synchronous: str, p: Parametros, rng: random
     caminho = pasta / f"{carga}_{journal}_{synchronous}.db"
     con = conectar(caminho, journal, synchronous)
     try:
-        latencias = (medir_escrita if carga == "escrita" else medir_leitura)(con, p, rng)
+        if carga == "escrita":
+            latencias = medir_escrita(con, p, rng)
+        else:
+            latencias = medir_leitura(con, p, rng, em_transacao=carga == "leitura_transacao")
     finally:
         con.close()
     for sufixo in ("", "-wal", "-shm", "-journal"):  # cada medicao comeca com banco novo
@@ -130,11 +142,28 @@ def coletar(p: Parametros, pasta: Path | None = None, progresso=print) -> list[d
     return linhas
 
 
+def discos() -> list[dict] | str:
+    """Modelo e tipo dos discos (a sincronizacao com o disco domina o custo das escritas)."""
+    comandos = {"Windows": ["powershell", "-NoProfile", "-Command",
+                            "Get-PhysicalDisk | Select-Object FriendlyName,MediaType,BusType | ConvertTo-Json"],
+                "Linux": ["lsblk", "-J", "-d", "-o", "NAME,MODEL,ROTA,TRAN"],
+                "Darwin": ["system_profiler", "SPStorageDataType", "-json"]}
+    comando = comandos.get(platform.system())
+    if not comando:
+        return "desconhecido"
+    try:
+        saida = subprocess.run(comando, capture_output=True, text=True, timeout=30, check=True).stdout
+        dados = json.loads(saida)
+        return dados if isinstance(dados, list) else [dados] if "FriendlyName" in dados else dados
+    except (OSError, subprocess.SubprocessError, json.JSONDecodeError):
+        return "desconhecido"
+
+
 def ambiente(p: Parametros) -> dict:
     return {"coletado_em": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "sqlite_version": sqlite3.sqlite_version, "python": sys.version.split()[0],
             "sistema": platform.platform(), "processador": platform.processor() or platform.machine(),
-            "cpus": os.cpu_count(), "parametros": asdict(p)}
+            "cpus": os.cpu_count(), "discos": discos(), "parametros": asdict(p)}
 
 
 def salvar(linhas: list[dict], info: dict, nome: str, destino: Path = DADOS) -> Path:
