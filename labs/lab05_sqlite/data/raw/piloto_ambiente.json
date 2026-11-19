@@ -1,0 +1,16 @@
+{
+  "coletado_em": "2026-11-19T03:31:39+00:00",
+  "sqlite_version": "3.50.4",
+  "python": "3.14.7",
+  "sistema": "Windows-11-10.0.26200-SP0",
+  "processador": "AMD64 Family 25 Model 97 Stepping 2, AuthenticAMD",
+  "cpus": 12,
+  "parametros": {
+    "repeticoes": 5,
+    "escritas": 200,
+    "linhas_leitura": 5000,
+    "leituras": 2000,
+    "tamanho_payload": 200,
+    "seed": 42
+  }
+}
