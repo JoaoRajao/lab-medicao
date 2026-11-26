@@ -1,4 +1,5 @@
-"""Validacao da coleta completa versionada (#121): o CSV segue o desenho planejado na proposta."""
+"""Validacao das coletas completas versionadas: Windows (#121) e replicacao no Linux (#137). Cada CSV segue o
+desenho planejado na proposta."""
 
 from __future__ import annotations
 
@@ -13,14 +14,24 @@ from labs.lab05_sqlite import coleta
 RAW = Path(coleta.__file__).parent / "data" / "raw"
 
 
-@pytest.fixture(scope="module")
-def dados() -> pd.DataFrame:
-    return pd.read_csv(RAW / "coleta_completa.csv")
+COLETAS = ("coleta_completa", "coleta_linux")
+
+
+@pytest.fixture(scope="module", params=COLETAS)
+def coleta_versionada(request) -> tuple[pd.DataFrame, dict]:
+    nome = request.param
+    return (pd.read_csv(RAW / f"{nome}.csv"),
+            json.loads((RAW / f"{nome}_ambiente.json").read_text(encoding="utf-8")))
 
 
 @pytest.fixture(scope="module")
-def ambiente() -> dict:
-    return json.loads((RAW / "coleta_completa_ambiente.json").read_text(encoding="utf-8"))
+def dados(coleta_versionada) -> pd.DataFrame:
+    return coleta_versionada[0]
+
+
+@pytest.fixture(scope="module")
+def ambiente(coleta_versionada) -> dict:
+    return coleta_versionada[1]
 
 
 def test_colunas_e_sem_valores_faltando(dados):

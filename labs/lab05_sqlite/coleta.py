@@ -183,11 +183,15 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--piloto", action="store_true", help="5 blocos com cargas pequenas (S01)")
     parser.add_argument("--repeticoes", type=int, default=Parametros.repeticoes)
     parser.add_argument("--nome", help="Nome do CSV em data/raw (padrao: piloto ou coleta_<data>)")
+    parser.add_argument("--pasta", type=Path, help="Pasta dos bancos temporarios. Precisa estar em disco: no Linux/WSL "
+                        "o /tmp costuma ser tmpfs (memoria), onde o fsync nao custa nada")
     args = parser.parse_args(argv)
     p = PILOTO if args.piloto else Parametros(repeticoes=args.repeticoes)
     nome = args.nome or ("piloto" if args.piloto else f"coleta_{datetime.now():%Y-%m-%d}")
     print(f"SQLite {sqlite3.sqlite_version}: {p.repeticoes} blocos x {len(CARGAS) * len(CONFIGURACOES)} medicoes")
-    caminho = salvar(coletar(p), ambiente(p), nome)
+    if args.pasta:
+        args.pasta.mkdir(parents=True, exist_ok=True)
+    caminho = salvar(coletar(p, args.pasta), ambiente(p), nome)
     print(f"   dados em {caminho}")
     return 0
 
