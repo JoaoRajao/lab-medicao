@@ -1,0 +1,42 @@
+name: lab05-replicacao
+
+# Replica a coleta completa do Lab05 (#137) em maquinas diferentes da do grupo: Ubuntu, Windows e macOS.
+# Roda o nosso proprio codigo no nosso repositorio; nenhum sistema de terceiros recebe carga.
+# Os runners sao maquinas virtuais compartilhadas, entao servem para conferir a direcao dos efeitos,
+# nao a magnitude exata. Os CSVs ficam como artefato e sao versionados em labs/lab05_sqlite/data/raw.
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/lab05-replicacao.yml
+
+permissions:
+  contents: read
+
+jobs:
+  coleta:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+
+      - name: Coleta completa (30 blocos, so biblioteca padrao)
+        shell: bash
+        run: >
+          python -m labs.lab05_sqlite.coleta --repeticoes 30
+          --nome "coleta_actions_${{ runner.os }}"
+          --pasta "${{ runner.temp }}/lab05_db"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coleta_actions_${{ runner.os }}
+          path: labs/lab05_sqlite/data/raw/coleta_actions_${{ runner.os }}*
