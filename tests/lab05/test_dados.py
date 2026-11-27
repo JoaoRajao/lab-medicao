@@ -15,7 +15,7 @@ RAW = Path(coleta.__file__).parent / "data" / "raw"
 
 
 COLETAS = ("coleta_completa", "coleta_linux", "coleta_actions_Linux", "coleta_actions_Windows",
-           "coleta_actions_macOS")
+           "coleta_actions_macOS", "coleta_iphone")
 
 
 @pytest.fixture(scope="module", params=COLETAS)
@@ -72,3 +72,24 @@ def test_rastreabilidade_com_o_ambiente(dados, ambiente):
     assert set(dados["sqlite_version"]) == {ambiente["sqlite_version"]}
     assert set(dados["seed"]) == {ambiente["parametros"]["seed"]}
     assert ambiente["discos"], "o modelo do disco precisa estar registrado"
+
+
+# ------------------------------------------------------------------- concorrencia (PC com processos, celulares com threads)
+CONCORRENCIAS = ("concorrencia", "concorrencia_iphone")
+
+
+@pytest.mark.parametrize("nome", CONCORRENCIAS)
+def test_concorrencia_tem_blocos_completos_e_valores_coerentes(nome):
+    from labs.lab05_sqlite import concorrencia
+
+    dados = pd.read_csv(RAW / f"{nome}.csv")
+    ambiente = json.loads((RAW / f"{nome}_ambiente.json").read_text(encoding="utf-8"))
+    assert list(dados.columns) == list(concorrencia.COLUNAS) and not dados.isna().any().any()
+    blocos = ambiente["parametros"]["repeticoes"]
+    assert len(dados) == blocos * 2 * len(coleta.CONFIGURACOES)
+    for _, bloco in dados.groupby("bloco"):
+        assert not bloco.duplicated(["journal_mode", "synchronous", "escritor"]).any()
+    assert (dados["leituras"] > 0).all() and (dados["latencia_mediana_ms"] <= dados["latencia_max_ms"]).all()
+    assert (dados.loc[dados["escritor"] == "nao", "escritas"] == 0).all()
+    assert (dados.loc[dados["escritor"] == "sim", "escritas"] > 0).all()
+    assert set(dados["sqlite_version"]) == {ambiente["sqlite_version"]}

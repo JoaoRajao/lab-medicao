@@ -1,0 +1,20 @@
+{
+  "coletado_em": "2026-11-27T01:24:19+00:00",
+  "sqlite_version": "3.43.2",
+  "python": "3.13.1+",
+  "sistema": "iOS-18.3.2-iPhone12,1-arm64-64bit",
+  "processador": "arm64",
+  "cpus": 1,
+  "discos": "desconhecido",
+  "parametros": {
+    "repeticoes": 30,
+    "linhas": 20000,
+    "tela": 50,
+    "intervalo_s": 0.005,
+    "duracao_s": 3.0,
+    "quadro_ms": 16.0,
+    "timeout_s": 5.0,
+    "seed": 42,
+    "escritor": "thread"
+  }
+}
