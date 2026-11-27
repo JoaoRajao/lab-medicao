@@ -1,0 +1,4 @@
+hipotese,carga,n_piloto,n_blocos_planejado,efeito_razao_piloto,dp_log_razao_piloto,repeticoes,erro_tipo_i_simulado,poder_simulado
+H-1,escrita,5,30,3.081095524382098,0.3910645619354499,5000,0.0462,1.0
+H-2,leitura,5,30,6.769059861118131,0.061041735743269286,5000,0.0496,1.0
+H-3,escrita,5,30,156.61425351742852,0.41088655473231434,5000,0.044,1.0
