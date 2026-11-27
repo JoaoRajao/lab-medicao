@@ -14,8 +14,9 @@ from labs.lab05_sqlite import coleta
 RAW = Path(coleta.__file__).parent / "data" / "raw"
 
 
-COLETAS = ("coleta_completa", "coleta_linux", "coleta_actions_Linux", "coleta_actions_Windows",
-           "coleta_actions_macOS", "coleta_iphone")
+# todas as coletas completas versionadas: notebook, WSL2, Actions e celulares (o Android entra sozinho quando chegar)
+COLETAS = tuple(sorted(c.stem for c in RAW.glob("coleta_*.csv"))) + ("coleta_completa",)
+COLETAS = tuple(dict.fromkeys(c for c in COLETAS if (RAW / f"{c}_ambiente.json").exists()))
 
 
 @pytest.fixture(scope="module", params=COLETAS)
@@ -75,7 +76,8 @@ def test_rastreabilidade_com_o_ambiente(dados, ambiente):
 
 
 # ------------------------------------------------------------------- concorrencia (PC com processos, celulares com threads)
-CONCORRENCIAS = ("concorrencia", "concorrencia_iphone")
+CONCORRENCIAS = tuple(sorted(c.stem for c in RAW.glob("concorrencia*.csv")
+                           if (RAW / f"{c.stem}_ambiente.json").exists()))
 
 
 @pytest.mark.parametrize("nome", CONCORRENCIAS)
