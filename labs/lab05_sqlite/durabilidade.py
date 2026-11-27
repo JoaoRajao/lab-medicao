@@ -34,7 +34,7 @@ import tempfile
 import threading
 import time
 from datetime import datetime, timezone
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 
 from labs.lab05_sqlite import coleta
 
@@ -213,7 +213,9 @@ def _wsl(*args: str, usuario: str = "root", cd: bool = True) -> list[str]:
 
 
 def _caminho_wsl(caminho: Path) -> str:
-    unidade, resto = caminho.drive, caminho.as_posix()[len(caminho.drive):]
+    """C:/Users/... -> /mnt/c/Users/... (PureWindowsPath: o teste roda tambem no CI, que e Linux)."""
+    janela = PureWindowsPath(caminho)
+    unidade, resto = janela.drive, janela.as_posix()[len(janela.drive):]
     return f"/mnt/{unidade.rstrip(':').lower()}{resto}"
 
 
