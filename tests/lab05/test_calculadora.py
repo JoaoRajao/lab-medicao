@@ -51,3 +51,13 @@ def test_concorrencia_do_celular_quando_o_ambiente_e_celular(dados):
         pytest.skip("sem coleta do iPhone")
     r = calculadora.recomendar(Perfil(60, True, "inaceitavel", "iPhone 11 · iOS"), dados)
     assert any("iPhone" in m and "lê enquanto grava" in m for m in r["motivos"])
+
+
+def test_grafico_tem_um_quadro_por_ritmo_e_a_recomendacao_muda_ao_deslizar(dados):
+    fig = calculadora.grafico(True, "toleravel", robustez.REFERENCIA, dados)
+    assert [f.name for f in fig.frames] == [str(r) for r in calculadora.RITMOS]
+    assert len(fig.layout.sliders[0].steps) == len(calculadora.RITMOS)
+    titulos = [f.layout.title.text for f in fig.frames]
+    assert "WAL/FULL" in titulos[0] and "WAL/NORMAL" in titulos[-1]  # pouco ritmo: FULL; muito: NORMAL
+    inaceitavel = calculadora.grafico(True, "inaceitavel", robustez.REFERENCIA, dados)
+    assert all("WAL/FULL" in f.layout.title.text for f in inaceitavel.frames)
