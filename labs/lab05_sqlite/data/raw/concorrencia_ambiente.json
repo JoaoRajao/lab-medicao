@@ -1,0 +1,25 @@
+{
+  "coletado_em": "2026-11-27T00:02:06+00:00",
+  "sqlite_version": "3.50.4",
+  "python": "3.14.7",
+  "sistema": "Windows-11-10.0.26300-SP0",
+  "processador": "AMD64 Family 25 Model 97 Stepping 2, AuthenticAMD",
+  "cpus": 12,
+  "discos": [
+    {
+      "FriendlyName": "SAMSUNG MZVL4512HBLU-00B",
+      "MediaType": "SSD",
+      "BusType": "NVMe"
+    }
+  ],
+  "parametros": {
+    "repeticoes": 30,
+    "linhas": 20000,
+    "tela": 50,
+    "intervalo_s": 0.005,
+    "duracao_s": 3.0,
+    "quadro_ms": 16.0,
+    "timeout_s": 5.0,
+    "seed": 42
+  }
+}

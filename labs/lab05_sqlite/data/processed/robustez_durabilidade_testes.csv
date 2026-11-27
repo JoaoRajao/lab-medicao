@@ -1,0 +1,3 @@
+comparacao,com_perda_a,n_a,com_perda_b,n_b,p,p_holm,rejeita_h0
+WAL/NORMAL perde mais que WAL/FULL,17,20,0,20,1.2847621301458902e-08,1.2847621301458902e-08,True
+DELETE/FULL perde mais que DELETE/EXTRA,20,20,0,20,7.254444551924844e-12,1.4508889103849688e-11,True

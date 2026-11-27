@@ -1,0 +1,3 @@
+ambiente,sqlite,blocos,telas_delete,telas_wal,pior_delete_ms,pior_wal_ms,c1_razao,c1_p_holm,c1_rejeita,c2_razao,c2_p_holm,c2_rejeita
+Notebook · Windows (processos),3.50.4,30,8.0,600.0,3982.2828,3.6062,20640.663152053276,1.862645149230957e-09,True,3.1877073628472807,1.862645149230957e-09,True
+iPhone 11 · iOS (threads),3.43.2,30,317.0,600.0,579.8726,5.8158,447.87215909090907,1.862645149230957e-09,True,6.614026258695117,1.862645149230957e-09,True

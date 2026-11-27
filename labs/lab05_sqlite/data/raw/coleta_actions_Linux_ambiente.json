@@ -1,0 +1,26 @@
+{
+  "coletado_em": "2026-11-26T23:45:40+00:00",
+  "sqlite_version": "3.46.1",
+  "python": "3.14.10",
+  "sistema": "Linux-7.0.0-1020-azure-x86_64-with-glibc2.43",
+  "processador": "x86_64",
+  "cpus": 4,
+  "discos": {
+    "blockdevices": [
+      {
+        "name": "sda",
+        "model": "Virtual Disk",
+        "rota": true,
+        "tran": null
+      }
+    ]
+  },
+  "parametros": {
+    "repeticoes": 30,
+    "escritas": 500,
+    "linhas_leitura": 20000,
+    "leituras": 5000,
+    "tamanho_payload": 200,
+    "seed": 42
+  }
+}

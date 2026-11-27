@@ -1,4 +1,5 @@
-"""Validacao da coleta completa versionada (#121): o CSV segue o desenho planejado na proposta."""
+"""Validacao das coletas completas versionadas: Windows (#121) e replicacoes (#137: WSL2 e GitHub Actions). Cada CSV segue o
+desenho planejado na proposta."""
 
 from __future__ import annotations
 
@@ -13,14 +14,26 @@ from labs.lab05_sqlite import coleta
 RAW = Path(coleta.__file__).parent / "data" / "raw"
 
 
-@pytest.fixture(scope="module")
-def dados() -> pd.DataFrame:
-    return pd.read_csv(RAW / "coleta_completa.csv")
+# todas as coletas completas versionadas: notebook, WSL2, Actions e celulares (o Android entra sozinho quando chegar)
+COLETAS = tuple(sorted(c.stem for c in RAW.glob("coleta_*.csv"))) + ("coleta_completa",)
+COLETAS = tuple(dict.fromkeys(c for c in COLETAS if (RAW / f"{c}_ambiente.json").exists()))
+
+
+@pytest.fixture(scope="module", params=COLETAS)
+def coleta_versionada(request) -> tuple[pd.DataFrame, dict]:
+    nome = request.param
+    return (pd.read_csv(RAW / f"{nome}.csv"),
+            json.loads((RAW / f"{nome}_ambiente.json").read_text(encoding="utf-8")))
 
 
 @pytest.fixture(scope="module")
-def ambiente() -> dict:
-    return json.loads((RAW / "coleta_completa_ambiente.json").read_text(encoding="utf-8"))
+def dados(coleta_versionada) -> pd.DataFrame:
+    return coleta_versionada[0]
+
+
+@pytest.fixture(scope="module")
+def ambiente(coleta_versionada) -> dict:
+    return coleta_versionada[1]
 
 
 def test_colunas_e_sem_valores_faltando(dados):
@@ -60,3 +73,25 @@ def test_rastreabilidade_com_o_ambiente(dados, ambiente):
     assert set(dados["sqlite_version"]) == {ambiente["sqlite_version"]}
     assert set(dados["seed"]) == {ambiente["parametros"]["seed"]}
     assert ambiente["discos"], "o modelo do disco precisa estar registrado"
+
+
+# ------------------------------------------------------------------- concorrencia (PC com processos, celulares com threads)
+CONCORRENCIAS = tuple(sorted(c.stem for c in RAW.glob("concorrencia*.csv")
+                           if (RAW / f"{c.stem}_ambiente.json").exists()))
+
+
+@pytest.mark.parametrize("nome", CONCORRENCIAS)
+def test_concorrencia_tem_blocos_completos_e_valores_coerentes(nome):
+    from labs.lab05_sqlite import concorrencia
+
+    dados = pd.read_csv(RAW / f"{nome}.csv")
+    ambiente = json.loads((RAW / f"{nome}_ambiente.json").read_text(encoding="utf-8"))
+    assert list(dados.columns) == list(concorrencia.COLUNAS) and not dados.isna().any().any()
+    blocos = ambiente["parametros"]["repeticoes"]
+    assert len(dados) == blocos * 2 * len(coleta.CONFIGURACOES)
+    for _, bloco in dados.groupby("bloco"):
+        assert not bloco.duplicated(["journal_mode", "synchronous", "escritor"]).any()
+    assert (dados["leituras"] > 0).all() and (dados["latencia_mediana_ms"] <= dados["latencia_max_ms"]).all()
+    assert (dados.loc[dados["escritor"] == "nao", "escritas"] == 0).all()
+    assert (dados.loc[dados["escritor"] == "sim", "escritas"] > 0).all()
+    assert set(dados["sqlite_version"]) == {ambiente["sqlite_version"]}
