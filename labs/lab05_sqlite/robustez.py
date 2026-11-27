@@ -36,7 +36,11 @@ DOC = Path(__file__).resolve().parents[2] / "docs" / "lab05" / "robustez.md"
 # rotulo -> arquivo em data/raw; o primeiro e a referencia. Os que nao existirem sao ignorados.
 AMBIENTES = {"Notebook · Windows": "coleta_completa", "Notebook · Linux (WSL2)": "coleta_linux",
              "Actions · Ubuntu": "coleta_actions_Linux", "Actions · Windows": "coleta_actions_Windows",
-             "Actions · macOS": "coleta_actions_macOS"}
+             "Actions · macOS": "coleta_actions_macOS", "iPhone 11 · iOS": "coleta_iphone",
+             "Android": "coleta_android"}
+# concorrencia: o PC usa processos; os celulares, threads (o iOS nao permite iniciar processos)
+CONCORRENCIAS = {"Notebook · Windows (processos)": "concorrencia", "iPhone 11 · iOS (threads)": "concorrencia_iphone",
+                 "Android (threads)": "concorrencia_android"}
 REFERENCIA = next(iter(AMBIENTES))
 LINUX = "Notebook · Linux (WSL2)"  # onde a queda do sistema foi simulada
 
@@ -283,6 +287,9 @@ def secao_replicacao(rep: pd.DataFrame, comp: pd.DataFrame) -> list[str]:
         "- **Actions:** máquinas virtuais do GitHub Actions com Ubuntu, Windows e macOS "
         "(`.github/workflows/lab05-replicacao.yml`). Hardware diferente do nosso, mas compartilhado e com ruído: "
         "servem para conferir a direção, não a magnitude.",
+        "- **Celulares:** a mesma coleta no armazenamento real de um iPhone 11 (app a-Shell) e, quando disponível, de "
+        "um Android (app Termux), com os comandos de `docs/lab05/coleta_celular.md`. É o tipo de aparelho a que se "
+        "referem os números de impacto.",
         "",
         "| Ambiente | SQLite |",
         "| --- | --- |",
@@ -359,7 +366,31 @@ def secao_durabilidade(dur: pd.DataFrame, resumo: pd.DataFrame, testes: pd.DataF
     return [*linhas, ""]
 
 
-def secao_concorrencia(conc: pd.DataFrame, resumo: pd.DataFrame, testes: pd.DataFrame) -> list[str]:
+def replica_concorrencia(pasta: Path = RAW) -> pd.DataFrame | None:
+    """C-1 e C-2 em cada ambiente com dados de concorrencia, com os numeros que importam para a tela."""
+    linhas = []
+    for ambiente, arquivo in CONCORRENCIAS.items():
+        if not (pasta / f"{arquivo}.csv").exists():
+            continue
+        conc = pd.read_csv(pasta / f"{arquivo}.csv")
+        resumo, testes = resumo_concorrencia(conc), testes_concorrencia(conc).set_index("codigo")
+
+        def r(j: str) -> pd.Series:
+            return resumo[(resumo["journal_mode"] == j) & (resumo["synchronous"] == "FULL")
+                          & (resumo["escritor"] == "sim")].iloc[0]
+
+        linhas.append({"ambiente": ambiente, "sqlite": conc["sqlite_version"].iloc[0], "blocos": conc["bloco"].nunique(),
+                       "telas_delete": r("DELETE")["leituras_mediana"], "telas_wal": r("WAL")["leituras_mediana"],
+                       "pior_delete_ms": r("DELETE")["latencia_max_ms"], "pior_wal_ms": r("WAL")["latencia_max_ms"],
+                       "c1_razao": testes.loc["C-1", "razao"], "c1_p_holm": testes.loc["C-1", "p_holm"],
+                       "c1_rejeita": bool(testes.loc["C-1", "rejeita_h0"]),
+                       "c2_razao": testes.loc["C-2", "razao"], "c2_p_holm": testes.loc["C-2", "p_holm"],
+                       "c2_rejeita": bool(testes.loc["C-2", "rejeita_h0"])})
+    return pd.DataFrame(linhas) if linhas else None
+
+
+def secao_concorrencia(conc: pd.DataFrame, resumo: pd.DataFrame, testes: pd.DataFrame,
+                       replica: pd.DataFrame | None = None) -> list[str]:
     linhas = [
         "## 3. Leitura e escrita ao mesmo tempo",
         "",
@@ -391,6 +422,20 @@ def secao_concorrencia(conc: pd.DataFrame, resumo: pd.DataFrame, testes: pd.Data
         linhas.append(f"| **{t['codigo']}** {t['descricao']} | {t['comparacao']} (`{t['metrica']}`) | "
                       f"{_vezes(t['razao'])} {_ic(t['ic_inf'], t['ic_sup'])} | {_p(t['p_holm'])} | "
                       f"{'Sim' if t['rejeita_h0'] else 'Não'} |")
+    if replica is not None and len(replica) > 1:
+        linhas += [
+            "", "**Replicação em celulares.** O iOS não permite iniciar processos, então nos celulares o escritor roda "
+            "em uma *thread* com conexão própria (`--threads`). No PC, os dois modos deram o mesmo padrão. Números "
+            "com escrita em segundo plano e `synchronous = FULL`:", "",
+            "| Ambiente | SQLite | Telas em 3 s: DELETE × WAL | Pior leitura: DELETE × WAL | C-1 (p Holm) | "
+            "C-2: escritor no WAL (p Holm) |",
+            "| --- | --- | ---: | ---: | ---: | ---: |"]
+        for _, x in replica.iterrows():
+            linhas.append(
+                f"| {x['ambiente']} | {x['sqlite']} | {_n(x['telas_delete'], 0)} × {_n(x['telas_wal'], 0)} | "
+                f"{_ms(x['pior_delete_ms'])} × {_ms(x['pior_wal_ms'])} | "
+                f"{'confirmada' if x['c1_rejeita'] else 'não confirmada'} ({_p(x['c1_p_holm'])}) | "
+                f"{_vezes(x['c2_razao'])} ({_p(x['c2_p_holm'])}) |")
     return [*linhas, ""]
 
 
@@ -404,7 +449,8 @@ def markdown(d: dict) -> str:
               *secao_replicacao(d["replicacao"], d["comparacao"]),
               *secao_durabilidade(d["dur"], d["durabilidade"], d["testes"])]
     if d.get("conc") is not None:
-        linhas += secao_concorrencia(d["conc"], d["concorrencia"], d["testes_concorrencia"])
+        linhas += secao_concorrencia(d["conc"], d["concorrencia"], d["testes_concorrencia"],
+                                     d.get("replica_concorrencia"))
     linhas += ["## 4. O que isso muda nas conclusões", "", *conclusoes(d), ""]
     return "\n".join(linhas)
 
@@ -476,6 +522,19 @@ def conclusoes(d: dict) -> list[str]:
             f"C-1 {'confirmada' if tc.loc['C-1', 'rejeita_h0'] else 'não confirmada'} (p Holm "
             f"{_p(tc.loc['C-1', 'p_holm'])}); C-2 {'confirmada' if tc.loc['C-2', 'rejeita_h0'] else 'não confirmada'}"
             f" (escritor {_vezes(tc.loc['C-2', 'razao'])} no WAL, p Holm {_p(tc.loc['C-2', 'p_holm'])}).")
+        rcp = d.get("replica_concorrencia")
+        if rcp is not None and len(rcp) > 1:
+            outros = rcp.iloc[1:]
+            nomes = [a.replace(" (threads)", "") for a in outros["ambiente"]]
+            ambos = outros["c1_rejeita"] & outros["c2_rejeita"]
+            telas = " e ".join(_n(v, 0) for v in outros["telas_delete"])
+            if len(outros) == 1:
+                itens[-1] += (f" No {nomes[0]}, C-1 e C-2 {'também foram confirmadas' if ambos.all() else 'não se repetiram'}"
+                              f": com o escritor, o leitor do DELETE completou {telas} das 600 telas e o do WAL, "
+                              f"{_n(outros['telas_wal'].iloc[0], 0)}.")
+            else:
+                itens[-1] += (f" Nos celulares ({', '.join(nomes)}), C-1 e C-2 se repetem em {int(ambos.sum())} de "
+                              f"{len(outros)}; o leitor do DELETE completou {telas} das 600 telas.")
     pares = int(comp["ambientes"].sum())
     itens.append(f"**Validade externa:** em {int(comp['ambientes'].max())} ambientes, a direção dos efeitos se repete "
                  f"em {int(comp['mesma_direcao'].sum())} de {pares} pares e a conclusão em "
@@ -490,10 +549,12 @@ def gerar(destino_doc: Path = DOC) -> dict:
     d["conc"] = carregar_concorrencia()
     if d["conc"] is not None:
         d["concorrencia"], d["testes_concorrencia"] = resumo_concorrencia(d["conc"]), testes_concorrencia(d["conc"])
+        d["replica_concorrencia"] = replica_concorrencia()
     PROCESSADOS.mkdir(parents=True, exist_ok=True)
     saidas = {"replicacao": "robustez_replicacao", "durabilidade": "robustez_durabilidade",
               "testes": "robustez_durabilidade_testes", "concorrencia": "robustez_concorrencia",
-              "testes_concorrencia": "robustez_concorrencia_testes"}
+              "testes_concorrencia": "robustez_concorrencia_testes",
+              "replica_concorrencia": "robustez_concorrencia_ambientes"}
     for chave, nome in saidas.items():
         if d.get(chave) is not None:
             d[chave].to_csv(PROCESSADOS / f"{nome}.csv", index=False, lineterminator="\n")

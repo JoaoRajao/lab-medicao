@@ -8,6 +8,7 @@ A coleta completa (30 blocos × 3 cargas × 4 configurações, o mesmo script e 
 
 - **Notebook · Linux (WSL2):** Ubuntu 26.04 no mesmo notebook, bancos no ext4 (o `/tmp` do WSL fica em memória e foi evitado). Mudam o sistema, o sistema de arquivos e a versão do SQLite; o hardware é o mesmo.
 - **Actions:** máquinas virtuais do GitHub Actions com Ubuntu, Windows e macOS (`.github/workflows/lab05-replicacao.yml`). Hardware diferente do nosso, mas compartilhado e com ruído: servem para conferir a direção, não a magnitude.
+- **Celulares:** a mesma coleta no armazenamento real de um iPhone 11 (app a-Shell) e, quando disponível, de um Android (app Termux), com os comandos de `docs/lab05/coleta_celular.md`. É o tipo de aparelho a que se referem os números de impacto.
 
 | Ambiente | SQLite |
 | --- | --- |
@@ -16,18 +17,19 @@ A coleta completa (30 blocos × 3 cargas × 4 configurações, o mesmo script e 
 | Actions · Ubuntu | 3.46.1 |
 | Actions · Windows | 3.50.4 |
 | Actions · macOS | 3.50.4 |
+| iPhone 11 · iOS | 3.43.2 |
 
-| Comparação | Notebook · Windows | Notebook · Linux (WSL2) | Actions · Ubuntu | Actions · Windows | Actions · macOS | Mesma direção | Mesma conclusão |
-| --- | ---: | ---: | ---: | ---: | ---: | :---: | :---: |
-| **H-1** Escrita: WAL > DELETE (FULL) | 3,16× · p < 0,001 | 1,95× · p < 0,001 | 2,30× · p < 0,001 | 5,67× · p < 0,001 | 4,85× · p < 0,001 | 5/5 | 5/5 |
-| **H-2** Leitura avulsa: WAL ≠ DELETE (FULL) | 5,31× · p < 0,001 | 2,18× · p < 0,001 | 2,00× · p < 0,001 | 2,91× · p < 0,001 | 2,17× · p < 0,001 | 5/5 | 5/5 |
-| **H-3** Escrita: NORMAL > FULL (WAL) | 168× · p < 0,001 | 442× · p < 0,001 | 17,31× · p < 0,001 | 10,47× · p < 0,001 | 8,34× · p < 0,001 | 5/5 | 5/5 |
-| **E-1** Leitura em 1 transação: WAL ≠ DELETE (FULL) | 0,99× · p 0,626 | 0,99× · p 0,309 | 0,99× · p 0,015 | 0,99× · p 0,028 | 1,00× · p 0,543 | 4/5 | 3/5 |
-| **E-2** Escrita: NORMAL > FULL (DELETE) | 1,46× · p < 0,001 | 1,26× · p < 0,001 | 1,14× · p < 0,001 | 1,16× · p < 0,001 | 1,14× · p < 0,001 | 5/5 | 5/5 |
+| Comparação | Notebook · Windows | Notebook · Linux (WSL2) | Actions · Ubuntu | Actions · Windows | Actions · macOS | iPhone 11 · iOS | Mesma direção | Mesma conclusão |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | :---: | :---: |
+| **H-1** Escrita: WAL > DELETE (FULL) | 3,16× · p < 0,001 | 1,95× · p < 0,001 | 2,30× · p < 0,001 | 5,67× · p < 0,001 | 4,85× · p < 0,001 | 7,46× · p < 0,001 | 6/6 | 6/6 |
+| **H-2** Leitura avulsa: WAL ≠ DELETE (FULL) | 5,31× · p < 0,001 | 2,18× · p < 0,001 | 2,00× · p < 0,001 | 2,91× · p < 0,001 | 2,17× · p < 0,001 | 7,58× · p < 0,001 | 6/6 | 6/6 |
+| **H-3** Escrita: NORMAL > FULL (WAL) | 168× · p < 0,001 | 442× · p < 0,001 | 17,31× · p < 0,001 | 10,47× · p < 0,001 | 8,34× · p < 0,001 | 7,22× · p < 0,001 | 6/6 | 6/6 |
+| **E-1** Leitura em 1 transação: WAL ≠ DELETE (FULL) | 0,99× · p 0,626 | 0,99× · p 0,309 | 0,99× · p 0,015 | 0,99× · p 0,028 | 1,00× · p 0,543 | 0,99× · p 0,968 | 5/6 | 4/6 |
+| **E-2** Escrita: NORMAL > FULL (DELETE) | 1,46× · p < 0,001 | 1,26× · p < 0,001 | 1,14× · p < 0,001 | 1,16× · p < 0,001 | 1,14× · p < 0,001 | 1,10× · p < 0,001 | 6/6 | 6/6 |
 
 Razão das medianas; p de Holm nas confirmatórias (H) e p bruto nas exploratórias (E). Os intervalos de confiança estão em `data/processed/robustez_replicacao.csv`.
 
-**Leitura:** a direção se repete em 24 de 25 pares (comparação × ambiente) e a conclusão do teste em 23 de 25. A **magnitude** varia bastante entre ambientes, porque o custo de sincronizar o disco e de travar arquivos depende do sistema e do hardware. Por isso o estudo afirma efeitos relativos (direção e ordem de grandeza) e não um número universal.
+**Leitura:** a direção se repete em 29 de 30 pares (comparação × ambiente) e a conclusão do teste em 28 de 30. A **magnitude** varia bastante entre ambientes, porque o custo de sincronizar o disco e de travar arquivos depende do sistema e do hardware. Por isso o estudo afirma efeitos relativos (direção e ordem de grandeza) e não um número universal.
 
 Em **E-1** o efeito é praticamente nulo em todos os ambientes (razões entre 0,986 e 1,001), então "mesma direção" não tem significado ali: o sinal de uma diferença de menos de 2% oscila com o ruído, e com 30 blocos uma diferença tão pequena às vezes fica significativa. A conclusão que se repete é a de E-1 ser desprezível perto de H-2.
 
@@ -83,11 +85,18 @@ Cada linha resume os blocos pela mediana (o pior caso é o máximo entre todos).
 | **C-1** Com escrita em andamento, a leitura p99 é menor no WAL | DELETE/FULL ÷ WAL/FULL (`latencia_p99_ms`) | 20.641× [16.195; 28.611] | < 0,001 | Sim |
 | **C-2** Com leituras em andamento, o escritor faz mais transações/s no WAL | WAL/FULL ÷ DELETE/FULL (`escritas_por_s`) | 3,19× [3,08; 3,27] | < 0,001 | Sim |
 
+**Replicação em celulares.** O iOS não permite iniciar processos, então nos celulares o escritor roda em uma *thread* com conexão própria (`--threads`). No PC, os dois modos deram o mesmo padrão. Números com escrita em segundo plano e `synchronous = FULL`:
+
+| Ambiente | SQLite | Telas em 3 s: DELETE × WAL | Pior leitura: DELETE × WAL | C-1 (p Holm) | C-2: escritor no WAL (p Holm) |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Notebook · Windows (processos) | 3.50.4 | 8 × 600 | 3.982 ms × 3,6 ms | confirmada (< 0,001) | 3,19× (< 0,001) |
+| iPhone 11 · iOS (threads) | 3.43.2 | 317 × 600 | 580 ms × 5,8 ms | confirmada (< 0,001) | 6,61× (< 0,001) |
+
 ## 4. O que isso muda nas conclusões
 
 1. **Travar o app não perdeu dados em nenhuma configuração** (0 rodadas com perda em 150). O risco do `synchronous` aparece só na queda do sistema ou de energia.
 2. **Custo medido do NORMAL:** na queda do sistema, `WAL/NORMAL` perdeu transações confirmadas em 17 de 20 rodadas (até 868 por queda), contra 0 de 20 no `WAL/FULL` (Fisher, p Holm < 0,001). É a contrapartida do ganho de H-3 (168× no Windows e 442× no Linux, onde a queda foi simulada), e a durabilidade deixa de ser só uma citação da documentação.
 3. **`DELETE/FULL` (o padrão do Python e do SQLite):** perdeu transação confirmada em 20 de 20 quedas (até 1 por queda); com `DELETE/EXTRA`, 0 de 20 (Fisher, p Holm < 0,001). É o que a documentação descreve para o EXTRA: sincronizar a pasta depois de apagar o journal. O `WAL/FULL` não perdeu nada e grava mais rápido que o `DELETE/FULL` (H-1: 3,16× no Windows e 1,95× no Linux, onde a queda foi simulada).
 4. **Integridade:** 250 de 250 bancos passaram no `PRAGMA integrity_check` depois da falha: as perdas são de transações recentes, não corrupção.
-5. **Concorrência:** com escrita em segundo plano, o leitor do `DELETE/FULL` completou só 8 das 600 telas em 3 s (latência mediana 161 ms, pior caso 3.982 ms: a tela congelaria), enquanto no `WAL/FULL` completou 600 (pior caso 3,6 ms, dentro de um quadro). C-1 confirmada (p Holm < 0,001); C-2 confirmada (escritor 3,19× no WAL, p Holm < 0,001).
-6. **Validade externa:** em 5 ambientes, a direção dos efeitos se repete em 24 de 25 pares e a conclusão em 23 de 25; a magnitude muda de ambiente para ambiente.
+5. **Concorrência:** com escrita em segundo plano, o leitor do `DELETE/FULL` completou só 8 das 600 telas em 3 s (latência mediana 161 ms, pior caso 3.982 ms: a tela congelaria), enquanto no `WAL/FULL` completou 600 (pior caso 3,6 ms, dentro de um quadro). C-1 confirmada (p Holm < 0,001); C-2 confirmada (escritor 3,19× no WAL, p Holm < 0,001). No iPhone 11 · iOS, C-1 e C-2 também foram confirmadas: com o escritor, o leitor do DELETE completou 317 das 600 telas e o do WAL, 600.
+6. **Validade externa:** em 6 ambientes, a direção dos efeitos se repete em 29 de 30 pares e a conclusão em 28 de 30; a magnitude muda de ambiente para ambiente.
