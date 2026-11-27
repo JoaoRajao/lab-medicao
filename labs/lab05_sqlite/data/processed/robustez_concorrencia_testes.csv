@@ -1,0 +1,3 @@
+codigo,descricao,metrica,comparacao,n,razao,ic_inf,ic_sup,p,p_holm,rejeita_h0
+C-1,"Com escrita em andamento, a leitura p99 é menor no WAL",latencia_p99_ms,DELETE/FULL ÷ WAL/FULL,30,20640.663152053276,16195.107172207061,28611.475673658322,9.313225746154785e-10,1.862645149230957e-09,True
+C-2,"Com leituras em andamento, o escritor faz mais transações/s no WAL",escritas_por_s,WAL/FULL ÷ DELETE/FULL,30,3.1877073628472807,3.0779031808799915,3.2696372884657166,9.313225746154785e-10,1.862645149230957e-09,True

@@ -65,15 +65,17 @@ BASE = {("escrita", "DELETE", "FULL"): 100, ("escrita", "DELETE", "NORMAL"): 140
 
 def test_replicacao_compara_direcao_e_conclusao_entre_ambientes():
     linux = dict(BASE) | {("escrita", "WAL", "FULL"): 200}  # efeito menor, mesma direcao
-    coletas = pd.concat([_coleta(BASE, 1).assign(ambiente="Windows"), _coleta(linux, 2).assign(ambiente="Linux")])
+    coletas = pd.concat([_coleta(BASE, 1).assign(ambiente=robustez.REFERENCIA),
+                         _coleta(linux, 2).assign(ambiente="Outro")])
     rep = robustez.replicacao(coletas)
     assert len(rep) == 2 * len(robustez.COMPARACOES)
     assert rep.loc[rep["confirmatoria"], "p_holm"].notna().all() and rep.loc[~rep["confirmatoria"], "p_holm"].isna().all()
+    h1 = rep[rep["codigo"] == "H-1"].set_index("ambiente")["razao"]
+    assert h1[robustez.REFERENCIA] == pytest.approx(3, rel=0.05) and h1["Outro"] == pytest.approx(2, rel=0.05)
     comp = robustez.comparar_ambientes(rep).set_index("codigo")
-    assert comp.loc["H-1", "razao_windows"] == pytest.approx(3, rel=0.05)
-    assert comp.loc["H-1", "razao_linux"] == pytest.approx(2, rel=0.05)
-    assert comp.loc["H-1", "mesma_direcao"] and comp.loc["H-1", "mesma_conclusao"]
-    assert not comp.loc["E-1", "rejeita_windows"]  # sem efeito na leitura em transacao
+    assert comp.loc["H-1", "ambientes"] == 2 and comp.loc["H-1", "mesma_direcao"] == 2
+    assert comp.loc["H-1", "mesma_conclusao"] == 2
+    assert not rep[(rep["codigo"] == "E-1")]["rejeita_h0"].any()  # sem efeito na leitura em transacao
 
 
 def test_holm():
@@ -95,27 +97,61 @@ def _durabilidade() -> pd.DataFrame:
     return pd.DataFrame(linhas)
 
 
+def _dados(dur: pd.DataFrame, conc: pd.DataFrame | None = None) -> dict:
+    rep = pd.DataFrame({"ambiente": [robustez.REFERENCIA] * 2, "codigo": ["H-1", "H-3"], "razao": [3.16, 168.3]})
+    d = {"durabilidade": robustez.resumo_durabilidade(dur), "testes": robustez.testes_durabilidade(dur),
+         "comparacao": pd.DataFrame({"ambientes": [5], "mesma_direcao": [5], "mesma_conclusao": [5]}),
+         "replicacao": rep}
+    if conc is not None:
+        d["concorrencia"], d["testes_concorrencia"] = (robustez.resumo_concorrencia(conc),
+                                                       robustez.testes_concorrencia(conc))
+    return d
+
+
 def test_resumo_e_testes_da_durabilidade():
     dur = _durabilidade()
     resumo = robustez.resumo_durabilidade(dur)
     assert list(resumo["falha"].unique()) == ["processo", "sistema"]
     wn = resumo[(resumo["falha"] == "sistema") & (resumo["journal_mode"] == "WAL") & (resumo["synchronous"] == "NORMAL")]
     assert wn["rodadas_com_perda"].item() == 15 and wn["ic_inf"].item() < 0.75 < wn["ic_sup"].item()
-    testes = robustez.testes_durabilidade(dur)
-    assert testes["rejeita_h0"].all()
-    texto = "\n".join(robustez.conclusoes(resumo, testes, pd.DataFrame({"mesma_conclusao": [True]}),
-                                          pd.DataFrame({"ambiente": ["Windows"] * 2, "codigo": ["H-1", "H-3"],
-                                                        "razao": [3.16, 168.3]})))
+    assert robustez.testes_durabilidade(dur)["rejeita_h0"].all()
+    texto = "\n".join(robustez.conclusoes(_dados(dur)))
     assert "não perdeu dados em nenhuma configuração" in texto and "168×" in texto and "3,16×" in texto
+    assert "É o que a documentação descreve" in texto
 
 
 def test_sem_perda_no_extra_e_frase_condicional():
     dur = _durabilidade()
     dur.loc[(dur["journal_mode"] == "DELETE") & (dur["synchronous"] == "EXTRA") & (dur["rodada"] == 1)
             & (dur["falha"] == "sistema"), "perdidas"] = 1
-    resumo = robustez.resumo_durabilidade(dur)
-    texto = "\n".join(robustez.conclusoes(resumo, robustez.testes_durabilidade(dur),
-                                          pd.DataFrame({"mesma_conclusao": [True]}),
-                                          pd.DataFrame({"ambiente": ["Windows"] * 2, "codigo": ["H-1", "H-3"],
-                                                        "razao": [3.16, 168.3]})))
+    texto = "\n".join(robustez.conclusoes(_dados(dur)))
     assert "É o que a documentação descreve" not in texto  # o EXTRA perdeu uma: a frase nao pode aparecer
+
+
+# --------------------------------------------------------------------------------------------- concorrencia
+def _concorrencia(seed: int = 3) -> pd.DataFrame:
+    rng = np.random.default_rng(seed)
+    linhas = []
+    for bloco in range(1, 31):
+        for j, s in coleta.CONFIGURACOES:
+            for escritor in ("sim", "nao"):
+                travado = j == "DELETE" and escritor == "sim"
+                p99 = (300 if travado else 0.2) * float(np.exp(rng.normal(0, 0.1)))
+                linhas.append({"bloco": bloco, "journal_mode": j, "synchronous": s, "escritor": escritor,
+                               "leituras": 40 if travado else 600, "erros_leitura": 0,
+                               "latencia_mediana_ms": p99 / 3, "latencia_p99_ms": p99, "latencia_max_ms": p99 * 1.2,
+                               "acima_quadro": 35 if travado else 0,
+                               "escritas_por_s": (0 if escritor == "nao" else (90 if j == "DELETE" else 400))
+                               * float(np.exp(rng.normal(0, 0.05))), "erros_escrita": 0})
+    return pd.DataFrame(linhas)
+
+
+def test_concorrencia_resumo_testes_e_conclusao():
+    conc = _concorrencia()
+    resumo = robustez.resumo_concorrencia(conc)
+    assert len(resumo) == 8 and resumo["escritor"].iloc[0] == "sim"
+    testes = robustez.testes_concorrencia(conc).set_index("codigo")
+    assert testes.loc["C-1", "rejeita_h0"] and testes.loc["C-2", "rejeita_h0"]
+    assert testes.loc["C-2", "razao"] == pytest.approx(400 / 90, rel=0.1)
+    texto = "\n".join(robustez.conclusoes(_dados(_durabilidade(), conc)))
+    assert "C-1 confirmada" in texto and "C-2 confirmada" in texto
