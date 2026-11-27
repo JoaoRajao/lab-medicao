@@ -18,9 +18,16 @@ def test_graficos_tem_titulo_eixo_e_dados(d):
         assert fig.data and all(len(t.x) for t in fig.data if t.x is not None)
 
 
-def test_cores_seguem_o_modo_de_journal(d):
+def test_cada_configuracao_e_cada_ambiente_tem_cor_propria(d):
+    from labs.lab05_sqlite import cores
+
     fig = painel.durabilidade(d["durabilidade"])
-    assert set(fig.data[0].marker.color) == {painel.COR["WAL"], painel.COR["DELETE"]}
+    cores_configs = list(fig.data[0].marker.color)
+    assert len(set(cores_configs)) == len(cores_configs) and set(cores_configs) <= set(cores.CONFIG.values())
+    rep = painel.replicacao(d["replicacao"])
+    pontos = [t for t in rep.data if t.mode == "markers"]
+    assert len({t.marker.color for t in pontos}) == len(pontos) == d["replicacao"]["ambiente"].nunique()
+    assert rep.layout.showlegend and painel.concorrencia(d["concorrencia"]).layout.showlegend
 
 
 def test_numeros_das_manchetes_saem_dos_dados(d):
@@ -30,6 +37,7 @@ def test_numeros_das_manchetes_saem_dos_dados(d):
     assert n["ambientes"] == d["comparacao"]["ambientes"].max()
     texto = painel.veredito(n)
     assert robustez._vezes(n["h1"]) in texto and f"{n['direcao']} de {n['pares']}" in texto
+    assert len(painel.resposta(n)["pontos"]) == 3
 
 
 def test_textos_de_limites_usam_os_dados(d):

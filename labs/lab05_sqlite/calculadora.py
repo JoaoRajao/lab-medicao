@@ -24,7 +24,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-from labs.lab05_sqlite import robustez
+from labs.lab05_sqlite import cores, robustez
 
 QUADRO_MS = 16.0
 LIMITE_TEMPO = 0.01        # 1% do tempo gravando
@@ -161,8 +161,7 @@ def recomendar(perfil: Perfil, dados: dict) -> dict:
 
 
 RITMOS = [1, 2, 5, 10, 20, 30, 60, 120, 300, 600, 1_200, 3_000, 6_000, 12_000, 30_000, 60_000]
-COR = {"WAL": "#2a78d6", "DELETE": "#eb6834"}
-COR_NEUTRA, COR_TEXTO, COR_GRADE = "#898781", "#3d3c38", "#e6e4df"
+COR_NEUTRA, COR_TEXTO, COR_GRADE = cores.TEXTO_SECUNDARIO, cores.TEXTO, cores.GRADE
 
 
 def escolher(perfil: Perfil, dados: dict) -> tuple[str, str]:
@@ -191,7 +190,7 @@ def grafico(le: bool, perda: str, ambiente: str, dados: dict, inicial: int = 60)
     """Figura com controle deslizante proprio (roda no navegador): cada posicao recalcula o custo e a
     recomendacao para aquele ritmo, sem voltar ao servidor, entao o grafico muda enquanto se arrasta."""
     nomes = [_nome(j, s) + (" (padrão)" if (j, s) == PADRAO else "") for j, s in CONFIGS]
-    cores = [COR[j] for j, _ in CONFIGS]
+    paleta = [cores.config(j, s) for j, s in CONFIGS]
     ms = {c: float(dados["latencia_ms"].loc[(ambiente, *c)]) for c in CONFIGS}
     pct = {c: [100 * r * ms[c] / 60_000 for r in RITMOS] for c in CONFIGS}
 
@@ -202,7 +201,7 @@ def grafico(le: bool, perda: str, ambiente: str, dados: dict, inicial: int = 60)
         fr = [float(t.loc[c, "fração do tempo gravando"]) for c in CONFIGS]
         topo = go.Scatter(
             x=[max(100 * f, 1e-6) for f in fr], y=nomes, mode="markers+text",
-            marker={"color": cores, "size": [22 if c == escolha else 12 for c in CONFIGS],
+            marker={"color": paleta, "size": [24 if c == escolha else 13 for c in CONFIGS],
                     "symbol": ["star" if c == escolha else "circle" for c in CONFIGS],
                     "line": {"color": "white", "width": 1.5}},
             text=[("★ recomendada · " if c == escolha else "") + _rotulo(t.loc[c, "ms gravando por minuto"], f)
@@ -211,11 +210,11 @@ def grafico(le: bool, perda: str, ambiente: str, dados: dict, inicial: int = 60)
             showlegend=False, xaxis="x", yaxis="y")
         pontos = go.Scatter(
             x=[r] * len(CONFIGS), y=[100 * f for f in fr], mode="markers", hoverinfo="skip",
-            marker={"color": cores, "size": [16 if c == escolha else 10 for c in CONFIGS],
+            marker={"color": paleta, "size": [18 if c == escolha else 11 for c in CONFIGS],
                     "symbol": ["star" if c == escolha else "circle" for c in CONFIGS],
                     "line": {"color": "white", "width": 1.5}}, showlegend=False, xaxis="x2", yaxis="y2")
-        titulo = (f"<b>{robustez._n(r, 0)} gravações por minuto → use <span style='color:{COR[escolha[0]]}'>"
-                  f"{_nome(*escolha)}</span></b><br><span style='font-size:13px;color:{COR_NEUTRA}'>"
+        titulo = (f"<b>{robustez._n(r, 0)} gravações por minuto → use "
+                  f"{_nome(*escolha)}</b><br><span style='font-size:13px;color:{COR_NEUTRA}'>"
                   f"{_motivo(escolha, perda, t)} · PRAGMA journal_mode={escolha[0]}; synchronous={escolha[1]};</span>")
         layout = {"title": {"text": titulo, "x": 0, "xanchor": "left", "y": 0.98, "yanchor": "top"},
                   "shapes": [{"type": "line", "xref": "x2", "yref": "y2 domain", "x0": r, "x1": r, "y0": 0, "y1": 1,
@@ -227,9 +226,9 @@ def grafico(le: bool, perda: str, ambiente: str, dados: dict, inicial: int = 60)
                                         "Como o custo cresce com o ritmo · linha cheia = FULL, tracejada = NORMAL"))
     e0 = estado(inicial)
     fig.add_trace(e0["dados"][0], row=1, col=1)
-    for c, nome, cor in zip(CONFIGS, nomes, cores):
+    for c, nome, cor in zip(CONFIGS, nomes, paleta):
         fig.add_trace(go.Scatter(x=RITMOS, y=pct[c], mode="lines", name=nome,
-                                 line={"color": cor, "width": 2, "dash": "solid" if c[1] == "FULL" else "dash"},
+                                 line={"color": cor, "width": 3, "dash": "solid" if c[1] == "FULL" else "dash"},
                                  hovertemplate=nome + ": %{x:,.0f} gravações/min → %{y:.3g}% do tempo<extra></extra>"),
                       row=2, col=1)
     fig.add_trace(e0["dados"][1], row=2, col=1)
@@ -280,18 +279,18 @@ def render(st, dados: dict) -> None:
     le = c3.toggle("O app lê enquanto grava", value=True,
                    help="Ex.: uma lista na tela durante uma sincronização em segundo plano")
     st.plotly_chart(grafico(le, perda, ambiente, dados), width="stretch",
-                    config={"displayModeBar": False})
+                    config={"displayModeBar": False}, key="calculadora_ritmo")
     alerta = recomendar(Perfil(60, le, perda, ambiente), dados)["alertas"]
     for a in alerta:
         st.warning(a)
     esq, dir_ = st.columns(2)
     with esq:
         st.plotly_chart(painel.durabilidade(painel_durabilidade(dados)), width="stretch",
-                        config={"displayModeBar": False})
+                        config={"displayModeBar": False}, key="calculadora_durabilidade")
     with dir_:
         if le and dados.get("concorrencia") is not None:
             st.plotly_chart(painel.concorrencia(dados["concorrencia"]), width="stretch",
-                            config={"displayModeBar": False})
+                            config={"displayModeBar": False}, key="calculadora_concorrencia")
         else:
             st.info("Com o app só gravando (sem ler ao mesmo tempo), o bloqueio da leitura no DELETE não pesa na "
                     "decisão. Ligue a opção acima para ver o efeito na tela.")
