@@ -19,7 +19,7 @@ mkdir lab05
 cd lab05
 curl -L -o coleta.py https://raw.githubusercontent.com/JoaoRajao/lab-medicao/master/labs/lab05_sqlite/coleta.py
 python3 coleta.py --repeticoes 30 --nome coleta_iphone
-curl -L -o concorrencia.py https://raw.githubusercontent.com/JoaoRajao/lab-medicao/feature/lab05s03-durabilidade-pedro/labs/lab05_sqlite/concorrencia.py
+curl -L -o concorrencia.py https://raw.githubusercontent.com/JoaoRajao/lab-medicao/master/labs/lab05_sqlite/concorrencia.py
 python3 concorrencia.py --threads --nome concorrencia_iphone
 ```
 
@@ -39,7 +39,7 @@ getprop ro.product.model > modelo.txt
 getprop ro.build.version.release >> modelo.txt
 curl -L -o coleta.py https://raw.githubusercontent.com/JoaoRajao/lab-medicao/master/labs/lab05_sqlite/coleta.py
 python coleta.py --repeticoes 30 --nome coleta_android
-curl -L -o concorrencia.py https://raw.githubusercontent.com/JoaoRajao/lab-medicao/feature/lab05s03-durabilidade-pedro/labs/lab05_sqlite/concorrencia.py
+curl -L -o concorrencia.py https://raw.githubusercontent.com/JoaoRajao/lab-medicao/master/labs/lab05_sqlite/concorrencia.py
 python concorrencia.py --threads --nome concorrencia_android
 cp data/raw/* modelo.txt ~/storage/downloads/
 ```
