@@ -1,0 +1,90 @@
+{
+  "coletado_em": "2026-11-26T23:45:37+00:00",
+  "sqlite_version": "3.50.4",
+  "python": "3.14.10",
+  "sistema": "macOS-26.7.2-arm64-arm-64bit-Mach-O",
+  "processador": "arm",
+  "cpus": 3,
+  "discos": {
+    "SPStorageDataType": [
+      {
+        "_name": "Data",
+        "bsd_name": "disk2s5",
+        "file_system": "APFS",
+        "free_space_in_bytes": 103001477120,
+        "ignore_ownership": "no",
+        "mount_point": "/System/Volumes/Data",
+        "physical_drive": {
+          "is_internal_disk": "yes",
+          "media_name": "AppleAPFSMedia",
+          "medium_type": "ssd",
+          "partition_map_type": "unknown_partition_map_type"
+        },
+        "size_in_bytes": 343073095680,
+        "volume_uuid": "4A1F17CF-B156-47AC-8FC6-443C31864B5F",
+        "writable": "yes"
+      },
+      {
+        "_name": "RevivalC13M302392.UC_SIRI_ASR_ASSISTANT_EN_US_EN_US_MACVM_Cryptex",
+        "bsd_name": "disk4s1",
+        "file_system": "Case-sensitive APFS",
+        "free_space_in_bytes": 22228992,
+        "ignore_ownership": "no",
+        "mount_point": "/System/Library/AssetsV2/com_apple_MobileAsset_UAF_Siri_Understanding/purpose_auto/c10eb90af2d4996616c3cd0f6bac0833eb4925fa.asset/.AssetData",
+        "physical_drive": {
+          "device_name": "Disk Image",
+          "is_internal_disk": "no",
+          "media_name": "AppleAPFSMedia",
+          "partition_map_type": "unknown_partition_map_type",
+          "protocol": "Disk Image"
+        },
+        "size_in_bytes": 545259520,
+        "volume_uuid": "5619C7BA-DE04-4110-B04E-15DD4710CA2A",
+        "writable": "no"
+      },
+      {
+        "_name": "Creedence11M6270.SECUREPKITRUSTSTOREASSETS_SECUREPKITRUSTSTORE_Cryptex",
+        "bsd_name": "disk6s1",
+        "file_system": "Case-sensitive APFS",
+        "free_space_in_bytes": 3149824,
+        "ignore_ownership": "no",
+        "mount_point": "/System/Library/AssetsV2/com_apple_MobileAsset_PKITrustStore/purpose_auto/6dd55b0d06633a00de6f57ccb910a66a5ba2409a.asset/.AssetData",
+        "physical_drive": {
+          "device_name": "Disk Image",
+          "is_internal_disk": "no",
+          "media_name": "AppleAPFSMedia",
+          "partition_map_type": "unknown_partition_map_type",
+          "protocol": "Disk Image"
+        },
+        "size_in_bytes": 4194304,
+        "volume_uuid": "A4B97E21-47AA-4E5E-A5D5-1F7563C37536",
+        "writable": "no"
+      },
+      {
+        "_name": "Macintosh HD",
+        "bsd_name": "disk2s1s1",
+        "file_system": "APFS",
+        "free_space_in_bytes": 103001477120,
+        "ignore_ownership": "no",
+        "mount_point": "/",
+        "physical_drive": {
+          "is_internal_disk": "yes",
+          "media_name": "AppleAPFSMedia",
+          "medium_type": "ssd",
+          "partition_map_type": "unknown_partition_map_type"
+        },
+        "size_in_bytes": 343073095680,
+        "volume_uuid": "A1916669-9282-46AC-AD35-FC2C808AF0F9",
+        "writable": "no"
+      }
+    ]
+  },
+  "parametros": {
+    "repeticoes": 30,
+    "escritas": 500,
+    "linhas_leitura": 20000,
+    "leituras": 5000,
+    "tamanho_payload": 200,
+    "seed": 42
+  }
+}

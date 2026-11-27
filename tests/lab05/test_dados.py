@@ -1,4 +1,4 @@
-"""Validacao das coletas completas versionadas: Windows (#121) e replicacao no Linux (#137). Cada CSV segue o
+"""Validacao das coletas completas versionadas: Windows (#121) e replicacoes (#137: WSL2 e GitHub Actions). Cada CSV segue o
 desenho planejado na proposta."""
 
 from __future__ import annotations
@@ -14,7 +14,8 @@ from labs.lab05_sqlite import coleta
 RAW = Path(coleta.__file__).parent / "data" / "raw"
 
 
-COLETAS = ("coleta_completa", "coleta_linux")
+COLETAS = ("coleta_completa", "coleta_linux", "coleta_actions_Linux", "coleta_actions_Windows",
+           "coleta_actions_macOS")
 
 
 @pytest.fixture(scope="module", params=COLETAS)
